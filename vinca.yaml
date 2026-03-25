@@ -97,6 +97,7 @@ packages_select_by_deps:
   - gripper_controllers
 
   - rosbridge_suite
+  - rosgraph_monitor
 
   - foxglove_bridge
   - foxglove_msgs
