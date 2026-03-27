@@ -988,7 +988,7 @@ python3-unidiff:
 python3-usb:
   robostack: [pyusb]
 python3-vcstool:
-  robostack: [vcstool]
+  robostack: [vcs2l]
 python3-flake8-docstrings:
   robostack: [flake8-docstrings]
 python3-flake8-import-order:
