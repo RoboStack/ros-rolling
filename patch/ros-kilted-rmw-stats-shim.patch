@@ -1,7 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -15,17 +15,27 @@
+@@ -15,17 +15,28 @@
  cmake_minimum_required(VERSION 3.8)
  project(rmw_stats_shim)
  
@@ -10,6 +8,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 +  string(REPLACE "--no-undefined" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
 +  string(REPLACE "-Wl,--no-undefined" "" CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS}")
 +  string(REPLACE "--no-undefined" "" CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS}")
++  string(REPLACE "-latomic" "" CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES}")
 +endif()
 +
  if(NOT CMAKE_CXX_STANDARD)
@@ -30,8 +29,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
  find_package(rcpputils REQUIRED)
  find_package(rmw REQUIRED)
  find_package(rosgraph_monitor_msgs REQUIRED)
- find_package(rosidl_runtime_cpp REQUIRED)
-@@ -45,6 +55,7 @@
+@@ -45,6 +56,7 @@
    rmw::rmw
    rosidl_runtime_cpp::rosidl_runtime_cpp
    rosidl_typesupport_cpp::rosidl_typesupport_cpp
