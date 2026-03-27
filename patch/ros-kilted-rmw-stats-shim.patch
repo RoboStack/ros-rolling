@@ -1,8 +1,18 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8dbdc3b..2117374 100644
+index 8dbdc3b..62f5bf0 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -19,18 +19,22 @@ if(NOT CMAKE_CXX_STANDARD)
+@@ -15,22 +15,31 @@
+ cmake_minimum_required(VERSION 3.8)
+ project(rmw_stats_shim)
+ 
++if(APPLE)
++  string(REPLACE "-Wl,--no-undefined" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
++  string(REPLACE "-Wl,--no-undefined" "" CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS}")
++endif()
++
+ if(NOT CMAKE_CXX_STANDARD)
+   set(CMAKE_CXX_STANDARD 17)
  endif()
  
  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -24,7 +34,7 @@ index 8dbdc3b..2117374 100644
  
  add_library(${PROJECT_NAME} SHARED
    src/shim.cpp
-@@ -46,6 +50,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
+@@ -46,6 +55,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
    rmw::rmw
    rosidl_runtime_cpp::rosidl_runtime_cpp
    rosidl_typesupport_cpp::rosidl_typesupport_cpp
