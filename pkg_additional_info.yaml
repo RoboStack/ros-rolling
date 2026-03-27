@@ -137,6 +137,10 @@ diagnostic_aggregator:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 diagnostic_updater:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+rmw_stats_shim:
+  additional_cmake_args: "-DCMAKE_SHARED_LINKER_FLAGS= -DCMAKE_MODULE_LINKER_FLAGS="
+rosgraph_monitor:
+  additional_cmake_args: "-DCMAKE_SHARED_LINKER_FLAGS= -DCMAKE_MODULE_LINKER_FLAGS= -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 octomap_ros:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 rviz_ogre_vendor:

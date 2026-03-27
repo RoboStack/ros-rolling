@@ -1,8 +1,7 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c0ec00d..f5ac313 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -14,14 +14,25 @@
+@@ -15,13 +15,26 @@
  cmake_minimum_required(VERSION 3.8)
  project(rosgraph_monitor)
  
@@ -12,7 +11,9 @@ index c0ec00d..f5ac313 100644
 +
 +if(APPLE)
 +  string(REPLACE "-Wl,--no-undefined" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
++  string(REPLACE "--no-undefined" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
 +  string(REPLACE "-Wl,--no-undefined" "" CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS}")
++  string(REPLACE "--no-undefined" "" CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS}")
 +endif()
 +
  if(NOT CMAKE_CXX_STANDARD)
