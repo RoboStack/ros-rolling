@@ -97,7 +97,6 @@ packages_select_by_deps:
   - gripper_controllers
 
   - rosbridge_suite
-  - rosgraph_monitor
 
   - foxglove_bridge
   - foxglove_msgs
@@ -166,6 +165,8 @@ packages_select_by_deps:
       - usb_cam
 
       - libcamera
+
+      - rosgraph_monitor
 
   # These packages are currently only build on Linux,
   # as trying to build them in the past on macos or Windows resulted in errors
