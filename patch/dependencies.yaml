@@ -221,8 +221,8 @@ gz_utils_vendor:
   add_host: ["gz-utils3"]
   add_run: ["gz-utils3"]
 sdformat_vendor:
-  add_host: ["sdformat"]
-  add_run: ["sdformat"]
+  add_host: ["sdformat15"]
+  add_run: ["sdformat15"]
 gz_dartsim_vendor:
   add_host: ["dartsim-cpp"]
   add_run: ["dartsim-cpp"]
