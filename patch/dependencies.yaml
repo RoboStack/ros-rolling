@@ -220,6 +220,9 @@ gz_transport_vendor:
 gz_utils_vendor:
   add_host: ["gz-utils3"]
   add_run: ["gz-utils3"]
+sdformat_urdf:
+  add_host: ["sdformat15"]
+  add_run: ["sdformat15"]
 sdformat_vendor:
   add_host: ["sdformat15"]
   add_run: ["sdformat15"]
