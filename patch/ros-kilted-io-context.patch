@@ -1,17 +1,3 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a3652b8..8e72e1d 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -25,6 +25,9 @@ endif()
- if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-   add_compile_options(-Wall -Wextra -Wpedantic)
- endif()
-+if(WIN32)
-+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-+endif()
- 
- ## dependencies
- find_package(ament_cmake_auto REQUIRED)
 diff --git a/include/io_context/io_context.hpp b/include/io_context/io_context.hpp
 index d2f5770..b3cfab8 100644
 --- a/include/io_context/io_context.hpp
