@@ -103,8 +103,6 @@ jobs:
       run: |
         rm -rf ${{ matrix.folder_cache }}/ros-kilted-sdformat* 2>/dev/null || true
         rm -rf ${{ matrix.folder_cache }}/ros-kilted-ur* 2>/dev/null || true
-        rm -rf ${{ matrix.folder_cache }}/ros-kilted-gz* 2>/dev/null || true
-        rm -rf ${{ matrix.folder_cache }}/ros-kilted-tinyxml2* 2>/dev/null || true
         mkdir -p ${{ matrix.folder_cache }}
         pixi run rattler-index fs ${{ matrix.folder_cache }}/.. --force
 
