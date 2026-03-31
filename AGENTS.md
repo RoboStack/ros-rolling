@@ -17,7 +17,7 @@ Working notes for future coding agents in a RoboStack repo. Replace $DISTRO with
 
 ```bash
 # single package (preferred for debugging)
-pixi run build-one --package ros-$DISTRO-<pkg>
+pixi run build-one ros-$DISTRO-<pkg>
 
 # broad pass when needed
 pixi run build_continue_on_failure
