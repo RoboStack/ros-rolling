@@ -402,3 +402,7 @@ mocap4r2_robot_gt_msgs:
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
   version: 0.0.7
   additional_folder: mocap4r2_robot_gt/mocap4r2_robot_gt_msgs
+cm_executors:
+  tag: 0.9.1
+  url: https://github.com/cellumation/cm_executors.git
+  version: 0.9.1
