@@ -71,3 +71,6 @@ libzenohcxx:
 
 libhwloc:
   - 2.12.2
+
+urdfdom_headers:
+  - 1.1.2

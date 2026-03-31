@@ -19,7 +19,6 @@ mutex_package:
     - gazebo 11.*
     - libprotobuf 6.31.1.*
     - vtk 9.5.2.*
-    - urdfdom_headers 1.*
 
 packages_skip_by_deps:
   - if: not linux
