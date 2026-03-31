@@ -59,19 +59,19 @@ packages_select_by_deps:
   - desktop
   - desktop_full
 
-    #  - moveit
-    #  - moveit-planners-chomp
-    #  - moveit-servo
-    #  - moveit-visual-tools
-    #  - moveit-ros-trajectory-cache
-    #  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
-    #  - moveit-chomp-optimizer-adapter
-    #  - moveit-ros-control-interface
-    #
-    #  - ros2_control
-    #  - ros2_controllers
-    #  - gz_ros2_control
-    #  - gz_ros2_control_demos
+  - moveit
+  - moveit-planners-chomp
+  - moveit-servo
+  - moveit-visual-tools
+  - moveit-ros-trajectory-cache
+  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
+  - moveit-chomp-optimizer-adapter
+  - moveit-ros-control-interface
+
+  - ros2_control
+  - ros2_controllers
+  - gz_ros2_control
+  - gz_ros2_control_demos
 
   - rviz_visual_tools
 
@@ -110,29 +110,29 @@ packages_select_by_deps:
 
   - nav2_bringup
 
-    #  - autoware_internal_msgs
-    #  - autoware_common_msgs
-    #  - autoware_control_msgs
-    #  - autoware_localization_msgs
-    #  - autoware_map_msgs
-    #  - autoware_perception_msgs
-    #  - autoware_planning_msgs
-    #  - autoware_sensing_msgs
-    #  - autoware_system_msgs
-    #  - autoware_v2x_msgs
-    #  - autoware_vehicle_msgs
-    #  - autoware_cmake
-    #  - autoware_utils
-    #  - autoware_component_interface_specs
-    #  - autoware_geography_utils
-    #  - autoware_global_parameter_loader
-    #  - autoware_interpolation
-    #  - autoware_kalman_filter
-    #  - autoware_node
-    #  - autoware_object_recognition_utils
-    #  - autoware_point_types
-    #  - autoware_signal_processing
-    #  - autoware_vehicle_info_utils
+  - autoware_internal_msgs
+  - autoware_common_msgs
+  - autoware_control_msgs
+  - autoware_localization_msgs
+  - autoware_map_msgs
+  - autoware_perception_msgs
+  - autoware_planning_msgs
+  - autoware_sensing_msgs
+  - autoware_system_msgs
+  - autoware_v2x_msgs
+  - autoware_vehicle_msgs
+  - autoware_cmake
+  - autoware_utils
+  - autoware_component_interface_specs
+  - autoware_geography_utils
+  - autoware_global_parameter_loader
+  - autoware_interpolation
+  - autoware_kalman_filter
+  - autoware_node
+  - autoware_object_recognition_utils
+  - autoware_point_types
+  - autoware_signal_processing
+  - autoware_vehicle_info_utils
 
   - apriltag_detector
 
