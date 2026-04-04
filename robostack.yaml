@@ -810,6 +810,8 @@ python3-docutils:
   robostack: [docutils]
 python3-empy:
   robostack: [empy]
+python3-fastapi:
+  robostack: [fastapi]
 python3-flake8:
   robostack: [flake8]
 python3-flake8-comprehensions:
@@ -905,6 +907,8 @@ python3-pycodestyle:
   robostack: [pycodestyle]
 python3-pycryptodome:
   robostack: [pycryptodome, pycryptodomex]
+python3-pydantic:
+  robostack: [pydantic]
 python3-pydot:
   robostack: [pydot]
 python3-pygraphviz:
@@ -987,6 +991,8 @@ python3-unidiff:
   robostack: [unidiff]
 python3-usb:
   robostack: [pyusb]
+python3-uvicorn:
+  robostack: [uvicorn]
 python3-vcstool:
   robostack: [vcstool]
 python3-flake8-docstrings:
@@ -1056,6 +1062,8 @@ socat:
     linux: [socat]
     osx: [socat]
     win64: []
+sophus:
+  robostack: [sophus]
 spacenavd:
   robostack: [libspnav]
 spdlog:
