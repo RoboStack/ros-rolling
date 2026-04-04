@@ -98,7 +98,7 @@ packages_select_by_deps:
 
   - rosbridge_suite
 
-  - foxglove_bridge
+#  - foxglove_bridge
   - foxglove_msgs
 
   - lanelet2
@@ -110,29 +110,29 @@ packages_select_by_deps:
 
   - nav2_bringup
 
-  - autoware_internal_msgs
-  - autoware_common_msgs
-  - autoware_control_msgs
-  - autoware_localization_msgs
-  - autoware_map_msgs
-  - autoware_perception_msgs
-  - autoware_planning_msgs
-  - autoware_sensing_msgs
-  - autoware_system_msgs
-  - autoware_v2x_msgs
-  - autoware_vehicle_msgs
-  - autoware_cmake
-  - autoware_utils
-  - autoware_component_interface_specs
-  - autoware_geography_utils
-  - autoware_global_parameter_loader
-  - autoware_interpolation
-  - autoware_kalman_filter
-  - autoware_node
-  - autoware_object_recognition_utils
-  - autoware_point_types
-  - autoware_signal_processing
-  - autoware_vehicle_info_utils
+#  - autoware_internal_msgs
+#  - autoware_common_msgs
+#  - autoware_control_msgs
+#  - autoware_localization_msgs
+#  - autoware_map_msgs
+#  - autoware_perception_msgs
+#  - autoware_planning_msgs
+#  - autoware_sensing_msgs
+#  - autoware_system_msgs
+#  - autoware_v2x_msgs
+#  - autoware_vehicle_msgs
+#  - autoware_cmake
+#  - autoware_utils
+#  - autoware_component_interface_specs
+#  - autoware_geography_utils
+#  - autoware_global_parameter_loader
+#  - autoware_interpolation
+#  - autoware_kalman_filter
+#  - autoware_node
+#  - autoware_object_recognition_utils
+#  - autoware_point_types
+#  - autoware_signal_processing
+#  - autoware_vehicle_info_utils
 
   - apriltag_detector
 
