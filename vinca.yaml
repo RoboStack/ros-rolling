@@ -57,24 +57,24 @@ packages_select_by_deps:
   - simulation
 
   - desktop
-#  - desktop_full
+  - desktop_full
 
-#  - moveit
-#  - moveit-planners-chomp
-#  - moveit-servo
-#  - moveit-visual-tools
-#  - moveit-ros-trajectory-cache
-#  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
-#  - moveit-chomp-optimizer-adapter
-#  - moveit-ros-control-interface
-#
-#  - ros2_control
-#  - ros2_controllers
-#  - gz_ros2_control
-#  - gz_ros2_control_demos
+  - moveit
+  - moveit-planners-chomp
+  - moveit-servo
+  - moveit-visual-tools
+  - moveit-ros-trajectory-cache
+  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
+  - moveit-chomp-optimizer-adapter
+  - moveit-ros-control-interface
 
-#  - rviz_visual_tools
-#
+  - ros2_control
+  - ros2_controllers
+  - gz_ros2_control
+  - gz_ros2_control_demos
+
+  - rviz_visual_tools
+
 #  - ur
 #  - ur_simulation_gz
 #
