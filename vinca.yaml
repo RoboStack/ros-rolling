@@ -98,7 +98,7 @@ packages_select_by_deps:
 
   - rosbridge_suite
 
-  - foxglove_bridge
+  # - foxglove_bridge
   - foxglove_msgs
 
   - lanelet2
