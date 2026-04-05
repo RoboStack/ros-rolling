@@ -46,17 +46,17 @@ packages_select_by_deps:
   - ament_cmake_mypy
 
   - ros_base
-#  - ros_environment
-#  - ros_workspace
-#  - dev_tools
-#  - diagnostics
-#  - teleop
-#  - robot
-#  - perception
-#  - navigation2
-#  - simulation
-#
-#  - desktop
+  - ros_environment
+  - ros_workspace
+  - dev_tools
+  - diagnostics
+  - teleop
+  - robot
+  - perception
+  - navigation2
+  - simulation
+
+  - desktop
 #  - desktop_full
 #
 #  - moveit
