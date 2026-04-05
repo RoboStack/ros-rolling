@@ -323,6 +323,10 @@ autoware_velocity_smoother:
   tag: release/humble/autoware_velocity_smoother/1.7.0-1
   url: https://github.com/ros2-gbp/autoware_core-release.git
   version: 1.7.0
+autoware_qos_utils:
+  tag: release/humble/autoware_qos_utils/1.7.0-1
+  url: https://github.com/ros2-gbp/autoware_core-release.git
+  version: 1.7.0
 # TODO: remove autoware msgs and it's sub packages after they are released in kilted
 autoware_internal_localization_msgs:
   tag: release/jazzy/autoware_internal_localization_msgs/1.10.0-1
