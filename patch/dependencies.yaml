@@ -250,6 +250,8 @@ autoware_utils_pcl:
   add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}"]
 autoware_utils_debug:
   add_host: ["fmt"]
+autoware_trajectory:
+  add_host: ["fmt"]
 rclpy:
   add_host: ["typing_extensions"]
   add_run: ["typing_extensions"]
