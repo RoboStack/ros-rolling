@@ -51,5 +51,5 @@ description = "Remove all generated recipes, before regenerating them."
 [tasks.build-one]
 cmd = "cp ./patch/{{ PACKAGE }}.*patch ./recipes/{{ PACKAGE }}/patch/; rattler-build build --recipe ./recipes/{{ PACKAGE }}/recipe.yaml -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge"
 args = [{ arg = "PACKAGE", default = "ros-rolling-ros-workspace" }]
-description = "Build a single package, from the ./recipes dir. Add the `ros-kilted-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"
+description = "Build a single package, from the ./recipes dir. Add the `ros-rolling-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"
 
