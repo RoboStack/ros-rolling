@@ -4,4 +4,4 @@ tests:
     - ros2 pkg prefix turtlebot3
     requirements:
       run:
-        - ros-kilted-ros2pkg
+        - ros-rolling-ros2pkg
