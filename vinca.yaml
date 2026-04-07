@@ -59,14 +59,14 @@ packages_select_by_deps:
   - desktop
   - desktop_full
 
-  - moveit
-  - moveit-planners-chomp
-  - moveit-servo
-  - moveit-visual-tools
-  - moveit-ros-trajectory-cache
-  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
-  - moveit-chomp-optimizer-adapter
-  - moveit-ros-control-interface
+#  - moveit
+#  - moveit-planners-chomp
+#  - moveit-servo
+#  - moveit-visual-tools
+#  - moveit-ros-trajectory-cache
+#  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
+#  - moveit-chomp-optimizer-adapter
+#  - moveit-ros-control-interface
 
   - ros2_control
   - ros2_controllers
@@ -193,10 +193,10 @@ packages_select_by_deps:
       - foxglove_compressed_video_transport
       - rplidar_ros
       - velodyne
-      - moveit-py
-      - moveit-ros-perception
-      - moveit-ros-occupancy-map-monitor
-      - moveit-runtime
+#      - moveit-py
+#      - moveit-ros-perception
+#      - moveit-ros-occupancy-map-monitor
+#      - moveit-runtime
       - pinocchio
       - serial_driver
       - swri_console  # Until sync of: https://github.com/ros/rosdistro/pull/49750
