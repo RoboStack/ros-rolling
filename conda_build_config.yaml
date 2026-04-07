@@ -43,7 +43,7 @@ cdt_name:  # [linux]
   - conda  # [linux]
 
 python:
-  - 3.12.* *_cpython
+  - 3.14.* *_cp314
 python_impl:
   - cpython
 
@@ -71,14 +71,9 @@ cxx_compiler_version:          # [unix]
   - 18                         # [osx]
 
 libzenohc:
-  - 1.7.2
+  - 1.8.0
 libzenohcxx:
-  - 1.7.2
+  - 1.8.0
 
 libhwloc:
   - 2.12.2
-
-urdfdom:
-  -  4.0.1
-urdfdom-headers:
-  -  1.1.2
