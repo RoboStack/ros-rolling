@@ -1,27 +1,27 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 611816f..d26d639 100644
+index 9285c891..d8b058ab 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -75,6 +75,18 @@ else()
    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
      set(FOXGLOVE_SDK_PLATFORM "x86_64-unknown-linux-gnu")
-     set(FOXGLOVE_SDK_SHA "8e4967ec7446a06b5a04c47b54bcd4cecff2ad8776e002ef3803ed4a7076841d")
+     set(FOXGLOVE_SDK_SHA "f3d2f6a8ba97fedeae13b978f5e8a51dec4803eddfd23b198a292bf9ab6675ff")
 +  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
 +    set(FOXGLOVE_SDK_PLATFORM "aarch64-apple-darwin")
-+    set(FOXGLOVE_SDK_SHA "0799fcb999616fe25d16d7e4b2894adb6f7fa97ce9671bd908d8412505887bec")
++    set(FOXGLOVE_SDK_SHA "6cb695e997e47a61c317177f13dd911c90ec1a95477473e1c5fb86db8a2da8ed")
 +  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
 +    set(FOXGLOVE_SDK_PLATFORM "x86_64-apple-darwin")
-+    set(FOXGLOVE_SDK_SHA "3e0d7e575e7de9351ae71a0201ede5c00020f2e9d12cc5cd08e2c896033c9fa9")
++    set(FOXGLOVE_SDK_SHA "21cba2f3d032b3d0a921b7eda8ef103393f93f66ab891cbc4851f57c8080b94b")
 +  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
 +    set(FOXGLOVE_SDK_PLATFORM "aarch64-pc-windows-msvc")
-+    set(FOXGLOVE_SDK_SHA "9bb816d97a69bf8f5b81559027955bf9277fcd60204cd11495dff352f49cb35e")
++    set(FOXGLOVE_SDK_SHA "602676101883defac7494e70fdc6bc8dd2daa1783da07645906ef595e6654a05")
 +  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
 +    set(FOXGLOVE_SDK_PLATFORM "x86_64-pc-windows-msvc")
-+    set(FOXGLOVE_SDK_SHA "219f84aa184eb1224d8ba35bc84412dc253137e65b3d6c5f0ffd80a8b0c2dbd2")
++    set(FOXGLOVE_SDK_SHA "6cdf69d23ae45a1643f6e430b9928c5546679ffa3b9fb54a79f244b93bdc8323")
    else()
      message(FATAL_ERROR "Unsupported platform/architecture combination: ${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
    endif()
-@@ -161,6 +173,12 @@ target_link_libraries(foxglove_bridge_component
+@@ -185,6 +197,12 @@ target_link_libraries(foxglove_bridge_component
    rosx_introspection::rosx_introspection
  )
  
@@ -33,3 +33,4 @@ index 611816f..d26d639 100644
 +
  rclcpp_components_register_nodes(foxglove_bridge_component "foxglove_bridge::FoxgloveBridge")
  enable_strict_compiler_warnings(foxglove_bridge_component)
+ 
