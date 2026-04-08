@@ -206,10 +206,9 @@ index 6b928b506d..83f5309add 100644
  
  install(DIRECTORY include/ DESTINATION include/moveit_ros_perception)
 diff --git a/semantic_world/CMakeLists.txt b/semantic_world/CMakeLists.txt
-index 98c87211ff..6ef5ed1168 100644
 --- a/semantic_world/CMakeLists.txt
 +++ b/semantic_world/CMakeLists.txt
-@@ -1,19 +1,18 @@
+@@ -1,18 +1,18 @@
  add_library(moveit_semantic_world SHARED src/semantic_world.cpp)
  set_target_properties(moveit_semantic_world
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
@@ -227,7 +226,6 @@ index 98c87211ff..6ef5ed1168 100644
 -  tf2_eigen
 -  Eigen3
 -  Boost
--  OpenCV)
 +  PUBLIC rclcpp::rclcpp
 +         moveit_core::moveit_core
 +         ${object_recognition_msgs_TARGETS}
