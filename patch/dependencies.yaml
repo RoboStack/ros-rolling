@@ -217,8 +217,8 @@ gz_tools_vendor:
   add_host: ["gz-tools"]
   add_run: ["gz-tools"]
 gz_transport_vendor:
-  add_host: ["gz-transport"]
-  add_run: ["gz-transport"]
+  add_host: ["libgz-transport"]
+  add_run: ["libgz-transport"]
 gz_utils_vendor:
   add_host: ["gz-utils"]
   add_run: ["gz-utils"]
