@@ -1,25 +1,27 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 322bacc..3333333 100644
+index a402b138..8b50b5ae 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -1,10 +1,11 @@
- cmake_minimum_required(VERSION 3.14)
- project(autoware_qp_interface)
+@@ -38,10 +38,10 @@ target_include_directories(${PROJECT_NAME}
+     "${EIGEN3_INCLUDE_DIR}"
+ )
  
-+find_package(Eigen3 REQUIRED)
-+get_target_property(EIGEN3_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
- find_package(autoware_cmake REQUIRED)
- autoware_package()
+-ament_target_dependencies(${PROJECT_NAME}
+-  Eigen3
+-  osqp_vendor
+-  proxsuite
++target_link_libraries(${PROJECT_NAME}
++  Eigen3::Eigen
++  osqp::osqp
++  proxsuite::proxsuite
+ )
  
--find_package(Eigen3 REQUIRED)
- find_package(proxsuite REQUIRED)
- 
- # after find_package(osqp_vendor) in ament_auto_find_build_dependencies
+ # crucial so downstream package builds because osqp_interface exposes osqp.hpp
 diff --git a/src/osqp_csc_matrix_conv.cpp b/src/osqp_csc_matrix_conv.cpp
-index 5d8345f..2222222 100644
+index 15314a9e..96056753 100644
 --- a/src/osqp_csc_matrix_conv.cpp
 +++ b/src/osqp_csc_matrix_conv.cpp
-@@ -22,9 +22,9 @@ namespace autoware::qp_interface
+@@ -25,9 +25,9 @@ namespace autoware::qp_interface
  {
  CSC_Matrix calCSCMatrix(const Eigen::MatrixXd & mat)
  {
@@ -30,7 +32,8 @@ index 5d8345f..2222222 100644
  
    std::vector<c_float> vals;
    vals.reserve(elem);
-@@ -60,8 +60,8 @@ CSC_Matrix calCSCMatrix(const Eigen::MatrixXd & mat)
+@@ -66,9 +66,9 @@ CSC_Matrix calCSCMatrix(const Eigen::MatrixXd & mat)
+ 
  CSC_Matrix calCSCMatrixTrapezoidal(const Eigen::MatrixXd & mat)
  {
 -  const size_t elem = static_cast<size_t>(mat.nonZeros());
