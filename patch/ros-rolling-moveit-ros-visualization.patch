@@ -1,7 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 27855877a..5a3d37053 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -27,7 +27,6 @@
+@@ -27,7 +27,6 @@ find_package(pluginlib REQUIRED)
  find_package(rclcpp REQUIRED)
  find_package(rclcpp_action REQUIRED)
  find_package(rclpy REQUIRED)
@@ -9,7 +10,23 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
  find_package(tf2_eigen REQUIRED)
  find_package(Eigen3 REQUIRED)
  find_package(rviz_common REQUIRED)
-@@ -106,8 +105,15 @@
+@@ -38,11 +37,11 @@ find_package(rviz_ogre_vendor REQUIRED)
+ include(ConfigExtras.cmake)
+ 
+ # Qt Stuff
+-find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+-set(QT_LIBRARIES Qt5::Widgets)
+-# Delegate to QT5 macro
++find_package(Qt6 ${rviz_QT_VERSION} REQUIRED Core Widgets)
++set(QT_LIBRARIES Qt6::Widgets)
++# Delegate to QT6 macro
+ macro(QT_WRAP_UI)
+-  qt5_wrap_ui(${ARGN})
++  qt6_wrap_ui(${ARGN})
+ endmacro()
+ 
+ set(CMAKE_INCLUDE_CURRENT_DIR ON)
+@@ -106,8 +105,15 @@ pluginlib_export_plugin_description_file(
  pluginlib_export_plugin_description_file(
    rviz_common robot_state_rviz_plugin_description.xml)
  
@@ -27,9 +44,19 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 diff --git a/motion_planning_rviz_plugin/CMakeLists.txt b/motion_planning_rviz_plugin/CMakeLists.txt
+index 711211c89..ff18e73ef 100644
 --- a/motion_planning_rviz_plugin/CMakeLists.txt
 +++ b/motion_planning_rviz_plugin/CMakeLists.txt
-@@ -29,28 +29,30 @@
+@@ -4,7 +4,7 @@ set(HEADERS
+     include/moveit/motion_planning_rviz_plugin/motion_planning_frame_joints_widget.hpp
+     include/moveit/motion_planning_rviz_plugin/motion_planning_param_widget.hpp
+     include/moveit/motion_planning_rviz_plugin/interactive_marker_display.hpp)
+-qt5_wrap_ui(UIC_FILES src/ui/motion_planning_rviz_plugin_frame.ui
++QT_WRAP_UI(UIC_FILES src/ui/motion_planning_rviz_plugin_frame.ui
+             src/ui/motion_planning_rviz_plugin_frame_joints.ui)
+ 
+ include_directories(${CMAKE_CURRENT_BINARY_DIR})
+@@ -29,28 +29,30 @@ add_library(moveit_motion_planning_rviz_plugin_core SHARED
  set_target_properties(moveit_motion_planning_rviz_plugin_core
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
  target_link_libraries(
@@ -76,9 +103,10 @@ diff --git a/motion_planning_rviz_plugin/CMakeLists.txt b/motion_planning_rviz_p
                             PRIVATE "${OGRE_PREFIX_DIR}/include")
  
 diff --git a/planning_scene_rviz_plugin/CMakeLists.txt b/planning_scene_rviz_plugin/CMakeLists.txt
+index efe2dc41f..71012ff83 100644
 --- a/planning_scene_rviz_plugin/CMakeLists.txt
 +++ b/planning_scene_rviz_plugin/CMakeLists.txt
-@@ -9,27 +9,29 @@
+@@ -9,27 +9,29 @@ target_include_directories(
    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
  set_target_properties(moveit_planning_scene_rviz_plugin_core
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
@@ -123,9 +151,10 @@ diff --git a/planning_scene_rviz_plugin/CMakeLists.txt b/planning_scene_rviz_plu
                             PRIVATE "${OGRE_PREFIX_DIR}/include")
  
 diff --git a/robot_state_rviz_plugin/CMakeLists.txt b/robot_state_rviz_plugin/CMakeLists.txt
+index f9bd7f4c8..98d5ae1d6 100644
 --- a/robot_state_rviz_plugin/CMakeLists.txt
 +++ b/robot_state_rviz_plugin/CMakeLists.txt
-@@ -4,27 +4,30 @@
+@@ -4,27 +4,30 @@ add_library(
    include/moveit/robot_state_rviz_plugin/robot_state_display.hpp)
  set_target_properties(moveit_robot_state_rviz_plugin_core
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
@@ -171,11 +200,13 @@ diff --git a/robot_state_rviz_plugin/CMakeLists.txt b/robot_state_rviz_plugin/CM
                             PRIVATE "${OGRE_PREFIX_DIR}/include")
  
 diff --git a/rviz_plugin_render_tools/CMakeLists.txt b/rviz_plugin_render_tools/CMakeLists.txt
+index 2a8c81a4d..e3b7b8bd7 100644
 --- a/rviz_plugin_render_tools/CMakeLists.txt
 +++ b/rviz_plugin_render_tools/CMakeLists.txt
-@@ -26,15 +26,17 @@
+@@ -26,15 +26,17 @@ set_target_properties(moveit_rviz_plugin_render_tools
  
- target_link_libraries(moveit_rviz_plugin_render_tools Qt5::Widgets)
+-target_link_libraries(moveit_rviz_plugin_render_tools Qt5::Widgets)
++target_link_libraries(moveit_rviz_plugin_render_tools ${QT_LIBRARIES})
  
 -ament_target_dependencies(
 +target_link_libraries(
@@ -200,9 +231,10 @@ diff --git a/rviz_plugin_render_tools/CMakeLists.txt b/rviz_plugin_render_tools/
                             PRIVATE "${OGRE_PREFIX_DIR}/include")
  
 diff --git a/trajectory_rviz_plugin/CMakeLists.txt b/trajectory_rviz_plugin/CMakeLists.txt
+index 8a58e56eb..711637fa3 100644
 --- a/trajectory_rviz_plugin/CMakeLists.txt
 +++ b/trajectory_rviz_plugin/CMakeLists.txt
-@@ -9,17 +9,16 @@
+@@ -9,17 +9,16 @@ add_library(moveit_trajectory_rviz_plugin_core SHARED src/trajectory_display.cpp
  set_target_properties(moveit_trajectory_rviz_plugin_core
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
  target_link_libraries(
@@ -229,7 +261,7 @@ diff --git a/trajectory_rviz_plugin/CMakeLists.txt b/trajectory_rviz_plugin/CMak
  target_include_directories(moveit_trajectory_rviz_plugin_core
                             PRIVATE "${OGRE_PREFIX_DIR}/include")
  
-@@ -27,10 +26,14 @@
+@@ -27,10 +26,14 @@ target_include_directories(moveit_trajectory_rviz_plugin_core
  add_library(moveit_trajectory_rviz_plugin SHARED src/plugin_init.cpp)
  set_target_properties(moveit_trajectory_rviz_plugin
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
