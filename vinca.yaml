@@ -82,8 +82,6 @@ packages_select_by_deps:
   - slam_toolbox
   - turtlebot3
 
-  - apriltag_ros
-
   - ackermann-msgs
   - sbg_driver
 
@@ -185,6 +183,8 @@ packages_select_by_deps:
       - v4l2_camera
       # Serial communication only implemented for linux
       - swri_serial_util
+      # Depends on camera_ros
+      - apriltag_ros
 
   # These packages are currently not build on Windows, but they be with some work
   - if: not win
