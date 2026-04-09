@@ -141,6 +141,28 @@ index 1555eee16..b02d52024 100644
  };
  
  }  // namespace moveit_setup
+diff --git a/include/moveit_setup_framework/utilities.hpp b/include/moveit_setup_framework/utilities.hpp
+index ace3237c6..b7ba031fd 100644
+--- a/include/moveit_setup_framework/utilities.hpp
++++ b/include/moveit_setup_framework/utilities.hpp
+@@ -37,7 +37,7 @@
+ #pragma once
+ 
+ #include <ament_index_cpp/get_package_prefix.hpp>
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+ #include <filesystem>
+ #include <string>
+ #include <tinyxml2.h>
+@@ -52,7 +52,7 @@ inline std::filesystem::path getSharePath(const std::string& package_name)
+ {
+   try
+   {
+-    return std::filesystem::path(ament_index_cpp::get_package_share_directory(package_name));
++    return ament_index_cpp::get_package_share_path(package_name);
+   }
+   catch (const std::runtime_error& e)
+   {
 diff --git a/src/urdf_config.cpp b/src/urdf_config.cpp
 index eab682326..5d17cec95 100644
 --- a/src/urdf_config.cpp
