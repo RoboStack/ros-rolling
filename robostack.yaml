@@ -484,6 +484,36 @@ libqt5x11extras5-dev:
     linux: [qt-main, libopengl-devel, libgl-devel]
     osx: [qt-main]
     win64: [qt-main]
+libqt6-core:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqt6gui6t64:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqt6opengl6t64:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqt6svg6:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqt6-websockets:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqt6widgets6t64:
+  robostack:
+    linux: [qt-main, libopengl-devel, libgl-devel]
+    osx: [qt-main]
+    win64: [qt-main]
 libreadline:
   robostack: [readline]
 libreadline-dev:
@@ -1028,6 +1058,11 @@ qtbase5-dev:
     linux: [qt-main, libopengl-devel, libgl-devel]
     osx: [qt-main]
     win64: [qt-main]
+qt6-base-dev:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
 range-v3:
   robostack: [range-v3]
 rapidjson-dev:
