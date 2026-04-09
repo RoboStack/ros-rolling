@@ -119,6 +119,27 @@ index f32e7b5ad..c6f472682 100644
  {
    Q_OBJECT
  public:
+diff --git a/include/moveit_setup_framework/qt/xml_syntax_highlighter.hpp b/include/moveit_setup_framework/qt/xml_syntax_highlighter.hpp
+index 5a5fbdd29..aea5aa8cc 100644
+--- a/include/moveit_setup_framework/qt/xml_syntax_highlighter.hpp
++++ b/include/moveit_setup_framework/qt/xml_syntax_highlighter.hpp
+@@ -38,6 +38,7 @@
+ 
+ #include <QtGui/QSyntaxHighlighter>
+ #include <QRegularExpression>
++#include <QStringView>
+ #include <map>
+ 
+ namespace moveit_setup
+@@ -63,7 +64,7 @@ private:
+   using Rules = std::map<int, Rule>;
+   Rules rules_;
+ 
+-  Rules::const_iterator highlight(Rules::const_iterator active, QStringRef text, int start, bool search_end, int& end);
++  Rules::const_iterator highlight(Rules::const_iterator active, QStringView text, int start, bool search_end, int& end);
+ };
+ 
+ }  // namespace moveit_setup
 diff --git a/include/moveit_setup_framework/templates.hpp b/include/moveit_setup_framework/templates.hpp
 index 1555eee16..b02d52024 100644
 --- a/include/moveit_setup_framework/templates.hpp
@@ -175,3 +196,25 @@ index eab682326..5d17cec95 100644
  
  namespace moveit_setup
  {
+diff --git a/src/xml_syntax_highlighter.cpp b/src/xml_syntax_highlighter.cpp
+index 1733943ce..53203b1ef 100644
+--- a/src/xml_syntax_highlighter.cpp
++++ b/src/xml_syntax_highlighter.cpp
+@@ -64,7 +64,7 @@ void XmlSyntaxHighlighter::addTag(const QString& tag, const QTextCharFormat& for
+ }
+ 
+ XmlSyntaxHighlighter::Rules::const_iterator
+-XmlSyntaxHighlighter::highlight(Rules::const_iterator active, QStringRef text, int start, bool search_end, int& end)
++XmlSyntaxHighlighter::highlight(Rules::const_iterator active, QStringView text, int start, bool search_end, int& end)
+ {
+   int offset = end;    // when passed, end indicates the end of the opening expression
+   auto next = active;  // return value: active rule at end of text
+@@ -121,7 +121,7 @@ void XmlSyntaxHighlighter::highlightBlock(const QString& text)
+ {
+   Rules::const_iterator active = previousBlockState() < 0 ? rules_.end() : rules_.find(previousBlockState());
+   int unused = 0;
+-  active = highlight(active, QStringRef(&text, 0, text.size()), 0, active != rules_.cend(), unused);
++  active = highlight(active, QStringView{ text }, 0, active != rules_.cend(), unused);
+   setCurrentBlockState(active != rules_.cend() ? active->first : -1);
+ }
+ 
