@@ -1,7 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3e3d417fb..fc6d922c4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -11,9 +11,17 @@
+@@ -11,9 +11,17 @@ find_package(ament_index_cpp REQUIRED)
  find_package(fmt REQUIRED)
  find_package(moveit_core REQUIRED)
  find_package(moveit_ros_planning REQUIRED)
@@ -21,7 +22,35 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
  find_package(pluginlib REQUIRED)
  find_package(rclcpp REQUIRED)
  find_package(rviz_common REQUIRED)
-@@ -43,30 +51,35 @@
+@@ -23,12 +31,21 @@ find_package(urdf REQUIRED)
+ 
+ set(CMAKE_INCLUDE_CURRENT_DIR ON)
+ 
+-qt5_wrap_cpp(
+-  MOC_FILES
+-  include/moveit_setup_framework/qt/helper_widgets.hpp
+-  include/moveit_setup_framework/qt/setup_step_widget.hpp
+-  include/moveit_setup_framework/qt/rviz_panel.hpp
+-  include/moveit_setup_framework/qt/double_list_widget.hpp)
++if(NOT Qt6_FOUND)
++  qt5_wrap_cpp(
++    MOC_FILES
++    include/moveit_setup_framework/qt/helper_widgets.hpp
++    include/moveit_setup_framework/qt/setup_step_widget.hpp
++    include/moveit_setup_framework/qt/rviz_panel.hpp
++    include/moveit_setup_framework/qt/double_list_widget.hpp)
++else()
++  qt6_wrap_cpp(
++    MOC_FILES
++    include/moveit_setup_framework/qt/helper_widgets.hpp
++    include/moveit_setup_framework/qt/setup_step_widget.hpp
++    include/moveit_setup_framework/qt/rviz_panel.hpp
++    include/moveit_setup_framework/qt/double_list_widget.hpp)
++endif()
+ 
+ add_library(
+   moveit_setup_framework
+@@ -43,30 +60,35 @@ add_library(
    src/utilities.cpp
    src/xml_syntax_highlighter.cpp
    ${MOC_FILES})
@@ -113,7 +142,7 @@ index 1555eee16..b02d52024 100644
  
  }  // namespace moveit_setup
 diff --git a/src/urdf_config.cpp b/src/urdf_config.cpp
-index 72d9bf4af..3ca176656 100644
+index eab682326..5d17cec95 100644
 --- a/src/urdf_config.cpp
 +++ b/src/urdf_config.cpp
 @@ -36,6 +36,7 @@
