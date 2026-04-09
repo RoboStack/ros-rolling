@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 58538a70b9..e4aa84e4dc 100644
+index 58538a70b..e4aa84e4d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -34,11 +34,18 @@ set_target_properties(moveit_ros_benchmarks
@@ -24,3 +24,15 @@ index 58538a70b9..e4aa84e4dc 100644
  target_link_libraries(moveit_run_benchmark moveit_ros_benchmarks)
  
  install(
+diff --git a/src/BenchmarkExecutor.cpp b/src/BenchmarkExecutor.cpp
+index e43884259..a24d6a2ce 100644
+--- a/src/BenchmarkExecutor.cpp
++++ b/src/BenchmarkExecutor.cpp
+@@ -62,6 +62,7 @@ using boost_progress_display = boost::progress_display;
+ #include <math.h>
+ #include <limits>
+ #include <filesystem>
++#include <regex>
+ #ifndef _WIN32
+ #include <unistd.h>
+ #else
