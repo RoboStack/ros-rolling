@@ -1,9 +1,15 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index b8dd549bcb..98737c501a 100644
+index b8dd549bc..ec355bf1d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -18,6 +18,8 @@ find_package(Eigen3 REQUIRED)
- find_package(octomap REQUIRED)
+@@ -13,11 +13,11 @@ find_package(moveit_core REQUIRED)
+ find_package(moveit_msgs REQUIRED)
+ find_package(pluginlib REQUIRED)
+ find_package(Eigen3 REQUIRED)
+-# Enforce system version liboctomap-dev
+-# https://github.com/moveit/moveit2/issues/2862
+-find_package(octomap 1.9.7...<1.10.0 REQUIRED)
++find_package(octomap REQUIRED)
  find_package(geometric_shapes REQUIRED)
  find_package(tf2_ros REQUIRED)
 +find_package(rclcpp REQUIRED)
@@ -11,7 +17,7 @@ index b8dd549bcb..98737c501a 100644
  
  include_directories(include)
  include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS} ${X11_INCLUDE_DIR})
-@@ -38,14 +40,27 @@ add_library(
+@@ -38,14 +38,27 @@ add_library(
  set_target_properties(
    moveit_ros_occupancy_map_monitor
    PROPERTIES VERSION "${moveit_ros_occupancy_map_monitor_VERSION}")
