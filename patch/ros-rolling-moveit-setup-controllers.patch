@@ -1,8 +1,17 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 402a52ad9b..324423504c 100644
+index 3e661098b..cff065637 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -49,8 +49,10 @@ target_include_directories(
+@@ -16,7 +16,7 @@ find_package(rclcpp REQUIRED)
+ set(CMAKE_AUTOMOC ON)
+ add_definitions(-DQT_NO_KEYWORDS)
+ 
+-qt5_wrap_cpp(
++qt6_wrap_cpp(
+   MOC_FILES include/moveit_setup_controllers/controller_edit_widget.hpp
+   include/moveit_setup_controllers/controllers_widget.hpp
+   include/moveit_setup_controllers/urdf_modifications_widget.hpp)
+@@ -40,8 +40,10 @@ target_include_directories(
    moveit_setup_controllers
    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
           $<INSTALL_INTERFACE:include/moveit_setup_controllers>)
