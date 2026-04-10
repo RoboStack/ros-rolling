@@ -292,3 +292,5 @@ pinocchio:
   add_host: ["eigen-abi-devel"]
 eigenpy:
   add_host: ["eigen-abi-devel"]
+rosidl_typesupport_fastrtps_cpp:
+  add_host: ["rosidl_buffer"]
