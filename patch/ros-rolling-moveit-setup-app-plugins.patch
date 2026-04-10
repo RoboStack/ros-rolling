@@ -1,8 +1,17 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ce013e59d9..1d268e888c 100644
+index fb10aca60..7a3bcb819 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -43,9 +43,13 @@ target_include_directories(
+@@ -17,7 +17,7 @@ find_package(rclcpp REQUIRED)
+ set(CMAKE_AUTOMOC ON)
+ add_definitions(-DQT_NO_KEYWORDS)
+ 
+-qt5_wrap_cpp(MOC_FILES include/moveit_setup_app_plugins/launches_widget.hpp
++qt6_wrap_cpp(MOC_FILES include/moveit_setup_app_plugins/launches_widget.hpp
+              include/moveit_setup_app_plugins/perception_widget.hpp)
+ 
+ add_library(
+@@ -33,9 +33,13 @@ target_include_directories(
    moveit_setup_app_plugins
    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
           $<INSTALL_INTERFACE:include/moveit_setup_app_plugins>)
