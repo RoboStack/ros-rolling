@@ -1,96 +1,473 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 919969e..2bf015a 100644
+index 9c00505..61850b1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -11,6 +11,7 @@ install(FILES
-   cmake/shiboken_helper.cmake
-   cmake/sip_configure.py
-   cmake/sip_helper.cmake
+@@ -4,12 +4,23 @@ project(python_qt_binding)
+ find_package(ament_cmake REQUIRED)
+ find_package(ament_cmake_python REQUIRED)
+ 
++# Copy python package into binary directory
++file(COPY src/${PROJECT_NAME} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
++
++include(python_qt_binding-extras.cmake)
++
++# Generate a version.py file inside the copied package directory
++file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/version.py
++  "QT_MAJOR_VERSION = ${python_qt_binding_QT_MAJOR_VERSION}\n"
++)
++
++# Install the package from the binary directory
+ ament_python_install_package(${PROJECT_NAME}
+-  PACKAGE_DIR src/${PROJECT_NAME})
++  PACKAGE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME})
+ 
+ install(FILES
 +  cmake/pyproject.toml.in
+   cmake/shiboken_helper.cmake
+-  cmake/sip_configure.py
+   cmake/sip_helper.cmake
    DESTINATION share/${PROJECT_NAME}/cmake)
  
- if(BUILD_TESTING)
+@@ -27,4 +38,6 @@ if(BUILD_TESTING)
+     TIMEOUT 90)
+ endif()
+ 
+-ament_package()
++ament_package(
++  CONFIG_EXTRAS "python_qt_binding-extras.cmake"
++)
 diff --git a/cmake/pyproject.toml.in b/cmake/pyproject.toml.in
 new file mode 100644
-index 0000000..cf4f57f
+index 0000000..36ce9f2
 --- /dev/null
 +++ b/cmake/pyproject.toml.in
-@@ -0,0 +1,31 @@
-+[project]
-+name = "lib@PROJECT_NAME@"
-+
-+# Specify sip v5 as the build system for the package.
+@@ -0,0 +1,22 @@
 +[build-system]
-+requires = ["PyQt-builder >=1, <2"]
++requires = ["sip >=6, <7"]
 +build-backend = "sipbuild.api"
++
++[project]
++name = "@PROJECT_NAME@"
++version = "1.0.0"
 +
 +[tool.sip]
 +project-factory = "pyqtbuild:PyQtProject"
 +
 +[tool.sip.builder]
-+qmake = "@QMAKE_EXECUTABLE@"
-+qmake-settings = [ "QMAKE_MACOSX_DEPLOYMENT_TARGET=@MACOS_MINIMUM_VERSION@", "CONFIG+=c++17" ]
++qmake = "@python_qt_binding_QMAKE_EXECUTABLE@"
 +
 +[tool.sip.project]
-+sip-files-dir = "@SIP_FILES_DIR@"
 +build-dir = "@SIP_BUILD_DIR@"
-+verbose = true
-+minimum-macos-version = "@MACOS_MINIMUM_VERSION@"
-+# Specify the PEP 566 metadata for the project.
-+[tool.sip.metadata]
-+name = "lib@PROJECT_NAME@"
++sip-files-dir = "@sip_SOURCE_DIR@"
++sip-include-dirs = ["@__PYQT_BINDINGS_DIR@"]
++abi-version = "@__QT_SIP_ABI_VERSION@"
 +
-+[tool.sip.bindings.libqt_gui_cpp_sip]
-+sip-file = "@SIP_FILE@"
-+include-dirs = [@SIP_INCLUDE_DIRS@]
-+libraries = [@SIP_LIBARIES@]
-+library-dirs = [@SIP_LIBRARY_DIRS@]
-+qmake-QT = ["widgets"]
-+exceptions = true
++[tool.sip.bindings.@PROJECT_NAME@]
++sip-file = "@SIP_FILE_NAME@"
 diff --git a/cmake/sip_configure.py b/cmake/sip_configure.py
-index 5210ee5..7bafe73 100644
+deleted file mode 100644
+index 5210ee5..0000000
 --- a/cmake/sip_configure.py
-+++ b/cmake/sip_configure.py
-@@ -215,6 +215,7 @@ if sys.platform == 'win32':
-     # The __cplusplus flag is not properly set on Windows for backwards
-     # compatibilty. This flag sets it correctly
-     makefile.CXXFLAGS.append('/Zc:__cplusplus')
-+    makefile.extra_cxxflags.append('/DROS_BUILD_SHARED_LIBS=1')
- else:
-     makefile.extra_cxxflags.append('-std=c++17')
- 
++++ /dev/null
+@@ -1,231 +0,0 @@
+-import copy
+-import os
+-import re
+-import shutil
+-import subprocess
+-import sys
+-import tempfile
+-
+-import PyQt5
+-from PyQt5 import QtCore
+-import sipconfig
+-
+-libqt5_rename = False
+-
+-
+-class Configuration(sipconfig.Configuration):
+-
+-    def __init__(self):
+-        env = copy.copy(os.environ)
+-        env['QT_SELECT'] = '5'
+-        qmake_exe = 'qmake-qt5' if shutil.which('qmake-qt5') else 'qmake'
+-        qtconfig = subprocess.check_output(
+-            [qmake_exe, '-query'], env=env, universal_newlines=True)
+-        qtconfig = dict(line.split(':', 1) for line in qtconfig.splitlines())
+-        pyqtconfig = {
+-            'qt_archdata_dir': qtconfig['QT_INSTALL_DATA'],
+-            'qt_data_dir': qtconfig['QT_INSTALL_DATA'],
+-            'qt_dir': qtconfig['QT_INSTALL_PREFIX'],
+-            'qt_inc_dir': qtconfig['QT_INSTALL_HEADERS'],
+-            'qt_lib_dir': qtconfig['QT_INSTALL_LIBS'],
+-            'qt_threaded': 1,
+-            'qt_version': QtCore.QT_VERSION,
+-            'qt_winconfig': 'shared exceptions',
+-        }
+-        if sys.platform == 'darwin':
+-            if os.path.exists(os.path.join(qtconfig['QT_INSTALL_LIBS'], 'QtCore.framework')):
+-                pyqtconfig['qt_framework'] = 1
+-            else:
+-                global libqt5_rename
+-                libqt5_rename = True
+-
+-        sipconfig.Configuration.__init__(self, [pyqtconfig])
+-
+-        macros = sipconfig._default_macros.copy()
+-        macros['INCDIR_QT'] = qtconfig['QT_INSTALL_HEADERS']
+-        macros['LIBDIR_QT'] = qtconfig['QT_INSTALL_LIBS']
+-        macros['MOC'] = 'moc-qt5' if shutil.which('moc-qt5') else 'moc'
+-        self.set_build_macros(macros)
+-
+-
+-def get_sip_dir_flags(config):
+-    """
+-    Get the extra SIP flags needed by the imported qt module, and locate PyQt5 sip install files.
+-
+-    Note that this normally only includes those flags (-x and -t) that relate to SIP's versioning
+-    system.
+-    """
+-    try:
+-        sip_dir = config.pyqt_sip_dir
+-        sip_flags = config.pyqt_sip_flags
+-        return sip_dir, sip_flags
+-    except AttributeError:
+-        pass
+-
+-    # We didn't find the sip_dir and sip_flags from the config, continue looking
+-
+-    # sipconfig.Configuration does not have a pyqt_sip_dir or pyqt_sip_flags AttributeError
+-    sip_flags = QtCore.PYQT_CONFIGURATION['sip_flags']
+-
+-    candidate_sip_dirs = []
+-
+-    # Archlinux installs sip files here by default
+-    candidate_sip_dirs.append(os.path.join(PyQt5.__path__[0], 'bindings'))
+-
+-    # sip4 installs here by default
+-    candidate_sip_dirs.append(os.path.join(sipconfig._pkg_config['default_sip_dir'], 'PyQt5'))
+-
+-    # Homebrew installs sip files here by default
+-    candidate_sip_dirs.append(os.path.join(sipconfig._pkg_config['default_sip_dir'], 'Qt5'))
+-
+-    for sip_dir in candidate_sip_dirs:
+-        if os.path.exists(sip_dir):
+-            return sip_dir, sip_flags
+-
+-    raise FileNotFoundError('The sip directory for PyQt5 could not be located. Please ensure' +
+-                            ' that PyQt5 is installed')
+-
+-
+-if len(sys.argv) != 8:
+-    print('usage: %s build-dir sip-file output_dir include_dirs libs lib_dirs ldflags' %
+-          sys.argv[0])
+-    sys.exit(1)
+-
+-# The SIP build folder, the SIP file, the output directory, the include
+-# directories, the libraries, the library directories and the linker
+-# flags.
+-build_dir, sip_file, output_dir, include_dirs, libs, lib_dirs, ldflags = sys.argv[1:]
+-
+-# The name of the SIP build file generated by SIP and used by the build system.
+-build_file = 'pyqtscripting.sbf'
+-
+-# Get the PyQt configuration information.
+-config = Configuration()
+-
+-sip_dir, sip_flags = get_sip_dir_flags(config)
+-
+-try:
+-    os.makedirs(build_dir)
+-except OSError:
+-    pass
+-
+-# Run SIP to generate the code.  Note that we tell SIP where to find the qt
+-# module's specification files using the -I flag.
+-
+-sip_bin = config.sip_bin
+-# Without the .exe, this might actually be a directory in Windows
+-if sys.platform == 'win32' and os.path.isdir(sip_bin):
+-    sip_bin += '.exe'
+-
+-# SIP4 has an incompatibility with Qt 5.15.6.  In particular, Qt 5.15.6 uses a new SIP directive
+-# called py_ssize_t_clean in QtCoremod.sip that SIP4 does not understand.
+-#
+-# Unfortunately, the combination of SIP4 and Qt 5.15.6 is common.  Archlinux, Ubuntu 22.04
+-# and RHEL-9 all have this combination.  On Ubuntu 22.04, there is a custom patch to SIP4
+-# to make it understand the py_ssize_t_clean tag, so the combination works.  But on most
+-# other platforms, it fails.
+-#
+-# To workaround this, copy all of the SIP files into a temporary directory, remove the offending
+-# line, and then use that temporary directory as the include path.  This is unnecessary on
+-# Ubuntu 22.04, but shouldn't hurt anything there.
+-with tempfile.TemporaryDirectory() as tmpdirname:
+-    shutil.copytree(sip_dir, tmpdirname, dirs_exist_ok=True)
+-
+-    output = ''
+-    with open(os.path.join(tmpdirname, 'QtCore', 'QtCoremod.sip'), 'r') as infp:
+-        for line in infp:
+-            if line.startswith('%Module(name='):
+-                result = re.sub(r', py_ssize_t_clean=True', '', line)
+-                output += result
+-            else:
+-                output += line
+-
+-    with open(os.path.join(tmpdirname, 'QtCore', 'QtCoremod.sip'), 'w') as outfp:
+-        outfp.write(output)
+-
+-    cmd = [
+-        sip_bin,
+-        '-c', build_dir,
+-        '-b', os.path.join(build_dir, build_file),
+-        '-I', tmpdirname,
+-        '-w'
+-    ]
+-    cmd += sip_flags.split(' ')
+-    cmd.append(sip_file)
+-
+-    subprocess.check_call(cmd)
+-
+-# Create the Makefile.  The QtModuleMakefile class provided by the
+-# pyqtconfig module takes care of all the extra preprocessor, compiler and
+-# linker flags needed by the Qt library.
+-makefile = sipconfig.SIPModuleMakefile(
+-    dir=build_dir,
+-    configuration=config,
+-    build_file=build_file,
+-    qt=['QtCore', 'QtGui']
+-)
+-
+-# hack to override makefile behavior which always prepend -l to libraries
+-# which is wrong for absolute paths
+-default_platform_lib_function = sipconfig.SIPModuleMakefile.platform_lib
+-
+-
+-def custom_platform_lib_function(self, clib, framework=0):
+-    if not clib or clib.isspace():
+-        return None
+-    # Only add '-l' if a library doesn't already start with '-l' and is not an absolute path
+-    if os.path.isabs(clib) or clib.startswith('-l'):
+-        return clib
+-
+-    global libqt5_rename
+-    # sip renames libs to Qt5 automatically on Linux, but not on macOS
+-    if libqt5_rename and not framework and clib.startswith('Qt') and not clib.startswith('Qt5'):
+-        return '-lQt5' + clib[2:]
+-
+-    return default_platform_lib_function(self, clib, framework)
+-
+-
+-sipconfig.SIPModuleMakefile.platform_lib = custom_platform_lib_function
+-
+-
+-# split paths on whitespace
+-# while dealing with whitespaces within the paths if they are escaped with backslashes
+-def split_paths(paths):
+-    paths = re.split('(?<=[^\\\\]) ', paths)
+-    return paths
+-
+-
+-for include_dir in split_paths(include_dirs):
+-    include_dir = include_dir.replace('\\', '')
+-    makefile.extra_include_dirs.append(include_dir)
+-for lib in split_paths(libs):
+-    makefile.extra_libs.append(lib)
+-for lib_dir in split_paths(lib_dirs):
+-    lib_dir = lib_dir.replace('\\', '')
+-    makefile.extra_lib_dirs.append(lib_dir)
+-for ldflag in ldflags.split('\\ '):
+-    makefile.LFLAGS.append(ldflag)
+-
+-# redirect location of generated library
+-makefile._target = '"%s"' % os.path.join(output_dir, makefile._target)
+-
+-# Force c++17
+-if sys.platform == 'win32':
+-    makefile.extra_cxxflags.append('/std:c++17')
+-    # The __cplusplus flag is not properly set on Windows for backwards
+-    # compatibilty. This flag sets it correctly
+-    makefile.CXXFLAGS.append('/Zc:__cplusplus')
+-else:
+-    makefile.extra_cxxflags.append('-std=c++17')
+-
+-# Finalise the Makefile, preparing it to be saved to disk
+-makefile.finalise()
+-
+-# Replace Qt variables from libraries
+-libs = makefile.LIBS.as_list()
+-for i in range(len(libs)):
+-    libs[i] = libs[i].replace('$$[QT_INSTALL_LIBS]', config.build_macros()['LIBDIR_QT'])
+-makefile.LIBS.set(libs)
+-
+-# Generate the Makefile itself
+-makefile.generate()
 diff --git a/cmake/sip_helper.cmake b/cmake/sip_helper.cmake
-index a5ac3c2..fdc9c18 100644
+index a5ac3c2..acc8063 100644
 --- a/cmake/sip_helper.cmake
 +++ b/cmake/sip_helper.cmake
-@@ -31,7 +31,7 @@ execute_process(
- if(PYTHON_SIP_EXECUTABLE)
-   string(STRIP ${PYTHON_SIP_EXECUTABLE} SIP_EXECUTABLE)
- else()
--  find_program(SIP_EXECUTABLE sip)
-+  find_program(SIP_EXECUTABLE NAMES sip sip-build)
- endif()
+@@ -5,47 +5,92 @@ set(__PYTHON_QT_BINDING_SIP_HELPER_INCLUDED TRUE)
  
- if(SIP_EXECUTABLE)
-@@ -42,6 +42,15 @@ else()
+ set(__PYTHON_QT_BINDING_SIP_HELPER_DIR ${CMAKE_CURRENT_LIST_DIR})
+ 
+-# By default, without the settings below, find_package(Python3) will attempt
+-# to find the newest python version it can, and additionally will find the
+-# most specific version.  For instance, on a system that has
+-# /usr/bin/python3.10, /usr/bin/python3.11, and /usr/bin/python3, it will find
+-# /usr/bin/python3.11, even if /usr/bin/python3 points to /usr/bin/python3.10.
+-# The behavior we want is to prefer the "system" installed version unless the
+-# user specifically tells us othewise through the Python3_EXECUTABLE hint.
+-# Setting CMP0094 to NEW means that the search will stop after the first
+-# python version is found.  Setting Python3_FIND_UNVERSIONED_NAMES means that
+-# the search will prefer /usr/bin/python3 over /usr/bin/python3.11.  And that
+-# latter functionality is only available in CMake 3.20 or later, so we need
+-# at least that version.
+ cmake_minimum_required(VERSION 3.20)
+ cmake_policy(SET CMP0094 NEW)
+ set(Python3_FIND_UNVERSIONED_NAMES FIRST)
+ 
+ find_package(Python3 ${Python3_VERSION} REQUIRED COMPONENTS Interpreter Development)
+ 
++# Find the directory containing the SIP bindings shipped by PyQt.
++#
++# :param python_qt_binding_QT_MAJOR_VERSION: The major version of Qt (e.g., 5 or 6).
++#
++# :out __PYQT_BINDINGS_DIR: Path to the directory containing QT*.sip files.
++# :out __PYQT_BINDINGS_FOUND: Boolean indicating if the bindings were located.
++#
++function(__find_qt_sip_files python_qt_binding_QT_MAJOR_VERSION)
++    set(MODULE_NAME "PyQt${python_qt_binding_QT_MAJOR_VERSION}")
++
++    execute_process(
++        COMMAND ${Python3_EXECUTABLE} -c "import ${MODULE_NAME}.bindings as pb; print(pb.__path__[0])"
++        OUTPUT_VARIABLE BINDINGS_DIR
++        OUTPUT_STRIP_TRAILING_WHITESPACE
++        ERROR_QUIET
++        RESULT_VARIABLE _res
++    )
++
++    if(_res EQUAL 0 AND IS_DIRECTORY "${BINDINGS_DIR}")
++        set(__PYQT_BINDINGS_DIR "${BINDINGS_DIR}" PARENT_SCOPE)
++        set(__PYQT_BINDINGS_FOUND TRUE PARENT_SCOPE)
++        message(STATUS "Found ${MODULE_NAME} SIP bindings at: ${BINDINGS_DIR}")
++    else()
++        set(__PYQT_BINDINGS_FOUND FALSE PARENT_SCOPE)
++        message(WARNING "Could not determine ${MODULE_NAME} bindings directory.")
++    endif()
++endfunction()
++
++# Extract the sip-abi-version from PyQt's configuration
++#
++# :param BINDINGS_DIR: Path to the directory containing QT*.sip files.
++# :out __QT_SIP_ABI_VERSION: The detected ABI version (defaults to 12).
++function(__find_qt_sip_abi BINDINGS_DIR)
++    # Default to 12 if detection fails
++    set(DETECTED_ABI "12")
++    set(TOML_FILE "${BINDINGS_DIR}/QtCore/QtCore.toml")
++
++    if(EXISTS "${TOML_FILE}")
++        file(READ "${TOML_FILE}" TOML_CONTENT_STR)
++        if(TOML_CONTENT_STR MATCHES "sip-abi-version[ \t]*=[ \t]*\"([^\"]+)\"")
++            set(DETECTED_ABI ${CMAKE_MATCH_1})
++            message(STATUS "Detected SIP ABI version: ${DETECTED_ABI}")
++        endif()
++    else()
++        message(STATUS "QtCore.toml not found at ${TOML_FILE}, defaulting SIP ABI to 12")
++    endif()
++
++    set(__QT_SIP_ABI_VERSION "${DETECTED_ABI}" PARENT_SCOPE)
++endfunction()
++
++# Check if modern sipbuild is available via python module
+ execute_process(
+-  COMMAND ${Python3_EXECUTABLE} -c "import sipconfig; print(sipconfig.Configuration().sip_bin)"
+-  OUTPUT_VARIABLE PYTHON_SIP_EXECUTABLE
++  COMMAND ${Python3_EXECUTABLE} -c "import sipbuild"
++  RESULT_VARIABLE _sipbuild_res
+   ERROR_QUIET)
+ 
+-if(PYTHON_SIP_EXECUTABLE)
+-  string(STRIP ${PYTHON_SIP_EXECUTABLE} SIP_EXECUTABLE)
+-else()
+-  find_program(SIP_EXECUTABLE sip)
+-endif()
+-
+-if(SIP_EXECUTABLE)
+-  message(STATUS "SIP binding generator available at: ${SIP_EXECUTABLE}")
++if(_sipbuild_res EQUAL 0)
++  message(STATUS "Modern SIP binding generator (sip-build) is available.")
+   set(sip_helper_FOUND TRUE)
+ else()
+-  message(STATUS "SIP binding generator NOT available.")
++  message(STATUS "Modern SIP binding generator NOT available.")
    set(sip_helper_NOTFOUND TRUE)
  endif()
  
-+if(sip_helper_FOUND)
-+  execute_process(
-+    COMMAND ${SIP_EXECUTABLE} -V
-+    OUTPUT_VARIABLE SIP_VERSION
-+    ERROR_QUIET)
-+  string(STRIP ${SIP_VERSION} SIP_VERSION)
-+  message(STATUS "SIP binding generator version: ${SIP_VERSION}")
++# Find Qt's installed SIP files
++__find_qt_sip_files(${python_qt_binding_QT_MAJOR_VERSION})
++if(NOT __PYQT_BINDINGS_FOUND)
++    message(FATAL_ERROR "PyQt${python_qt_binding_QT_MAJOR_VERSION} SIP bindings are required but were not found.")
 +endif()
++
++# Extract the sip-abi-version from PyQt
++__find_qt_sip_abi("${__PYQT_BINDINGS_DIR}")
++
++# Find qmake
++find_program(python_qt_binding_QMAKE_EXECUTABLE NAMES qmake${python_qt_binding_QT_MAJOR_VERSION} qmake REQUIRED)
 +
  #
  # Run the SIP generator and compile the generated code into a library.
  #
-@@ -93,34 +102,107 @@ function(build_sip_binding PROJECT_NAME SIP_FILE)
-     set(LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
-     set(LDFLAGS_OTHER ${${PROJECT_NAME}_LDFLAGS_OTHER})
+-# .. note:: The target lib${PROJECT_NAME} is created.
++# .. note:: Creates a target named lib${PROJECT_NAME}
+ #
+ # :param PROJECT_NAME: The name of the sip project
+ # :type PROJECT_NAME: string
+@@ -53,17 +98,14 @@ endif()
+ # :type SIP_FILE: string
+ #
+ # The following options can be used to override the default behavior:
+-#   SIP_CONFIGURE: the used configure script for SIP
+-#     (default: sip_configure.py in the same folder as this file)
++#   SIP_CONFIGURE: (IGNORED) Retained for CMake API compatibility only.
+ #   SOURCE_DIR: the source dir (default: ${PROJECT_SOURCE_DIR}/src)
+ #   LIBRARY_DIR: the library dir (default: ${PROJECT_SOURCE_DIR}/src)
+ #   BINARY_DIR: the binary dir (default: ${PROJECT_BINARY_DIR})
+ #
+ # The following keywords arguments can be used to specify:
+-#   DEPENDS: depends for the custom command
+-#     (should list all sip and header files)
++#   DEPENDS: depends for the custom command (should list all sip and header files)
+ #   DEPENDENCIES: target dependencies
+-#     (should list the library for which SIP generates the bindings)
+ #
+ function(build_sip_binding PROJECT_NAME SIP_FILE)
+     cmake_parse_arguments(sip "" "SIP_CONFIGURE;SOURCE_DIR;LIBRARY_DIR;BINARY_DIR" "DEPENDS;DEPENDENCIES" ${ARGN})
+@@ -71,11 +113,11 @@ function(build_sip_binding PROJECT_NAME SIP_FILE)
+         message(WARNING "build_sip_binding(${PROJECT_NAME}) called with unused arguments: ${sip_UNPARSED_ARGUMENTS}")
+     endif()
+ 
+-    # set default values for optional arguments
+-    if(NOT sip_SIP_CONFIGURE)
+-        # default to sip_configure.py in this directory
+-        set(sip_SIP_CONFIGURE ${__PYTHON_QT_BINDING_SIP_HELPER_DIR}/sip_configure.py)
++    if(sip_SIP_CONFIGURE)
++        message(WARNING "SIP_CONFIGURE argument is deprecated and ignored. CMake now handles configuration natively.")
+     endif()
++
++    # set default values for optional arguments
+     if(NOT sip_SOURCE_DIR)
+         set(sip_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+     endif()
+@@ -88,43 +130,42 @@ function(build_sip_binding PROJECT_NAME SIP_FILE)
+ 
+     set(SIP_BUILD_DIR ${sip_BINARY_DIR}/sip/${PROJECT_NAME})
+ 
+-    set(INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${Python3_INCLUDE_DIRS})
+-    set(LIBRARIES ${${PROJECT_NAME}_LIBRARIES})
+-    set(LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
+-    set(LDFLAGS_OTHER ${${PROJECT_NAME}_LDFLAGS_OTHER})
++    # Extract the filename from the SIP_FILE path
++    get_filename_component(SIP_FILE_NAME ${SIP_FILE} NAME)
  
 -    add_custom_command(
 -        OUTPUT ${SIP_BUILD_DIR}/Makefile
@@ -100,155 +477,205 @@ index a5ac3c2..fdc9c18 100644
 -        WORKING_DIRECTORY ${sip_SOURCE_DIR}
 -        COMMENT "Running SIP generator for ${PROJECT_NAME} Python bindings..."
 -    )
-+    if(${SIP_VERSION} VERSION_GREATER_EQUAL "5.0.0")
-+        # Since v5, SIP implements the backend per PEP 517, PEP 518
-+        # Here we synthesize `pyproject.toml` and run `pip install`
++    # Generate a pyproject.toml to be given to sip-build
++    file(MAKE_DIRECTORY ${SIP_BUILD_DIR})
  
 -    if(NOT EXISTS "${sip_LIBRARY_DIR}")
-+        find_program(QMAKE_EXECUTABLE NAMES qmake REQUIRED)
-+
-+        file(REMOVE_RECURSE ${SIP_BUILD_DIR})
-         file(MAKE_DIRECTORY ${sip_LIBRARY_DIR})
+-        file(MAKE_DIRECTORY ${sip_LIBRARY_DIR})
 -    endif()
++    set(PYPROJECT_TOML "${SIP_BUILD_DIR}/pyproject.toml")
++    configure_file(
++        "${__PYTHON_QT_BINDING_SIP_HELPER_DIR}/pyproject.toml.in"
++        "${PYPROJECT_TOML}"
++        @ONLY
++    )
  
 -    if(WIN32)
 -      set(MAKE_EXECUTABLE NMake.exe)
-+        set(SIP_FILES_DIR ${sip_SOURCE_DIR})
-+
-+        set(SIP_INCLUDE_DIRS "")
-+        foreach(_x ${INCLUDE_DIRS})
-+          set(SIP_INCLUDE_DIRS "${SIP_INCLUDE_DIRS},\"${_x}\"")
-+        endforeach()
-+        string(REGEX REPLACE "^," "" SIP_INCLUDE_DIRS ${SIP_INCLUDE_DIRS})
-+
-+        # SIP expects the libraries WITHOUT the file extension.
-+        set(SIP_LIBARIES "")
-+        set(SIP_LIBRARY_DIRS "")
-+
-+        if(APPLE)
-+          set(LIBRARIES_TO_LOOP ${LIBRARIES})
-+        else()
-+          set(LIBRARIES_TO_LOOP ${LIBRARIES} ${PYTHON_LIBRARIES})
-+        endif()
-+
-+        foreach(_x ${LIBRARIES_TO_LOOP})
-+          get_filename_component(_x_NAME "${_x}" NAME_WLE)
-+          get_filename_component(_x_DIR "${_x}" DIRECTORY)
-+          get_filename_component(_x "${_x_DIR}/${_x_NAME}" ABSOLUTE)
-+          STRING(REGEX REPLACE "^lib" "" _x_NAME_NOPREFIX ${_x_NAME})
-+
-+          string(FIND "${_x_NAME_NOPREFIX}" "$<TARGET_FILE" out)
-+          string(FIND "${_x_NAME_NOPREFIX}" "::" out2)
-+          if("${out}" EQUAL 0)
-+            STRING(REGEX REPLACE "\\$<TARGET_FILE:" "" _x_NAME_NOPREFIX ${_x_NAME_NOPREFIX})
-+            STRING(REGEX REPLACE ">" "" _x_NAME_NOPREFIX ${_x_NAME_NOPREFIX})
-+            if(NOT "${out2}" EQUAL -1)
-+              message(STATUS "IGNORE: ${_x_NAME_NOPREFIX}")
-+            else()
-+              set(SIP_LIBARIES "${SIP_LIBARIES},\"${_x_NAME_NOPREFIX}\"")
-+            endif()
-+          else()
-+            set(SIP_LIBARIES "${SIP_LIBARIES},\"${_x_NAME_NOPREFIX}\"")
-+            set(SIP_LIBRARY_DIRS "${SIP_LIBRARY_DIRS},\"${_x_DIR}\"")
-+          endif()
-+        endforeach()
-+        string(REGEX REPLACE "^," "" SIP_LIBARIES ${SIP_LIBARIES})
-+
-+        foreach(_x ${LIBRARY_DIRS})
-+          set(SIP_LIBRARY_DIRS "${SIP_LIBRARY_DIRS},\"${_x}\"")
-+        endforeach()
-+        string(REGEX REPLACE "^," "" SIP_LIBRARY_DIRS ${SIP_LIBRARY_DIRS})
-+        message(WARNING "test lib dir: ${SIP_LIBRARY_DIRS}")
-+
-+        set(MACOS_MINIMUM_VERSION ${CMAKE_OSX_DEPLOYMENT_TARGET})
-+
-+        # TODO:
-+        #   I don't know what to do about LDFLAGS_OTHER
-+        #   what's the equivalent construct in sip5?
-+
-+        configure_file(
-+            ${__PYTHON_QT_BINDING_SIP_HELPER_DIR}/pyproject.toml.in
-+            ${sip_BINARY_DIR}/sip/pyproject.toml
-+        )
-+        add_custom_command(
-+            OUTPUT ${sip_LIBRARY_DIR}/lib${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}
-+            COMMAND ${Python3_EXECUTABLE} -m pip install . --target ${sip_LIBRARY_DIR} --no-deps --verbose --upgrade
-+            DEPENDS ${sip_SIP_CONFIGURE} ${SIP_FILE} ${sip_DEPENDS}
-+            WORKING_DIRECTORY ${sip_BINARY_DIR}/sip
-+            COMMENT "Running SIP-build generator for ${PROJECT_NAME} Python bindings..."
-+        )
-     else()
+-    else()
 -      find_program(MAKE_PROGRAM NAMES make)
 -      message(STATUS "Found required make: ${MAKE_PROGRAM}")
 -      set(MAKE_EXECUTABLE ${MAKE_PROGRAM})
 -    endif()
-+        add_custom_command(
-+            OUTPUT ${SIP_BUILD_DIR}/Makefile
-+            COMMAND ${Python3_EXECUTABLE} ${sip_SIP_CONFIGURE} ${SIP_BUILD_DIR} ${SIP_FILE} ${sip_LIBRARY_DIR}
-+              \"${INCLUDE_DIRS}\" \"${LIBRARIES}\" \"${LIBRARY_DIRS}\" \"${LDFLAGS_OTHER}\"
-+            DEPENDS ${sip_SIP_CONFIGURE} ${SIP_FILE} ${sip_DEPENDS}
-+            WORKING_DIRECTORY ${sip_SOURCE_DIR}
-+            COMMENT "Running SIP generator for ${PROJECT_NAME} Python bindings..."
-+        )
++    # Find all generated C/C++ files
++    set(GENERATED_CPP
++        "${SIP_BUILD_DIR}/lib${PROJECT_NAME}/siplib${PROJECT_NAME}part0.cpp"
++    )
  
--    add_custom_command(
++    # Generate code for a cPython extension using sip-build
+     add_custom_command(
 -        OUTPUT ${sip_LIBRARY_DIR}/lib${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}
 -        COMMAND ${MAKE_EXECUTABLE}
 -        DEPENDS ${SIP_BUILD_DIR}/Makefile
--        WORKING_DIRECTORY ${SIP_BUILD_DIR}
++        OUTPUT ${GENERATED_CPP}
++        COMMAND ${Python3_EXECUTABLE} -m sipbuild.tools.build --no-compile --concatenate 1
++        DEPENDS ${SIP_FILE} ${sip_DEPENDS} ${PYPROJECT_TOML}
+         WORKING_DIRECTORY ${SIP_BUILD_DIR}
 -        COMMENT "Compiling generated code for ${PROJECT_NAME} Python bindings..."
++        COMMENT "Generating C++ code for ${PROJECT_NAME} Python bindings using sip-build..."
+     )
+ 
+-    add_custom_target(lib${PROJECT_NAME} ALL
+-        DEPENDS ${sip_LIBRARY_DIR}/lib${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}
+-        COMMENT "Meta target for ${PROJECT_NAME} Python bindings..."
 -    )
-+        if(NOT EXISTS "${sip_LIBRARY_DIR}")
-+            file(MAKE_DIRECTORY ${sip_LIBRARY_DIR})
-+        endif()
+-    add_dependencies(lib${PROJECT_NAME} ${sip_DEPENDENCIES})
++    # Build the cPython extension natively using CMake
++    python3_add_library(lib${PROJECT_NAME} MODULE ${GENERATED_CPP})
 +
-+        if(WIN32)
-+            set(MAKE_EXECUTABLE NMake.exe)
-+        else()
-+            set(MAKE_EXECUTABLE make)
-+        endif()
++    # Link project dependencies against this target
++    target_include_directories(lib${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_INCLUDE_DIRS} ${SIP_BUILD_DIR})
++    target_link_libraries(lib${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_LIBRARIES} ${sip_DEPENDENCIES})
++    target_link_directories(lib${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_LIBRARY_DIRS})
 +
-+        add_custom_command(
-+            OUTPUT ${sip_LIBRARY_DIR}/lib${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}
-+            COMMAND ${MAKE_EXECUTABLE}
-+            DEPENDS ${SIP_BUILD_DIR}/Makefile
-+            WORKING_DIRECTORY ${SIP_BUILD_DIR}
-+            COMMENT "Compiling generated code for ${PROJECT_NAME} Python bindings..."
-+        )
++    if(${PROJECT_NAME}_LDFLAGS_OTHER)
++        target_link_options(lib${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_LDFLAGS_OTHER})
 +    endif()
+ endfunction()
+diff --git a/package.xml b/package.xml
+index df2b169..0547cdc 100644
+--- a/package.xml
++++ b/package.xml
+@@ -28,10 +28,8 @@
  
-     add_custom_target(lib${PROJECT_NAME} ALL
-         DEPENDS ${sip_LIBRARY_DIR}/lib${PROJECT_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}
-diff --git a/src/python_qt_binding/__init__.py b/src/python_qt_binding/__init__.py
-index 1e209de..6b55f35 100644
---- a/src/python_qt_binding/__init__.py
-+++ b/src/python_qt_binding/__init__.py
-@@ -66,3 +66,11 @@ for module_name, module in QT_BINDING_MODULES.items():
-     del module
+   <buildtool_depend>ament_cmake</buildtool_depend>
  
- del sys
-+
-+import os
-+from PyQt5.QtGui import QIcon
-+current_theme_path = QIcon.themeSearchPaths()
-+conda_path = os.environ['CONDA_PREFIX']
-+QIcon.setThemeSearchPaths(current_theme_path + [os.path.join(conda_path, 'share/icons/')])
-+QIcon.setThemeName('Adwaita')
-+del os
+-  <build_depend>qtbase5-dev</build_depend>
+-  <build_depend>python3-qt5-bindings</build_depend>
+-
+-  <exec_depend>python3-qt5-bindings</exec_depend>
++  <build_depend>qt6-base-dev</build_depend>
++  <build_depend>python3-qt-bindings</build_depend>
+ 
+   <test_depend>ament_cmake_pytest</test_depend>
+   <test_depend>ament_lint_auto</test_depend>
+diff --git a/python_qt_binding-extras.cmake b/python_qt_binding-extras.cmake
+new file mode 100644
+index 0000000..5bfec49
+--- /dev/null
++++ b/python_qt_binding-extras.cmake
+@@ -0,0 +1,2 @@
++# Allow users to pick which QT version to use
++set(python_qt_binding_QT_MAJOR_VERSION "6" CACHE STRING "The major version of Qt to use (5 or 6)")
 diff --git a/src/python_qt_binding/binding_helper.py b/src/python_qt_binding/binding_helper.py
-index 27c3237..781fe62 100644
+index 27c3237..86913fe 100644
 --- a/src/python_qt_binding/binding_helper.py
 +++ b/src/python_qt_binding/binding_helper.py
-@@ -50,11 +50,7 @@ QT_BINDING_VERSION = None
- def _select_qt_binding(binding_name=None, binding_order=None):
-     global QT_BINDING, QT_BINDING_VERSION
+@@ -41,6 +41,8 @@ import platform
+ import sys
+ import traceback
  
--    # order of default bindings can be changed here
--    if platform.system() == 'Darwin':
--        DEFAULT_BINDING_ORDER = ['pyside']
--    else:
--        DEFAULT_BINDING_ORDER = ['pyqt', 'pyside']
-+    DEFAULT_BINDING_ORDER = ['pyqt', 'pyside']
++from .version import QT_MAJOR_VERSION
++
  
-     binding_order = binding_order or DEFAULT_BINDING_ORDER
+ QT_BINDING = None
+ QT_BINDING_MODULES = {}
+@@ -155,9 +157,9 @@ def _load_pyqt(required_modules, optional_modules):
  
+     # register required and optional PyQt modules
+     for module_name in required_modules:
+-        _named_import('PyQt5.%s' % module_name)
++        _named_import(f'PyQt{QT_MAJOR_VERSION}.{module_name}')
+     for module_name in optional_modules:
+-        _named_optional_import('PyQt5.%s' % module_name)
++        _named_optional_import(f'PyQt{QT_MAJOR_VERSION}.{module_name}')
+ 
+     # set some names for compatibility with PySide
+     sys.modules['QtCore'].Signal = sys.modules['QtCore'].pyqtSignal
+@@ -166,30 +168,38 @@ def _load_pyqt(required_modules, optional_modules):
+ 
+     # try to register Qwt module
+     try:
+-        import PyQt5.Qwt5
+-        _register_binding_module('Qwt', PyQt5.Qwt5)
++        Qwt = builtins.__import__(f'PyQt{QT_MAJOR_VERSION}.Qwt{QT_MAJOR_VERSION}', fromlist=['*'])
++        _register_binding_module('Qwt', Qwt)
+     except ImportError:
+         pass
+ 
+     global _loadUi
+ 
+     def _loadUi(uifile, baseinstance=None, custom_widgets_=None):
+-        from PyQt5 import uic
++        uic = builtins.__import__(f'PyQt{QT_MAJOR_VERSION}.uic', fromlist=['*'])
+         return uic.loadUi(uifile, baseinstance=baseinstance)
+ 
+-    import PyQt5.QtCore
+-    return PyQt5.QtCore.PYQT_VERSION_STR
++    QtCore = builtins.__import__(f'PyQt{QT_MAJOR_VERSION}.QtCore', fromlist=['*'])
++    return QtCore.PYQT_VERSION_STR
+ 
+ 
+ def _load_pyside(required_modules, optional_modules):
+     # set environment variable QT_API for matplotlib
+     os.environ['QT_API'] = 'pyside'
+ 
++    # Determine the PySide module based on the Qt version
++    if str(QT_MAJOR_VERSION) == '6':
++        pyside_module = 'PySide6'
++    elif str(QT_MAJOR_VERSION) == '5':
++        pyside_module = 'PySide2'
++    else:
++        raise RuntimeError('Only Qt5 and Qt6 are supported')
++
+     # register required and optional PySide modules
+     for module_name in required_modules:
+-        _named_import('PySide2.%s' % module_name)
++        _named_import(f'{pyside_module}.{module_name}')
+     for module_name in optional_modules:
+-        _named_optional_import('PySide2.%s' % module_name)
++        _named_optional_import(f'{pyside_module}.{module_name}')
+ 
+     # set some names for compatibility with PyQt
+     sys.modules['QtCore'].pyqtSignal = sys.modules['QtCore'].Signal
+@@ -198,7 +208,7 @@ def _load_pyside(required_modules, optional_modules):
+ 
+     # try to register PySideQwt module
+     try:
+-        import PySideQwt
++        PySideQwt = builtins.__import__(f'{pyside_module}Qwt', fromlist=['*'])
+         _register_binding_module('Qwt', PySideQwt)
+     except ImportError:
+         pass
+@@ -206,8 +216,10 @@ def _load_pyside(required_modules, optional_modules):
+     global _loadUi
+ 
+     def _loadUi(uifile, baseinstance=None, custom_widgets=None):
+-        from PySide2.QtUiTools import QUiLoader
+-        from PySide2.QtCore import QMetaObject
++        QtUiTools = builtins.__import__(f'{pyside_module}.QtUiTools', fromlist=['*'])
++        QtCore = builtins.__import__(f'{pyside_module}.QtCore', fromlist=['*'])
++        QUiLoader = QtUiTools.QUiLoader
++        QMetaObject = QtCore.QMetaObject
+ 
+         class CustomUiLoader(QUiLoader):
+             class_aliases = {
+@@ -241,25 +253,17 @@ def _load_pyside(required_modules, optional_modules):
+ 
+         loader = CustomUiLoader(baseinstance, custom_widgets)
+ 
+-        # instead of passing the custom widgets, they should be registered using
+-        # QUiLoader.registerCustomWidget(),
+-        # but this does not work in PySide 1.0.6: it simply segfaults...
+-        # loader = CustomUiLoader(baseinstance)
+-        # custom_widgets = custom_widgets or {}
+-        # for custom_widget in custom_widgets.values():
+-        #    loader.registerCustomWidget(custom_widget)
+-
+         ui = loader.load(uifile)
+         QMetaObject.connectSlotsByName(ui)
+         return ui
+ 
+-    import PySide2
+-    return PySide2.__version__
++    pyside = builtins.__import__(pyside_module, fromlist=['*'])
++    return pyside.__version__
+ 
+ 
+ def loadUi(uifile, baseinstance=None, custom_widgets=None):
+     """
+-    Load a provided UI file chosen Python Qt 5 binding.
++    Load a provided UI file chosen Python Qt binding.
+ 
+     @type uifile: str
+     @param uifile: Absolute path of .ui file
