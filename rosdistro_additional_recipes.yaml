@@ -421,7 +421,7 @@ cm_executors:
 # temporal addition
 rosidl_buffer:
   tag: 5.1.4
-  url: https://github.com/rosidl/rosidl.git
+  url: https://github.com/ros2/rosidl.git
   version: 5.1.4
   additional_folder: rosidl_buffer
 rosidl_buffer_backend:
