@@ -1,8 +1,17 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3d26d03f58..1dff23e7f4 100644
+index 2610a37ea..3d3515754 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -45,15 +45,15 @@ add_library(
+@@ -19,7 +19,7 @@ find_package(urdf REQUIRED)
+ set(CMAKE_AUTOMOC ON)
+ add_definitions(-DQT_NO_KEYWORDS)
+ 
+-qt5_wrap_cpp(
++qt6_wrap_cpp(
+   MOC_FILES include/moveit_setup_core_plugins/start_screen_widget.hpp
+   include/moveit_setup_core_plugins/configuration_files_widget.hpp
+   include/moveit_setup_core_plugins/author_information_widget.hpp)
+@@ -36,15 +36,15 @@ add_library(
  target_include_directories(
    ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                           $<INSTALL_INTERFACE:include/moveit_setup_core_plugins>)
