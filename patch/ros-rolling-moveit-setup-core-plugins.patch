@@ -35,3 +35,15 @@ index 2610a37ea..3d3515754 100644
  
  install(
    TARGETS moveit_setup_core_plugins
+diff --git a/src/configuration_files_widget.cpp b/src/configuration_files_widget.cpp
+index 9e4c3484a..36d2ca8b3 100644
+--- a/src/configuration_files_widget.cpp
++++ b/src/configuration_files_widget.cpp
+@@ -44,7 +44,6 @@
+ #include <QProgressBar>
+ #include <QPushButton>
+ #include <QPushButton>
+-#include <QRegExp>
+ #include <QSplitter>
+ #include <QVBoxLayout>
+ 
