@@ -1,0 +1,30 @@
+diff --git a/mocap4r2_control/mocap4r2_control/CMakeLists.txt b/mocap4r2_control/mocap4r2_control/CMakeLists.txt
+index 394d5e5..dd6bcaa 100644
+--- a/mocap4r2_control/mocap4r2_control/CMakeLists.txt
++++ b/mocap4r2_control/mocap4r2_control/CMakeLists.txt
+@@ -22,9 +22,9 @@ find_package(rclcpp_lifecycle REQUIRED)
+ find_package(mocap4r2_control_msgs REQUIRED)
+ 
+ set(dependencies
+-  rclcpp
+-  rclcpp_lifecycle
+-  mocap4r2_control_msgs
++  rclcpp::rclcpp
++  rclcpp_lifecycle::rclcpp_lifecycle
++  ${mocap4r2_control_msgs_TARGETS}
+ )
+ 
+ include_directories(include)
+@@ -34,10 +34,10 @@ add_library(${PROJECT_NAME} SHARED
+   src/mocap4r2_control/ControllerNode.cpp
+   src/mocap4r2_control/AuxiliarNode.cpp
+ )
+-ament_target_dependencies(${PROJECT_NAME} ${dependencies})
++target_link_libraries(${PROJECT_NAME} ${dependencies})
+ 
+ add_executable(auxiliar_main src/auxiliar_main.cpp)
+-ament_target_dependencies(auxiliar_main ${dependencies})
++target_link_libraries(auxiliar_main ${dependencies})
+ target_link_libraries(auxiliar_main ${PROJECT_NAME})
+ 
+ install(DIRECTORY include/
