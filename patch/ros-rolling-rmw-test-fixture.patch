@@ -1,0 +1,11 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d9dae44..a5adbce 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ cmake_minimum_required(VERSION 3.20)
+ project(rmw_test_fixture LANGUAGES NONE)
++enable_language(C CXX)
+ 
+ find_package(ament_cmake REQUIRED)
+ find_package(ament_cmake_ros_core REQUIRED)
