@@ -77,8 +77,3 @@ libzenohcxx:
 
 libhwloc:
   - 2.12.2
-
-libcurl:
-  - 8.17.0
-qt6-main:
-  - 6.8.*
