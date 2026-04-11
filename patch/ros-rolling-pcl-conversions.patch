@@ -1,0 +1,138 @@
+diff --git a/include/pcl_conversions/pcl_conversions.h b/include/pcl_conversions/pcl_conversions.h
+index e959ae4..37643d9 100644
+--- a/include/pcl_conversions/pcl_conversions.h
++++ b/include/pcl_conversions/pcl_conversions.h
+@@ -38,6 +38,7 @@
+ #define PCL_CONVERSIONS_H__
+ 
+ #include <cstddef>
++#include <utility>
+ #include <vector>
+ 
+ #include <rclcpp/rclcpp.hpp>
+@@ -77,6 +78,34 @@
+ 
+ namespace pcl_conversions {
+ 
++  namespace internal
++  {
++    template<class T, class Allocator>
++    inline void move(std::vector<T, Allocator> &a, std::vector<T, Allocator> &b)
++    {
++      b.swap(a);
++    }
++
++    template<class T1, class T2, class Allocator1, class Allocator2>
++    inline void move(std::vector<T1, Allocator1> &a, std::vector<T2, Allocator2> &b)
++    {
++      b.assign(a.cbegin(), a.cend());
++    }
++
++    template<class T, class Allocator>
++    inline void move(std::vector<T, Allocator> &a, rosidl::Buffer<T, Allocator> &b)
++    {
++      b = std::move(a);
++    }
++
++    template<class T, class Allocator>
++    inline void move(rosidl::Buffer<T, Allocator> &a, std::vector<T, Allocator> &b)
++    {
++      b = a.to_vector();
++      a.clear();
++    }
++  }
++
+   /** PCLHeader <=> Header **/
+ 
+   inline
+@@ -169,7 +198,7 @@ namespace pcl_conversions {
+   void moveFromPCL(pcl::PCLImage &pcl_image, sensor_msgs::msg::Image &image)
+   {
+     copyPCLImageMetaData(pcl_image, image);
+-    image.data.swap(pcl_image.data);
++    internal::move(pcl_image.data, image.data);
+   }
+ 
+   inline
+@@ -194,7 +223,7 @@ namespace pcl_conversions {
+   void moveToPCL(sensor_msgs::msg::Image &image, pcl::PCLImage &pcl_image)
+   {
+     copyImageMetaData(image, pcl_image);
+-    pcl_image.data.swap(image.data);
++    internal::move(image.data, pcl_image.data);
+   }
+ 
+   /** PCLPointField <=> PointField **/
+@@ -269,7 +298,7 @@ namespace pcl_conversions {
+   void moveFromPCL(pcl::PCLPointCloud2 &pcl_pc2, sensor_msgs::msg::PointCloud2 &pc2)
+   {
+     copyPCLPointCloud2MetaData(pcl_pc2, pc2);
+-    pc2.data.swap(pcl_pc2.data);
++    internal::move(pcl_pc2.data, pc2.data);
+   }
+ 
+   inline
+@@ -296,7 +325,7 @@ namespace pcl_conversions {
+   void moveToPCL(sensor_msgs::msg::PointCloud2 &pc2, pcl::PCLPointCloud2 &pcl_pc2)
+   {
+     copyPointCloud2MetaData(pc2, pcl_pc2);
+-    pcl_pc2.data.swap(pc2.data);
++    internal::move(pc2.data, pcl_pc2.data);
+   }
+ 
+   /** pcl::PointIndices <=> pcl_msgs::PointIndices **/
+@@ -312,7 +341,7 @@ namespace pcl_conversions {
+   void moveFromPCL(pcl::PointIndices &pcl_pi, pcl_msgs::msg::PointIndices &pi)
+   {
+     fromPCL(pcl_pi.header, pi.header);
+-    pi.indices.swap(pcl_pi.indices);
++    internal::move(pcl_pi.indices, pi.indices);
+   }
+ 
+   inline
+@@ -326,7 +355,7 @@ namespace pcl_conversions {
+   void moveToPCL(pcl_msgs::msg::PointIndices &pi, pcl::PointIndices &pcl_pi)
+   {
+     toPCL(pi.header, pcl_pi.header);
+-    pcl_pi.indices.swap(pi.indices);
++    internal::move(pi.indices, pcl_pi.indices);
+   }
+ 
+   /** pcl::ModelCoefficients <=> pcl_msgs::ModelCoefficients **/
+@@ -342,7 +371,7 @@ namespace pcl_conversions {
+   void moveFromPCL(pcl::ModelCoefficients &pcl_mc, pcl_msgs::msg::ModelCoefficients &mc)
+   {
+     fromPCL(pcl_mc.header, mc.header);
+-    mc.values.swap(pcl_mc.values);
++    internal::move(pcl_mc.values, mc.values);
+   }
+ 
+   inline
+@@ -356,26 +385,11 @@ namespace pcl_conversions {
+   void moveToPCL(pcl_msgs::msg::ModelCoefficients &mc, pcl::ModelCoefficients &pcl_mc)
+   {
+     toPCL(mc.header, pcl_mc.header);
+-    pcl_mc.values.swap(mc.values);
++    internal::move(mc.values, pcl_mc.values);
+   }
+ 
+   /** pcl::Vertices <=> pcl_msgs::Vertices **/
+ 
+-  namespace internal
+-  {
+-    template <class T>
+-    inline void move(std::vector<T> &a, std::vector<T> &b)
+-    {
+-      b.swap(a);
+-    }
+-
+-    template <class T1, class T2>
+-    inline void move(std::vector<T1> &a, std::vector<T2> &b)
+-    {
+-      b.assign(a.cbegin(), a.cend());
+-    }
+-  }
+-
+   inline
+   void fromPCL(const pcl::Vertices &pcl_vert, pcl_msgs::msg::Vertices &vert)
+   {
