@@ -1,12 +1,22 @@
-diff --git a/src/rqt_gui_cpp/nodelet_plugin_provider.cpp b/src/rqt_gui_cpp/nodelet_plugin_provider.cpp
-index 5ff0cc90..f89520bf 100644
---- a/src/rqt_gui_cpp/nodelet_plugin_provider.cpp
-+++ b/src/rqt_gui_cpp/nodelet_plugin_provider.cpp
-@@ -35,6 +35,7 @@
- #include <memory>
- #include <stdexcept>
- #include <string>
-+#include <unistd.h>
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4e4bdb04..998eac1f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -24,8 +24,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
+ set(CMAKE_AUTOMOC ON)
  
- #include "roscpp_plugin_provider.hpp"
+ find_package(pluginlib REQUIRED)
+-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
++# Avoid find_package(QT NAMES Qt6 Qt5 ...) due to CMake's default ascending path resolution
++find_package(Qt6 QUIET COMPONENTS Widgets)
++if(Qt6_FOUND)
++  set(QT_VERSION_MAJOR 6)
++else()
++  find_package(Qt5 REQUIRED COMPONENTS Widgets)
++  set(QT_VERSION_MAJOR 5)
++endif()
++set(QT_VERSION "${Qt${QT_VERSION_MAJOR}_VERSION}")
+ find_package(rclcpp REQUIRED)
+ find_package(qt_gui_cpp REQUIRED)
  

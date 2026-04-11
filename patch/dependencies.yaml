@@ -120,7 +120,10 @@ qt_gui:
   remove_host: ["qt-main", "pyqt"]
   remove_run: ["qt-main", "pyqt"]
 rqt_gui_cpp:
-  add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}"]
+  add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}", "qt6-main"]
+  add_run: ["qt6-main"]
+  remove_host: ["qt-main"]
+  remove_run: ["qt-main"]
 ur_moveit_config:
   add_host: ["ros-rolling-rclpy"]
   add_run: ["ros-rolling-rclpy"]
