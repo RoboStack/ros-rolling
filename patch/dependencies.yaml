@@ -298,3 +298,5 @@ rosidl_runtime_c:
 rosidl_runtime_cpp:
   add_host: ["ros-rolling-rosidl-buffer"]
   add_run: ["ros-rolling-rosidl-buffer"]
+depth_image_proc:
+  add_host: ["eigen-abi-devel"]
