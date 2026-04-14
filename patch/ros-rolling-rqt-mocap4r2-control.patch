@@ -62,3 +62,16 @@ index 083b464..95cbcee 100644
 -ament_package()
 \ No newline at end of file
 +ament_package()
+diff --git a/mocap4r2_control/rqt_mocap4r2_control/include/rqt_mocap4r2_control/mocap4r2_control.hpp b/mocap4r2_control/rqt_mocap4r2_control/include/rqt_mocap4r2_control/mocap4r2_control.hpp
+index 3d18161..4c46a68 100644
+--- a/mocap4r2_control/rqt_mocap4r2_control/include/rqt_mocap4r2_control/mocap4r2_control.hpp
++++ b/mocap4r2_control/rqt_mocap4r2_control/include/rqt_mocap4r2_control/mocap4r2_control.hpp
+@@ -15,7 +15,7 @@
+ #ifndef RQT_MOCAP4R2_CONTROL__MOCAP4R2_CONTROL__HPP_
+ #define RQT_MOCAP4R2_CONTROL__MOCAP4R2_CONTROL__HPP_
+ 
+-#include <rqt_gui_cpp/plugin.h>
++#include <rqt_gui_cpp/plugin.hpp>
+ 
+ #include <ui_mocap4r2_control.h>
+ 
