@@ -308,3 +308,6 @@ rosidl_runtime_cpp:
   add_run: ["ros-rolling-rosidl-buffer"]
 depth_image_proc:
   add_host: ["eigen-abi-devel"]
+rqt_mocap4r2_control:
+  remove_host: ["qt-main"]
+  remove_run: ["qt-main"]
