@@ -418,5 +418,9 @@ cm_executors:
   tag: 0.9.1
   url: https://github.com/cellumation/cm_executors.git
   version: 0.9.1
-
-
+# temp
+rmw_cyclonedds_cpp:
+  rev: rolling 
+  url: https://github.com/ros2/rmw_cyclonedds.git
+  version: 5.0.0
+  additional_folder: rmw_cyclonedds_cpp
