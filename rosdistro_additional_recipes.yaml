@@ -418,26 +418,5 @@ cm_executors:
   tag: 0.9.1
   url: https://github.com/cellumation/cm_executors.git
   version: 0.9.1
-# temporal addition
-rosidl_buffer:
-  tag: 5.1.4
-  url: https://github.com/ros2/rosidl.git
-  version: 5.1.4
-  additional_folder: rosidl_buffer
-rosidl_buffer_backend:
-  tag: 5.1.4
-  url: https://github.com/ros2/rosidl.git
-  version: 5.1.4
-  additional_folder: rosidl_buffer_backend
-rosidl_buffer_backend_registry:
-  tag: 5.1.4
-  url: https://github.com/ros2/rosidl.git
-  version: 5.1.4
-  additional_folder: rosidl_buffer_backend_registry
-rosidl_buffer_py:
-  tag: 5.1.4
-  url: https://github.com/ros2/rosidl.git
-  version: 5.1.4
-  additional_folder: rosidl_buffer_py
 
 
