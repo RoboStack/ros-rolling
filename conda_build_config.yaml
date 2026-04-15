@@ -34,7 +34,7 @@ cmake:
   - 3.*
 
 eigen_abi_devel:
-  - 5.0.1
+  - 5.0.1.80
 
 
 cdt_name:  # [linux]
