@@ -60,8 +60,8 @@ packages_select_by_deps:
   - navigation2
   - simulation
 
-  - desktop
-  - desktop_full
+  # - desktop
+  # - desktop_full
 
   - moveit
   - moveit-planners-chomp
