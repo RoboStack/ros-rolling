@@ -1,3 +1,36 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a3652b8..2caed60 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -32,12 +32,18 @@ ament_auto_find_build_dependencies()
+ 
+ find_package(asio_cmake_module REQUIRED)
+ find_package(ASIO REQUIRED)
++if(ASIO_FOUND AND NOT TARGET asio::asio)
++  add_library(asio::asio INTERFACE IMPORTED)
++  set_target_properties(asio::asio PROPERTIES
++    INTERFACE_INCLUDE_DIRECTORIES "${ASIO_INCLUDE_DIR}"
++  )
++endif()
+ 
+ ament_auto_add_library(${PROJECT_NAME} SHARED
+   src/io_context.cpp
+   src/msg_converters/std_msgs.cpp
+ )
+-ament_target_dependencies(${PROJECT_NAME} "ASIO")
++target_link_libraries(${PROJECT_NAME} asio::asio)
+ 
+ if(BUILD_TESTING)
+   find_package(ament_lint_auto REQUIRED)
+@@ -47,7 +53,7 @@ if(BUILD_TESTING)
+ 
+   ament_add_gtest(${TEST_UDP_DRIVER_EXE}
+           test/${name}.cpp)
+-  ament_target_dependencies(${TEST_UDP_DRIVER_EXE} std_msgs udp_msgs "ASIO")
++  target_link_libraries(${TEST_UDP_DRIVER_EXE} ${std_msgs_TARGETS} ${udp_msgs_TARGETS} asio::asio)
+ 
+   target_include_directories(${TEST_UDP_DRIVER_EXE} PRIVATE include)
+   target_link_libraries(${TEST_UDP_DRIVER_EXE} ${PROJECT_NAME})
 diff --git a/include/io_context/io_context.hpp b/include/io_context/io_context.hpp
 index d2f5770..b3cfab8 100644
 --- a/include/io_context/io_context.hpp
