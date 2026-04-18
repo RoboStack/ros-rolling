@@ -1,15 +1,3 @@
-diff --git a/src/message_definition_cache.cpp b/src/message_definition_cache.cpp
-index ef72c9c1..ed857459 100644
---- a/src/message_definition_cache.cpp
-+++ b/src/message_definition_cache.cpp
-@@ -3,6 +3,7 @@
- #include <filesystem>
- #include <fstream>
- #include <functional>
-+#include <map>
- #include <optional>
- #include <regex>
- #include <set>
 diff --git a/src/ros2_foxglove_bridge.cpp b/src/ros2_foxglove_bridge.cpp
 index 72c11f54..fb799a92 100644
 --- a/src/ros2_foxglove_bridge.cpp

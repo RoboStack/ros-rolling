@@ -34,3 +34,15 @@ index 9285c891..d8b058ab 100644
  rclcpp_components_register_nodes(foxglove_bridge_component "foxglove_bridge::FoxgloveBridge")
  enable_strict_compiler_warnings(foxglove_bridge_component)
  
+diff --git a/src/message_definition_cache.cpp b/src/message_definition_cache.cpp
+index ef72c9c1..ed857459 100644
+--- a/src/message_definition_cache.cpp
++++ b/src/message_definition_cache.cpp
+@@ -3,6 +3,7 @@
+ #include <filesystem>
+ #include <fstream>
+ #include <functional>
++#include <map>
+ #include <optional>
+ #include <regex>
+ #include <set>
