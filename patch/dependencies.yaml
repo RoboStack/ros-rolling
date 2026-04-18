@@ -293,6 +293,3 @@ depth_image_proc:
 rqt_mocap4r2_control:
   remove_host: ["qt-main"]
   remove_run: ["qt-main"]
-rviz_imu_plugin:
-  remove_host: ["qt-main"]
-  remove_run: ["qt-main"]
