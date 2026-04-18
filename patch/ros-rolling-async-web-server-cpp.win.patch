@@ -255,3 +255,26 @@ index 8a0ab3c..302b1b3 100644
          return true;
      else
          return boost::indeterminate;
+diff --git a/test/test_web_server.cpp b/test/test_web_server.cpp
+index 0d9c332..69bbbfb 100644
+--- a/test/test_web_server.cpp
++++ b/test/test_web_server.cpp
+@@ -3,7 +3,9 @@
+ #include "async_web_server_cpp/websocket_connection.hpp"
+ #include "async_web_server_cpp/websocket_request_handler.hpp"
+ 
++#include <chrono>
+ #include <signal.h>
++#include <thread>
+ 
+ using namespace async_web_server_cpp;
+ 
+@@ -115,7 +117,7 @@ int main(int argc, char** argv)
+ 
+     while (!should_shutdown)
+     {
+-        sleep(1);
++        std::this_thread::sleep_for(std::chrono::seconds(1));
+     }
+ 
+     return (0);
