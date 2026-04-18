@@ -1,6 +1,7 @@
 # This file is used to add additional recipes to the ROS 2 distribution, not contained in the
 # upstream rosdistro. Differently from rosdistro_snapshot.yaml, this file is not
 # automatically generated, but manually maintained.
+# TODO: remove autoware (sub) packages after they are released in kilted
 autoware_adapi_adaptors:
   tag: release/humble/autoware_adapi_adaptors/1.7.0-1
   url: https://github.com/ros2-gbp/autoware_core-release.git
@@ -241,7 +242,6 @@ autoware_qos_utils:
   tag: release/humble/autoware_qos_utils/1.7.0-1
   url: https://github.com/ros2-gbp/autoware_core-release.git
   version: 1.7.0
-# TODO: remove autoware msgs and it's sub packages after they are released in kilted
 autoware_qp_interface:
   tag: release/humble/autoware_qp_interface/1.7.0-1
   url: https://github.com/ros2-gbp/autoware_core-release.git
@@ -334,7 +334,6 @@ autoware_utils_visualization:
   tag: release/jazzy/autoware_utils_visualization/1.4.2-1
   url: https://github.com/ros2-gbp/autoware_utils-release.git
   version: 1.4.2
-# TODO: remove autoware_core and it's sub packages after they are released in kilted
 autoware_vehicle_info_utils:
   tag: release/humble/autoware_vehicle_info_utils/1.7.0-1
   url: https://github.com/ros2-gbp/autoware_core-release.git
@@ -364,7 +363,6 @@ livox_ros_driver2:
   # support packages that stores their package.xml under a different name. For any
   # other modification, regular patch files should be used.
   package_xml_name: package_ROS2.xml
-# TODO: remove autoware_utils and it's sub packages after they are released in kilted
 mocap4r2_control:
   tag: 0.0.7
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
