@@ -1,31 +1,37 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 496fca1..4ca68b4 100644
+index 496fca1..fe9d13f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -33,6 +33,13 @@ set(req_deps
+@@ -26,6 +26,11 @@ FILE(GLOB RPLIDAR_SDK_SRC
+ )
+ endif()
+ 
++find_package(ament_cmake_auto REQUIRED)
++find_package(ament_cmake_ros REQUIRED)
++
++ament_auto_find_build_dependencies(REQUIRED ${req_deps})
++
+ set(req_deps
+   "rclcpp"
+   "sensor_msgs"
+@@ -33,10 +38,12 @@ set(req_deps
    "rclcpp_components"
  )
  
+-find_package(ament_cmake_auto REQUIRED)
+-find_package(ament_cmake_ros REQUIRED)
+-
+-ament_auto_find_build_dependencies(REQUIRED ${req_deps})
 +set(req_target_deps
 +  rclcpp::rclcpp
 +  ${sensor_msgs_TARGETS}
 +  ${std_srvs_TARGETS}
 +  rclcpp_components::component
 +)
-+
- find_package(ament_cmake_auto REQUIRED)
- find_package(ament_cmake_ros REQUIRED)
  
-@@ -42,6 +49,8 @@ include_directories(
+ include_directories(
    ${RPLIDAR_SDK_PATH}/include
-   ${RPLIDAR_SDK_PATH}/src
-   include
-+  ${sensor_msgs_INCLUDE_DIRS}
-+  ${std_srvs_INCLUDE_DIRS}
- )
- 
- # build composition node
-@@ -49,13 +58,13 @@ add_library(rplidar_composition_node SHARED
+@@ -49,13 +56,13 @@ add_library(rplidar_composition_node SHARED
    src/rplidar_node.cpp
    ${RPLIDAR_SDK_SRC}
  )
