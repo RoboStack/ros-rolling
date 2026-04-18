@@ -187,8 +187,8 @@ gz_fuel_tools_vendor:
   add_host: ["gz-fuel-tools"]
   add_run: ["gz-fuel-tools"]
 gz_sim_vendor:
-  add_host: ["gz-sim"]
-  add_run: ["gz-sim"]
+  add_host: ["libgz-sim"]
+  add_run: ["libgz-sim"]
 gz_gui_vendor:
   add_host: ["gz-gui"]
   add_run: ["gz-gui"]
