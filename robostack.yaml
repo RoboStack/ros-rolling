@@ -513,9 +513,9 @@ libqt6-websockets:
     win64: [qt6-main]
 libqt6widgets6t64:
   robostack:
-    linux: [qt-main, libopengl-devel, libgl-devel]
-    osx: [qt-main]
-    win64: [qt-main]
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
 libreadline:
   robostack: [readline]
 libreadline-dev:
