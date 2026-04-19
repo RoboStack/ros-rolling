@@ -1,7 +1,7 @@
 [workspace]
 name = "ros-rolling"
 description = "RoboStack repo to package ros-rolling packages as conda packages"
-authors = ["Tobias Fischer <tobias.fischer@qut.edu.au>", "Wolf Vollprecht <w.vollprecht@gmail.com>", "Silvio Traversaro <silvio@traversaro.it>"]
+authors = ["Tobias Fischer <tobias.fischer@qut.edu.au>", "Wolf Vollprecht <w.vollprecht@gmail.com>", "Silvio Traversaro <silvio@traversaro.it>", "Daisuke Nishimatsu <daisuke.nishimatsu1021@gmail.com>"]
 channels = ["https://repo.prefix.dev/conda-forge"]
 platforms = ["osx-arm64", "linux-64", "osx-64", "linux-aarch64", "win-64"]
 
