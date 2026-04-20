@@ -1,0 +1,31 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 374d0d13..6f07f561 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -49,6 +49,17 @@ if(Qt${QT_VERSION_MAJOR}_FOUND AND WIN32 AND TARGET Qt${QT_VERSION_MAJOR}::qmake
+   endif()
+ endif()
+ 
++set(rviz_enable_windeployqt TRUE)
++if(WIN32 AND DEFINED qt_install_prefix)
++  file(TO_CMAKE_PATH "${qt_install_prefix}" rviz_qt_install_prefix)
++  if(rviz_qt_install_prefix MATCHES "/lib/qt[0-9]+$")
++    message(STATUS
++      "Skipping windeployqt for ${PROJECT_NAME}: Qt install prefix "
++      "'${rviz_qt_install_prefix}' uses a conda layout.")
++    set(rviz_enable_windeployqt FALSE)
++  endif()
++endif()
++
+ add_executable(${PROJECT_NAME}
+   src/main.cpp
+ )
+@@ -63,7 +74,7 @@ target_link_libraries(${PROJECT_NAME}
+ #                necessary dlls and stuff to the bin folder.
+ #                see:
+ # https://stackoverflow.com/questions/41193584/deploy-all-qt-dependencies-when-building#41199492
+-if(TARGET Qt${QT_VERSION_MAJOR}::windeployqt)
++if(TARGET Qt${QT_VERSION_MAJOR}::windeployqt AND rviz_enable_windeployqt)
+   # execute windeployqt in a tmp directory after build
+   add_custom_command(TARGET ${PROJECT_NAME}
+     POST_BUILD
