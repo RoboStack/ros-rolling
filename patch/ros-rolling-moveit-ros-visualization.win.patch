@@ -42,7 +42,7 @@ diff --git a/motion_planning_rviz_plugin/CMakeLists.txt b/motion_planning_rviz_p
 diff --git a/motion_planning_rviz_plugin/src/plugin_init.cpp b/motion_planning_rviz_plugin/src/plugin_init.cpp
 --- a/motion_planning_rviz_plugin/src/plugin_init.cpp
 +++ b/motion_planning_rviz_plugin/src/plugin_init.cpp
-@@ -35,6 +35,19 @@
+@@ -35,6 +35,24 @@
  /* Author: Ioan Sucan */
  
  #include <class_loader/class_loader.hpp>
@@ -59,6 +59,10 @@ diff --git a/motion_planning_rviz_plugin/src/plugin_init.cpp b/motion_planning_r
 +  return true;
 +}();
 +}  // namespace
++
++extern "C" __declspec(dllexport) void moveit_motion_planning_rviz_plugin_exports()
++{
++}
 +#endif
 +
  CLASS_LOADER_REGISTER_CLASS(moveit_rviz_plugin::MotionPlanningDisplay, rviz_common::Display)
