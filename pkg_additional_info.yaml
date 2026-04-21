@@ -3,6 +3,7 @@ libcamera:
     dep_name: libcamera
     # see https://git.libcamera.org/libcamera/libcamera.git/tree/meson.build?h=v0.5.1#n65
     max_pin: 'x.x'
+    override_version: '0.5.2'
 octomap:
   generate_dummy_package_with_run_deps:
     dep_name: octomap
@@ -23,13 +24,14 @@ urdfdom_headers:
   generate_dummy_package_with_run_deps:
     dep_name: urdfdom_headers
     max_pin: 'x.x'
-    override_version: '1.1.2'
+    # the version on ros is outdated w.r.t. to the conda-forge one
+    override_version: '2.1.0'
 urdfdom:
   generate_dummy_package_with_run_deps:
     dep_name: urdfdom
     max_pin: 'x.x'
     # the version on ros is outdated w.r.t. to the conda-forge one
-    override_version: '4.0.1'
+    override_version: '5.1.0'
 cartographer:
   generate_dummy_package_with_run_deps:
     dep_name: cartographer
@@ -108,7 +110,7 @@ console_bridge_vendor:
 uncrustify_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 zenoh_cpp_vendor:
-  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
 openvdb_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 sqlite3_vendor:
@@ -164,4 +166,8 @@ io_context:
 ublox_gps:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 rosx_introspection:
+  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+compressed_depth_image_transport:
+  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+moveit_ros_visualization:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"

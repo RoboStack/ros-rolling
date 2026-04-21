@@ -1,0 +1,43 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9285c891..c90d1283 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -23,7 +23,7 @@ option(USE_LOCAL_SDK "Use pre-built Foxglove SDK binaries from local source tree
+ 
+ macro(enable_strict_compiler_warnings target)
+   if (MSVC)
+-    target_compile_options(${target} PRIVATE /WX /W4)
++    target_compile_options(${target} PRIVATE /W4)
+   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wold-style-cast -Wfloat-equal -Wmost -Wunused-exception-parameter)
+   else()
+@@ -96,7 +96,19 @@ else()
+   file(GLOB_RECURSE FOXGLOVE_SDK_SOURCES CONFIGURE_DEPENDS "${foxglove_sdk_SOURCE_DIR}/src/*.cpp")
+   target_sources(foxglove_cpp_static PRIVATE ${FOXGLOVE_SDK_SOURCES})
+   set_target_properties(foxglove_cpp_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+-  target_link_libraries(foxglove_cpp_static PRIVATE ${foxglove_sdk_SOURCE_DIR}/lib/libfoxglove.a)
++  if(MSVC)
++    target_link_libraries(foxglove_cpp_static PRIVATE
++      ${foxglove_sdk_SOURCE_DIR}/lib/foxglove.lib
++      Ws2_32.lib
++      Userenv.lib
++      Ntdll.lib
++      Crypt32.lib
++      Secur32.lib
++      Ncrypt.lib
++    )
++  else()
++    target_link_libraries(foxglove_cpp_static PRIVATE ${foxglove_sdk_SOURCE_DIR}/lib/libfoxglove.a)
++  endif()
+ endif()
+ 
+ find_program(GIT_SCM git DOC "Git version control")
+diff --git a/src/ros2_foxglove_bridge.cpp b/src/ros2_foxglove_bridge.cpp
+index 72c11f54..19c06299 100644
+--- a/src/ros2_foxglove_bridge.cpp
++++ b/src/ros2_foxglove_bridge.cpp
+@@ -1,3 +1,4 @@
++#define _CRT_SECURE_NO_WARNINGS
+ #include <filesystem>
+ #include <fstream>
+ #include <unordered_set>

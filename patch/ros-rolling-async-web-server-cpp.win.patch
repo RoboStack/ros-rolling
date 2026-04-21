@@ -1,0 +1,280 @@
+diff --git a/include/async_web_server_cpp/websocket_message.hpp b/include/async_web_server_cpp/websocket_message.hpp
+index 5e89a22..62be8f6 100644
+--- a/include/async_web_server_cpp/websocket_message.hpp
++++ b/include/async_web_server_cpp/websocket_message.hpp
+@@ -6,16 +6,6 @@
+ #include <boost/shared_ptr.hpp>
+ #include <boost/tuple/tuple.hpp>
+ 
+-#if defined(_MSC_VER)
+-#    define PACKED_STRUCT(name) \
+-        __pragma(pack(push, 1)) struct name __pragma(pack(pop))
+-#elif defined(__GNUC__)
+-#    define PACKED_STRUCT(name) struct __attribute__((packed)) name
+-#else
+-#    warning I don''t know how to create a packed struct with your compiler
+-#    define PACKED_STRUCT(name) struct name
+-#endif
+-
+ namespace async_web_server_cpp
+ {
+ 
+@@ -27,7 +17,7 @@ class WebsocketMessage;
+ class WebsocketFrame
+ {
+ public:
+-    PACKED_STRUCT(Header)
++    struct Header
+     {
+         enum opcode
+         {
+@@ -37,22 +27,57 @@ public:
+             opcode_close = 8,
+             opcode_ping = 9,
+             opcode_pong = 10,
+-        } opcode : 4;
+-        bool rsv3 : 1;
+-        bool rsv2 : 1;
+-        bool rsv1 : 1;
+-        bool fin : 1;
+-
+-        unsigned char len : 7;
+-        bool mask : 1;
++        };
++
++        Header() : bytes{0, 0} {}
++
++        opcode get_opcode() const
++        {
++            return static_cast<opcode>(bytes[0] & 0x0F);
++        }
++
++        void set_opcode(opcode value)
++        {
++            bytes[0] = static_cast<unsigned char>(
++                (bytes[0] & 0xF0) | (static_cast<unsigned char>(value) & 0x0F));
++        }
++
++        bool get_rsv3() const { return (bytes[0] & 0x10) != 0; }
++        void set_rsv3(bool value) { set_flag(bytes[0], 0x10, value); }
++
++        bool get_rsv2() const { return (bytes[0] & 0x20) != 0; }
++        void set_rsv2(bool value) { set_flag(bytes[0], 0x20, value); }
++
++        bool get_rsv1() const { return (bytes[0] & 0x40) != 0; }
++        void set_rsv1(bool value) { set_flag(bytes[0], 0x40, value); }
++
++        bool get_fin() const { return (bytes[0] & 0x80) != 0; }
++        void set_fin(bool value) { set_flag(bytes[0], 0x80, value); }
++
++        unsigned char get_len() const { return bytes[1] & 0x7F; }
++        void set_len(unsigned char value)
++        {
++            bytes[1] =
++                static_cast<unsigned char>((bytes[1] & 0x80) | (value & 0x7F));
++        }
++
++        bool get_mask() const { return (bytes[1] & 0x80) != 0; }
++        void set_mask(bool value) { set_flag(bytes[1], 0x80, value); }
++
++        unsigned char bytes[2];
++
++    private:
++        static void set_flag(unsigned char& byte, unsigned char mask, bool value)
++        {
++            if (value)
++                byte |= mask;
++            else
++                byte &= static_cast<unsigned char>(~mask);
++        }
+     };
+     static_assert(sizeof(Header) == 2,
+                   "the Header struct is not properly packed");
+-    union
+-    {
+-        Header header;
+-        char header_bytes[2];
+-    };
++    Header header;
+     uint64_t length;
+     unsigned char mask[4];
+     std::string content;
+@@ -130,6 +155,4 @@ public:
+ 
+ }  // namespace async_web_server_cpp
+ 
+-#undef PACKED_STRUCT
+-
+ #endif
+diff --git a/src/websocket_message.cpp b/src/websocket_message.cpp
+index 8a0ab3c..302b1b3 100644
+--- a/src/websocket_message.cpp
++++ b/src/websocket_message.cpp
+@@ -8,27 +8,27 @@ bool WebsocketFrame::fromMessage(const WebsocketMessage& message)
+     switch (message.type)
+     {
+         case WebsocketMessage::type_text:
+-            header.opcode = WebsocketFrame::Header::opcode_text;
++            header.set_opcode(WebsocketFrame::Header::opcode_text);
+             break;
+         case WebsocketMessage::type_binary:
+-            header.opcode = WebsocketFrame::Header::opcode_binary;
++            header.set_opcode(WebsocketFrame::Header::opcode_binary);
+             break;
+         case WebsocketMessage::type_close:
+-            header.opcode = WebsocketFrame::Header::opcode_close;
++            header.set_opcode(WebsocketFrame::Header::opcode_close);
+             break;
+         case WebsocketMessage::type_ping:
+-            header.opcode = WebsocketFrame::Header::opcode_ping;
++            header.set_opcode(WebsocketFrame::Header::opcode_ping);
+             break;
+         case WebsocketMessage::type_pong:
+-            header.opcode = WebsocketFrame::Header::opcode_pong;
++            header.set_opcode(WebsocketFrame::Header::opcode_pong);
+             break;
+         default:
+             return false;
+     }
+-    header.fin = true;
+-    header.rsv1 = false;
+-    header.rsv2 = false;
+-    header.rsv3 = false;
++    header.set_fin(true);
++    header.set_rsv1(false);
++    header.set_rsv2(false);
++    header.set_rsv3(false);
+     content = message.content;
+     length = message.content.size();
+     return true;
+@@ -39,25 +39,25 @@ bool WebsocketFrame::serialize(std::vector<unsigned char>& buffer)
+     int header_size = 2;  // first two bytes of header
+     if (length < 126)
+     {
+-        header.len = length;
++        header.set_len(static_cast<unsigned char>(length));
+     }
+     else if (length <= std::numeric_limits<uint16_t>::max())
+     {
+-        header.len = 126;
++        header.set_len(126);
+         header_size += 2;
+     }
+     else if (length <= std::numeric_limits<uint64_t>::max())
+     {
+-        header.len = 127;
++        header.set_len(127);
+         header_size += 8;
+     }
+     else
+         return false;     // Message too big
+-    header.mask = false;  // sending from server
++    header.set_mask(false);  // sending from server
+ 
+     buffer.resize(header_size + content.size());
+-    buffer[0] = header_bytes[0];
+-    buffer[1] = header_bytes[1];
++    buffer[0] = header.bytes[0];
++    buffer[1] = header.bytes[1];
+ 
+     if (length < 126)
+     {
+@@ -98,24 +98,24 @@ boost::tribool WebsocketFrameParser::consume(WebsocketFrame& frame, char input)
+     switch (state_)
+     {
+         case header_byte1:
+-            frame.header_bytes[0] = input;
++            frame.header.bytes[0] = static_cast<unsigned char>(input);
+             state_ = header_byte2;
+             return boost::indeterminate;
+         case header_byte2:
+-            frame.header_bytes[1] = input;
+-            if (frame.header.len < 126)
++            frame.header.bytes[1] = static_cast<unsigned char>(input);
++            if (frame.header.get_len() < 126)
+             {
+-                frame.length = frame.header.len;
++                frame.length = frame.header.get_len();
+                 frame.content.reserve(frame.length);
+                 frame.content.resize(0);
+-                if (frame.header.mask)
++                if (frame.header.get_mask())
+                     state_ = mask_byte1;
+                 else if (frame.length > 0)
+                     state_ = body;
+                 else
+                     return true;
+             }
+-            else if (frame.header.len == 126)
++            else if (frame.header.get_len() == 126)
+             {
+                 frame.length = 0;
+                 state_ = length_2bytes_left;
+@@ -159,7 +159,7 @@ boost::tribool WebsocketFrameParser::consume(WebsocketFrame& frame, char input)
+             frame.length |= ((uint64_t)(input & 0xFF) << 0);
+             frame.content.reserve(frame.length);
+             frame.content.resize(0);
+-            if (frame.header.mask)
++            if (frame.header.get_mask())
+                 state_ = mask_byte1;
+             else
+                 state_ = body;
+@@ -190,7 +190,7 @@ boost::tribool WebsocketFrameParser::consume(WebsocketFrame& frame, char input)
+             if (frame.content.size() < frame.length)
+                 return boost::indeterminate;
+             // unmask the frame
+-            if (frame.header.mask)
++            if (frame.header.get_mask())
+             {
+                 for (uint64_t i = 0; i < frame.length; ++i)
+                 {
+@@ -208,7 +208,7 @@ WebsocketMessage::WebsocketMessage() : type(type_unknown) {}
+ boost::tribool WebsocketFrameBuffer::consume(WebsocketMessage& message,
+                                              WebsocketFrame& frame)
+ {
+-    if (frame.header.opcode == WebsocketFrame::Header::opcode_continuation)
++    if (frame.header.get_opcode() == WebsocketFrame::Header::opcode_continuation)
+     {
+         if (message.type == WebsocketMessage::type_unknown)
+             return false;
+@@ -217,7 +217,7 @@ boost::tribool WebsocketFrameBuffer::consume(WebsocketMessage& message,
+     }
+     else
+     {
+-        switch (frame.header.opcode)
++        switch (frame.header.get_opcode())
+         {
+             case WebsocketFrame::Header::opcode_text:
+                 message.type = WebsocketMessage::type_text;
+@@ -240,7 +240,7 @@ boost::tribool WebsocketFrameBuffer::consume(WebsocketMessage& message,
+         }
+         message.content = frame.content;
+     }
+-    if (frame.header.fin)
++    if (frame.header.get_fin())
+         return true;
+     else
+         return boost::indeterminate;
+diff --git a/test/test_web_server.cpp b/test/test_web_server.cpp
+index 0d9c332..69bbbfb 100644
+--- a/test/test_web_server.cpp
++++ b/test/test_web_server.cpp
+@@ -3,7 +3,9 @@
+ #include "async_web_server_cpp/websocket_connection.hpp"
+ #include "async_web_server_cpp/websocket_request_handler.hpp"
+ 
++#include <chrono>
+ #include <signal.h>
++#include <thread>
+ 
+ using namespace async_web_server_cpp;
+ 
+@@ -115,7 +117,7 @@ int main(int argc, char** argv)
+ 
+     while (!should_shutdown)
+     {
+-        sleep(1);
++        std::this_thread::sleep_for(std::chrono::seconds(1));
+     }
+ 
+     return (0);

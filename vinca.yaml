@@ -1,4 +1,4 @@
-ros_distro: kilted
+ros_distro: rolling
 
 # mapping for package keys
 conda_index:
@@ -18,7 +18,7 @@ mutex_package:
     - pcl 1.15.1.*
     - gazebo 11.*
     - libprotobuf 6.33.5.*
-    - vtk 9.6.0.*
+    - vtk 9.6.1.*
 
 packages_skip_by_deps:
   - if: not linux
@@ -38,12 +38,16 @@ packages_remove_from_deps:
 
 skip_existing:
   # - output
-  - https://conda.anaconda.org/robostack-kilted/
+  - https://conda.anaconda.org/robostack-rolling/
 
 packages_select_by_deps:
   - ament_cmake_core
   - ament_cmake_catch2
   - ament_cmake_mypy
+  - rosidl_buffer
+  - rosidl_buffer_backend
+  - rosidl_buffer_backend_registry
+  - rosidl_buffer_py
 
   - ros_base
   - ros_environment
@@ -81,8 +85,6 @@ packages_select_by_deps:
   - ros_gz
   - slam_toolbox
   - turtlebot3
-
-  - apriltag_ros
 
   - ackermann-msgs
   - sbg_driver
@@ -160,6 +162,12 @@ packages_select_by_deps:
   - py-trees-ros
   - py-trees-ros-viewer
 
+  - nmea-navsat-driver
+  - diagnostic-remote-logging
+  - robot-localization
+  # - web-video-server
+  - persist-parameter-server
+
   # These packages are only built on Linux as they depend on Linux-specific API
   - if: linux
     then:
@@ -185,6 +193,8 @@ packages_select_by_deps:
       - v4l2_camera
       # Serial communication only implemented for linux
       - swri_serial_util
+      # Depends on camera_ros
+      - apriltag_ros
 
   # These packages are currently not build on Windows, but they be with some work
   - if: not win
