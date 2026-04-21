@@ -1,3 +1,51 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -106,10 +106,31 @@ pluginlib_export_plugin_description_file(
+ pluginlib_export_plugin_description_file(
+   rviz_common robot_state_rviz_plugin_description.xml)
+ 
+ # Create an umbrella INTERFACE target so downstream packages can use
+ # moveit_ros_visualization::moveit_ros_visualization to link all libraries at
+ # once.
++if(WIN32)
++  set(MOVEIT_ROS_VISUALIZATION_PLUGIN_LIBRARIES
++      moveit_motion_planning_rviz_plugin
++      moveit_planning_scene_rviz_plugin
++      moveit_robot_state_rviz_plugin
++      moveit_trajectory_rviz_plugin)
++  set(MOVEIT_ROS_VISUALIZATION_EXPORTED_LIBRARIES
++      moveit_motion_planning_rviz_plugin_core
++      moveit_planning_scene_rviz_plugin_core
++      moveit_robot_state_rviz_plugin_core
++      moveit_rviz_plugin_render_tools
++      moveit_trajectory_rviz_plugin_core)
++else()
++  set(MOVEIT_ROS_VISUALIZATION_EXPORTED_LIBRARIES ${THIS_PACKAGE_LIBRARIES})
++endif()
++
+ add_library(moveit_ros_visualization INTERFACE)
+ target_link_libraries(moveit_ros_visualization
+-                      INTERFACE ${THIS_PACKAGE_LIBRARIES})
++                      INTERFACE ${MOVEIT_ROS_VISUALIZATION_EXPORTED_LIBRARIES})
++
++if(WIN32)
++  install(
++    TARGETS ${MOVEIT_ROS_VISUALIZATION_PLUGIN_LIBRARIES}
++    LIBRARY DESTINATION lib
++    ARCHIVE DESTINATION lib
++    RUNTIME DESTINATION bin
++    INCLUDES
++    DESTINATION include/moveit_ros_visualization)
++endif()
+ 
+ install(
+-  TARGETS moveit_ros_visualization ${THIS_PACKAGE_LIBRARIES}
++  TARGETS moveit_ros_visualization ${MOVEIT_ROS_VISUALIZATION_EXPORTED_LIBRARIES}
+   EXPORT moveit_ros_visualizationTargets
+   LIBRARY DESTINATION lib
+   ARCHIVE DESTINATION lib
+
 diff --git a/motion_planning_rviz_plugin/CMakeLists.txt b/motion_planning_rviz_plugin/CMakeLists.txt
 --- a/motion_planning_rviz_plugin/CMakeLists.txt
 +++ b/motion_planning_rviz_plugin/CMakeLists.txt
