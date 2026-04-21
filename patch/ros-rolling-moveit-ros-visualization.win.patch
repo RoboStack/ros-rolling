@@ -24,11 +24,16 @@ diff --git a/motion_planning_rviz_plugin/CMakeLists.txt b/motion_planning_rviz_p
              ${SOURCE_FILES} ${HEADERS} ${UIC_FILES})
  set_target_properties(moveit_motion_planning_rviz_plugin_core
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
-@@ -50,6 +59,8 @@ target_link_libraries(
+@@ -50,6 +59,13 @@ target_link_libraries(
    moveit_ros_warehouse::moveit_ros_warehouse
    pluginlib::pluginlib
    rviz_ogre_vendor::OgreMain
    rviz_ogre_vendor::OgreOverlay)
++if(WIN32)
++  set_target_properties(moveit_motion_planning_rviz_plugin PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS OFF
++  )
++endif()
 +target_sources(moveit_motion_planning_rviz_plugin
 +               PRIVATE ${MOVEIT_MOTION_PLANNING_RVIZ_PLUGIN_RESOURCE_FILES})
  target_include_directories(moveit_motion_planning_rviz_plugin
