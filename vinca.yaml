@@ -38,7 +38,7 @@ packages_remove_from_deps:
 
 skip_existing:
   # - output
-  - https://conda.anaconda.org/robostack-rolling/
+  - https://prefix.dev/robostack-rolling/
 
 packages_select_by_deps:
   - ament_cmake_core
