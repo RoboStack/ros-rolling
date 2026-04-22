@@ -30,7 +30,7 @@ if exist "%CONDA_BLD_PATH%\win-64\*.conda" (
     echo Found .conda files, starting upload...
     for %%F in ("%CONDA_BLD_PATH%\win-64\*.conda") do (
         echo Uploading %%F
-        pixi run upload "%%F" --force
+        pixi run upload "%%F"
         if errorlevel 1 exit 1
     )
 ) else (
