@@ -18,7 +18,7 @@ for %%X in (%CURRENT_RECIPES%) do (
     cd %FEEDSTOCK_ROOT%\recipes\%%X\
     pixi run -v rattler-build build --recipe %FEEDSTOCK_ROOT%\recipes\%%X\ ^
         -m %FEEDSTOCK_ROOT%\conda_build_config.yaml ^
-        -c robostack-kilted -c conda-forge ^
+        -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge ^
         --output-dir %CONDA_BLD_PATH%
 
     if errorlevel 1 exit 1
@@ -30,7 +30,7 @@ if exist "%CONDA_BLD_PATH%\win-64\*.conda" (
     echo Found .conda files, starting upload...
     for %%F in ("%CONDA_BLD_PATH%\win-64\*.conda") do (
         echo Uploading %%F
-        pixi run upload "%%F"
+        pixi run upload "%%F" --skip-existing
         if errorlevel 1 exit 1
     )
 ) else (

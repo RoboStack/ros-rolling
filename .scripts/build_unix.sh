@@ -40,7 +40,7 @@ for recipe in ${CURRENT_RECIPES[@]}; do
 	pixi run -v rattler-build build \
 		--recipe ${FEEDSTOCK_ROOT}/recipes/${recipe} \
 		-m ${FEEDSTOCK_ROOT}/conda_build_config.yaml \
-		-c robostack-kilted -c conda-forge \
+		-c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge \
 		${extra_channel} \
 		--output-dir $CONDA_BLD_PATH \
 		${cross_compile}
@@ -50,7 +50,7 @@ done
 
 # Check if it build something, this is a hotfix for the skips inside additional_recipes 
 if compgen -G "${CONDA_BLD_PATH}/${target}*/*.conda" > /dev/null; then
-    pixi run upload "${CONDA_BLD_PATH}/${target}"*/*.conda
+    pixi run upload "${CONDA_BLD_PATH}/${target}"*/*.conda --skip-existing
 else
     echo "Warning: No .conda files found in ${CONDA_BLD_PATH}/${target}"
     echo "This might be due to all the packages being skipped"
