@@ -1,20 +1,13 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5b784cc..eb31e62 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -14,6 +14,7 @@ include(CheckLibraryExists)
+diff --git a/src/testing/fault_injection.c b/src/testing/fault_injection.c
+--- a/src/testing/fault_injection.c
++++ b/src/testing/fault_injection.c
+@@ -16,7 +16,7 @@
+ #include "rcutils/testing/fault_injection.h"
  
- find_package(ament_cmake REQUIRED)
- find_package(ament_cmake_ros_core REQUIRED)
-+find_package(Threads REQUIRED)
+ #include "rcutils/stdatomic_helper.h"
  
- if(UNIX AND NOT APPLE)
-   include(cmake/check_c_compiler_uses_glibc.cmake)
-@@ -87,6 +88,8 @@ if(BUILD_TESTING AND NOT RCUTILS_DISABLE_FAULT_INJECTION)
- endif()
+-static atomic_int_least64_t g_rcutils_fault_injection_count = {-1};
++static atomic_int_least64_t g_rcutils_fault_injection_count = -1;
  
- target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
-+target_link_libraries(${PROJECT_NAME} Threads::Threads)
-+ament_export_dependencies(Threads)
- 
- check_library_exists(atomic __atomic_load_8 "" HAVE_LIBATOMICS)
+ void rcutils_fault_injection_set_count(int_least64_t count)
+ {
