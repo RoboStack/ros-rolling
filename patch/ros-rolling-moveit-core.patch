@@ -833,6 +833,28 @@ index a906be706..44ccde09a 100644
 +    robot_state_benchmark moveit_robot_model moveit_test_utils
 +    moveit_robot_state kdl_parser::kdl_parser)
  endif()
+diff --git a/robot_state/src/attached_body.cpp b/robot_state/src/attached_body.cpp
+index 3a606dfe5..04961a849 100644
+--- a/robot_state/src/attached_body.cpp
++++ b/robot_state/src/attached_body.cpp
+@@ -88,7 +88,7 @@ void AttachedBody::setScale(double scale)
+   for (shapes::ShapeConstPtr& shape : shapes_)
+   {
+     // if this shape is only owned here (and because this is a non-const function), we can safely const-cast:
+-    if (shape.unique())
++    if (shape.use_count() == 1)
+     {
+       const_cast<shapes::Shape*>(shape.get())->scale(scale);
+     }
+@@ -122,7 +122,7 @@ void AttachedBody::setPadding(double padding)
+   for (shapes::ShapeConstPtr& shape : shapes_)
+   {
+     // if this shape is only owned here (and because this is a non-const function), we can safely const-cast:
+-    if (shape.unique())
++    if (shape.use_count() == 1)
+     {
+       const_cast<shapes::Shape*>(shape.get())->padd(padding);
+     }
 diff --git a/robot_trajectory/CMakeLists.txt b/robot_trajectory/CMakeLists.txt
 index c4b26ebb8..14594034b 100644
 --- a/robot_trajectory/CMakeLists.txt
