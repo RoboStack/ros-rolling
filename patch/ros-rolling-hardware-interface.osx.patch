@@ -7,7 +7,7 @@ index 6de4c69ae1..f875fad92b 100644
  std::optional<double> stod(const std::string & s)
  {
 -#if __cplusplus < 202002L
-+#if __cplusplus < 202002L || (defined(__APPLE__) && defined(__x86_64__))
++#if __cplusplus < 202002L || defined(__APPLE__)
    // convert from string using no locale
    // Impl with std::istringstream
    std::istringstream stream(s);
@@ -16,7 +16,7 @@ index 6de4c69ae1..f875fad92b 100644
  std::optional<float> stof(const std::string & s)
  {
 -#if __cplusplus < 202002L
-+#if __cplusplus < 202002L || (defined(__APPLE__) && defined(__x86_64__))
++#if __cplusplus < 202002L || defined(__APPLE__)
    // convert from string using no locale
    // Impl with std::istringstream
    std::istringstream stream(s);
