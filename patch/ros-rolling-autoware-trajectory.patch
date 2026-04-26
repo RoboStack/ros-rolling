@@ -41,3 +41,51 @@ index 6ca7cd4..8490283 100644
 +
  if(BUILD_TESTING)
    ament_auto_find_test_dependencies()
+ 
+diff --git a/src/utils/reference_path.cpp b/src/utils/reference_path.cpp
+index b8beb1b8..db8aec3f 100644
+--- a/src/utils/reference_path.cpp
++++ b/src/utils/reference_path.cpp
+@@ -46,6 +46,11 @@ namespace autoware::experimental::trajectory
+ struct UserDefinedWaypoint
+ {
+   UserDefinedWaypoint() = delete;
++  UserDefinedWaypoint(const lanelet::ConstPoint3d & point, const lanelet::Id defined_lanelet_id)
++  : point(point), defined_lanelet_id(defined_lanelet_id)
++  {
++  }
++
+   lanelet::ConstPoint3d point;
+   // NOTE(soblin): this point may not exist on defined_lanelet_id
+   lanelet::Id defined_lanelet_id;
+@@ -56,6 +61,13 @@ using UserDefinedWaypoints = std::vector<UserDefinedWaypoint>;
+ struct ReferencePoint
+ {
+   ReferencePoint() = delete;
++  ReferencePoint(
++    const lanelet::ConstPoint3d & point, const lanelet::Id located_lanelet_id,
++    const std::optional<lanelet::Id> next_lanelet_id = std::nullopt)
++  : point(point), located_lanelet_id(located_lanelet_id), next_lanelet_id(next_lanelet_id)
++  {
++  }
++
+   lanelet::ConstPoint3d point;
+   // NOTE(soblin): this point exists on located_lanelet_id
+   lanelet::Id located_lanelet_id;
+@@ -86,10 +98,12 @@ static std::optional<UserDefinedWaypoints> get_user_defined_waypoint(
+   if (waypoints_linestring.size() < 2) {
+     return std::nullopt;
+   }
+-  return waypoints_linestring | ranges::views::transform([&lanelet](const auto & p) {
+-           return UserDefinedWaypoint{p, lanelet.id()};
+-         }) |
+-         ranges::to<std::vector>();
++  UserDefinedWaypoints waypoints;
++  waypoints.reserve(waypoints_linestring.size());
++  for (const auto & point : waypoints_linestring) {
++    waypoints.emplace_back(point, lanelet.id());
++  }
++  return waypoints;
+ }
+ 
+ bool is_waypoint_inside_lanelet(
