@@ -418,3 +418,12 @@ cm_executors:
   tag: 0.9.1
   url: https://github.com/cellumation/cm_executors.git
   version: 0.9.1
+# temporal addition
+gz_rendering_vendor:
+  tag: release/rolling/gz_rendering_vendor/0.4.3-1
+  url: https://github.com/ros2-gbp/gz_rendering_vendor-release.git
+  version: 0.4.3
+ur_client_library:
+  tag: release/rolling/ur_client_library/2.10.0-1
+  url: https://github.com/ros2-gbp/Universal_Robots_Client_Library-release.git
+  version: 2.10.0
