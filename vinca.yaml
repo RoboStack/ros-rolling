@@ -21,10 +21,6 @@ mutex_package:
     - vtk 9.6.1.*
 
 packages_skip_by_deps:
-  # Upstream rolling currently has this package in rosdistro without a
-  # release version, which makes rosdistro's recursive dependency walker assert.
-  # Keep it selected explicitly below so Vinca can use the pinned snapshot entry.
-  - gz_rendering_vendor
   # Same rosdistro no-version issue; keep selected explicitly below via the
   # manually maintained additional recipe entry.
   - ur_client_library
@@ -36,7 +32,6 @@ packages_skip_by_deps:
       - tlsf_cpp
 
 packages_remove_from_deps:
-  - gz_rendering_vendor
   - ur_client_library
   - if: not linux
     then:
@@ -93,7 +88,6 @@ packages_select_by_deps:
   - ur_simulation_gz
 
   - ros_gz
-  - gz_rendering_vendor
   - slam_toolbox
   - turtlebot3
 
