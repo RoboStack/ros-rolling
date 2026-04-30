@@ -101,8 +101,8 @@ jobs:
     - name: Delete specific outdated cache entries
       shell: bash -l {0}
       run: |
-        rm -rf ${{ matrix.folder_cache }}/ros-rolling-rmw-connext* 2>/dev/null || true
-        rm -rf ${{ matrix.folder_cache }}/ros-rolling-rti-connext* 2>/dev/null || true
+        rm -rf ${{ matrix.folder_cache }}/ros-rolling-rmw-zenoh* 2>/dev/null || true
+        rm -rf ${{ matrix.folder_cache }}/ros-rolling-zenoh* 2>/dev/null || true
         mkdir -p ${{ matrix.folder_cache }}
         pixi run rattler-index fs ${{ matrix.folder_cache }}/.. --force
 
