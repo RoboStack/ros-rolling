@@ -32,7 +32,6 @@ packages_skip_by_deps:
       - tlsf_cpp
 
 packages_remove_from_deps:
-  - ur_client_library
   - if: not linux
     then:
       - pendulum_control
