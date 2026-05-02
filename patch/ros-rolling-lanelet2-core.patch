@@ -47,8 +47,8 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 +
 +target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
  
-#############
-## Install ##
+ #############
+ ## Install ##
 diff --git a/include/lanelet2_core/utility/HybridMap.h b/include/lanelet2_core/utility/HybridMap.h
 index 9ba57a4e..7d56c8dc 100644
 --- a/include/lanelet2_core/utility/HybridMap.h
