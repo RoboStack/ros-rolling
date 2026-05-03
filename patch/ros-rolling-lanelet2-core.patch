@@ -49,3 +49,16 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
  
  #############
  ## Install ##
+diff --git a/include/lanelet2_core/utility/HybridMap.h b/include/lanelet2_core/utility/HybridMap.h
+index 9ba57a4e..7d56c8dc 100644
+--- a/include/lanelet2_core/utility/HybridMap.h
++++ b/include/lanelet2_core/utility/HybridMap.h
+@@ -119,7 +119,7 @@ class HybridMap {
+   const_iterator find(const key_type& k) const { return m_.find(k); }
+   const_iterator find(Enum k) const {
+     const auto pos = static_cast<size_t>(k);
+-    return v_.size() < pos + 1 ? m_.end() : v_[pos];
++    return v_.size() < pos + 1 ? m_.end() : const_iterator{v_[pos]};
+   }
+ 
+   iterator begin() { return m_.begin(); }

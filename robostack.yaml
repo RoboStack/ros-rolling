@@ -516,6 +516,26 @@ libqt6widgets6t64:
     linux: [qt6-main, libopengl-devel, libgl-devel]
     osx: [qt6-main]
     win64: [qt6-main]
+libqtcore:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqtgui:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqtopengl:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
+libqtsvg:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
 libreadline:
   robostack: [readline]
 libreadline-dev:
@@ -1060,6 +1080,11 @@ qtbase5-dev:
     linux: [qt-main, libopengl-devel, libgl-devel]
     osx: [qt-main]
     win64: [qt-main]
+qt-base-dev:
+  robostack:
+    linux: [qt6-main, libopengl-devel, libgl-devel]
+    osx: [qt6-main]
+    win64: [qt6-main]
 qt6-base-dev:
   robostack:
     linux: [qt6-main, libopengl-devel, libgl-devel]

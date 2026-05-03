@@ -234,6 +234,8 @@ gz_dartsim_vendor:
 gz_ogre_next_vendor:
   add_host: ["ogre-next"]
   add_run: ["ogre-next"]
+  remove_host: ["shaderc"]
+  remove_run: ["shaderc"]
 rosx_introspection:
   add_host: ["rapidjson"]
 gz_ros2_control:

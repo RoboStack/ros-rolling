@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9b4136d012..3c1cfdcd83 100644
+index 9b4136d01..3c1cfdcd8 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -17,6 +17,7 @@ find_package(moveit_ros_occupancy_map_monitor REQUIRED)
@@ -34,7 +34,7 @@ index 9b4136d012..3c1cfdcd83 100644
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 diff --git a/collision_plugin_loader/CMakeLists.txt b/collision_plugin_loader/CMakeLists.txt
-index bc34ed5eca..577f6dcd2d 100644
+index bc34ed5ec..577f6dcd2 100644
 --- a/collision_plugin_loader/CMakeLists.txt
 +++ b/collision_plugin_loader/CMakeLists.txt
 @@ -2,7 +2,7 @@ add_library(moveit_collision_plugin_loader SHARED
@@ -48,7 +48,7 @@ index bc34ed5eca..577f6dcd2d 100644
  
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/constraint_sampler_manager_loader/CMakeLists.txt b/constraint_sampler_manager_loader/CMakeLists.txt
-index 222a564a78..0b457167f7 100644
+index 222a564a7..0b457167f 100644
 --- a/constraint_sampler_manager_loader/CMakeLists.txt
 +++ b/constraint_sampler_manager_loader/CMakeLists.txt
 @@ -3,9 +3,8 @@ add_library(moveit_constraint_sampler_manager_loader SHARED
@@ -65,7 +65,7 @@ index 222a564a78..0b457167f7 100644
  
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/kinematics_plugin_loader/CMakeLists.txt b/kinematics_plugin_loader/CMakeLists.txt
-index cbc9d6d0ff..61f9c38972 100644
+index cbc9d6d0f..61f9c3897 100644
 --- a/kinematics_plugin_loader/CMakeLists.txt
 +++ b/kinematics_plugin_loader/CMakeLists.txt
 @@ -2,16 +2,20 @@ add_library(moveit_kinematics_plugin_loader SHARED
@@ -94,8 +94,21 @@ index cbc9d6d0ff..61f9c38972 100644
  
  install(
    TARGETS kinematics_parameters
+diff --git a/kinematics_plugin_loader/src/kinematics_plugin_loader.cpp b/kinematics_plugin_loader/src/kinematics_plugin_loader.cpp
+index ead7aa044..464d6fbf0 100644
+--- a/kinematics_plugin_loader/src/kinematics_plugin_loader.cpp
++++ b/kinematics_plugin_loader/src/kinematics_plugin_loader.cpp
+@@ -197,7 +197,7 @@ public:
+   {
+     std::scoped_lock slock(cache_lock_);
+     kinematics::KinematicsBasePtr& cached = instances_[jmg];
+-    if (cached.unique())
++    if (cached.use_count() == 1)
+       return std::move(cached);  // pass on unique instance
+ 
+     // create a new instance and store in instances_
 diff --git a/moveit_cpp/CMakeLists.txt b/moveit_cpp/CMakeLists.txt
-index 59850df90f..a6e6f63503 100644
+index 59850df90..a6e6f6350 100644
 --- a/moveit_cpp/CMakeLists.txt
 +++ b/moveit_cpp/CMakeLists.txt
 @@ -1,10 +1,14 @@
@@ -117,7 +130,7 @@ index 59850df90f..a6e6f63503 100644
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
  
 diff --git a/plan_execution/CMakeLists.txt b/plan_execution/CMakeLists.txt
-index 95c11fd8e5..1a9cda2953 100644
+index 95c11fd8e..1a9cda295 100644
 --- a/plan_execution/CMakeLists.txt
 +++ b/plan_execution/CMakeLists.txt
 @@ -2,9 +2,14 @@ add_library(moveit_plan_execution SHARED src/plan_execution.cpp)
@@ -140,7 +153,7 @@ index 95c11fd8e5..1a9cda2953 100644
  
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/planning_components_tools/CMakeLists.txt b/planning_components_tools/CMakeLists.txt
-index 0eb2bd3fab..d38479aa72 100644
+index 0eb2bd3fa..d38479aa7 100644
 --- a/planning_components_tools/CMakeLists.txt
 +++ b/planning_components_tools/CMakeLists.txt
 @@ -5,31 +5,29 @@
@@ -200,7 +213,7 @@ index 0eb2bd3fab..d38479aa72 100644
  install(
    TARGETS moveit_print_planning_model_info
 diff --git a/planning_pipeline/CMakeLists.txt b/planning_pipeline/CMakeLists.txt
-index d3e9c75790..836d1f0d40 100644
+index d3e9c7579..836d1f0d4 100644
 --- a/planning_pipeline/CMakeLists.txt
 +++ b/planning_pipeline/CMakeLists.txt
 @@ -2,7 +2,10 @@ generate_parameter_library(planning_pipeline_parameters
@@ -251,7 +264,7 @@ index d3e9c75790..836d1f0d40 100644
    install(
      TARGETS moveit_pipeline_test_plugins
 diff --git a/planning_pipeline_interfaces/CMakeLists.txt b/planning_pipeline_interfaces/CMakeLists.txt
-index a6ccb228ca..34105f391e 100644
+index a6ccb228c..34105f391 100644
 --- a/planning_pipeline_interfaces/CMakeLists.txt
 +++ b/planning_pipeline_interfaces/CMakeLists.txt
 @@ -10,11 +10,9 @@ target_include_directories(
@@ -270,7 +283,7 @@ index a6ccb228ca..34105f391e 100644
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
  install(
 diff --git a/planning_request_adapter_plugins/CMakeLists.txt b/planning_request_adapter_plugins/CMakeLists.txt
-index 54cb62da1a..fe0d43ef2d 100644
+index 54cb62da1..fe0d43ef2 100644
 --- a/planning_request_adapter_plugins/CMakeLists.txt
 +++ b/planning_request_adapter_plugins/CMakeLists.txt
 @@ -7,13 +7,12 @@ add_library(
@@ -292,7 +305,7 @@ index 54cb62da1a..fe0d43ef2d 100644
  if(BUILD_TESTING)
    find_package(ament_cmake_gtest REQUIRED)
 diff --git a/planning_response_adapter_plugins/CMakeLists.txt b/planning_response_adapter_plugins/CMakeLists.txt
-index 7471eefa34..59edb807c2 100644
+index 7471eefa3..59edb807c 100644
 --- a/planning_response_adapter_plugins/CMakeLists.txt
 +++ b/planning_response_adapter_plugins/CMakeLists.txt
 @@ -6,10 +6,9 @@ add_library(
@@ -311,7 +324,7 @@ index 7471eefa34..59edb807c2 100644
 +  default_response_adapter_parameters Boost::headers moveit_core::moveit_core
 +  rclcpp::rclcpp pluginlib::pluginlib)
 diff --git a/planning_scene_monitor/CMakeLists.txt b/planning_scene_monitor/CMakeLists.txt
-index 03eab4077d..32feb33e0b 100644
+index 03eab4077..32feb33e0 100644
 --- a/planning_scene_monitor/CMakeLists.txt
 +++ b/planning_scene_monitor/CMakeLists.txt
 @@ -10,29 +10,24 @@ target_include_directories(
@@ -373,7 +386,7 @@ index 03eab4077d..32feb33e0b 100644
    add_ros_test(test/launch/planning_scene_monitor.test.py TIMEOUT 30 ARGS
                 "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
 diff --git a/rdf_loader/CMakeLists.txt b/rdf_loader/CMakeLists.txt
-index 70b73b8b59..6c3a08d3ff 100644
+index 70b73b8b5..6c3a08d3f 100644
 --- a/rdf_loader/CMakeLists.txt
 +++ b/rdf_loader/CMakeLists.txt
 @@ -2,8 +2,9 @@ add_library(moveit_rdf_loader SHARED src/rdf_loader.cpp
@@ -389,7 +402,7 @@ index 70b73b8b59..6c3a08d3ff 100644
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
  install(DIRECTORY test/data test/launch
 diff --git a/robot_model_loader/CMakeLists.txt b/robot_model_loader/CMakeLists.txt
-index 284ea4a363..ce7baa5d76 100644
+index 284ea4a36..ce7baa5d7 100644
 --- a/robot_model_loader/CMakeLists.txt
 +++ b/robot_model_loader/CMakeLists.txt
 @@ -5,9 +5,14 @@ endif()
@@ -412,7 +425,7 @@ index 284ea4a363..ce7baa5d76 100644
  
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/srdf_publisher_node/CMakeLists.txt b/srdf_publisher_node/CMakeLists.txt
-index d548d2f1e6..e858e7f53f 100644
+index d548d2f1e..e858e7f53 100644
 --- a/srdf_publisher_node/CMakeLists.txt
 +++ b/srdf_publisher_node/CMakeLists.txt
 @@ -1,6 +1,7 @@
@@ -426,7 +439,7 @@ index d548d2f1e6..e858e7f53f 100644
  if(BUILD_TESTING)
    find_package(launch_testing_ament_cmake REQUIRED)
 diff --git a/trajectory_execution_manager/CMakeLists.txt b/trajectory_execution_manager/CMakeLists.txt
-index 929e8c88f6..0d2f81c0ca 100644
+index 929e8c88f..0d2f81c0c 100644
 --- a/trajectory_execution_manager/CMakeLists.txt
 +++ b/trajectory_execution_manager/CMakeLists.txt
 @@ -7,18 +7,17 @@ target_include_directories(

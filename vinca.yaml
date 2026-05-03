@@ -5,12 +5,12 @@ conda_index:
   - robostack.yaml
   - packages-ignore.yaml
 
-# Reminder for next full rebuild, the next build number should be 17
-build_number: 17
+# Reminder for next full rebuild, the next build number should be 19
+build_number: 18
 
 mutex_package:
   name: "ros2-distro-mutex"
-  version: "0.14.0"
+  version: "0.15.0"
   upper_bound: "x.x"
   run_constraints:
     - libboost 1.88.*
@@ -21,6 +21,9 @@ mutex_package:
     - vtk 9.6.1.*
 
 packages_skip_by_deps:
+  # Same rosdistro no-version issue; keep selected explicitly below via the
+  # manually maintained additional recipe entry.
+  - ur_client_library
   - if: not linux
     then:
       - pendulum_control
@@ -80,6 +83,7 @@ packages_select_by_deps:
   - rviz_visual_tools
 
   - ur
+  - ur_client_library
   - ur_simulation_gz
 
   - ros_gz
