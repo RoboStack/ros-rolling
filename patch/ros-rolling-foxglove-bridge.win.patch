@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9285c891..c90d1283 100644
+index 9285c891..1e1ae5a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -23,7 +23,7 @@ option(USE_LOCAL_SDK "Use pre-built Foxglove SDK binaries from local source tree
@@ -11,7 +11,78 @@ index 9285c891..c90d1283 100644
    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
      target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wold-style-cast -Wfloat-equal -Wmost -Wunused-exception-parameter)
    else()
-@@ -96,7 +96,19 @@ else()
+@@ -87,6 +87,70 @@ else()
+     URL_HASH SHA256=${FOXGLOVE_SDK_SHA}
+   )
+   FetchContent_MakeAvailable(foxglove_sdk)
++
++  if(MSVC)
++    file(READ
++      "${foxglove_sdk_SOURCE_DIR}/include/foxglove/server/parameter.hpp"
++      _foxglove_parameter_hpp
++    )
++    string(REPLACE
++[=[
++    if (!this->isArray<ParameterValueView>()) {
++      return false;
++    }
++    try {
++      const auto& arr = this->get<ParameterValueView::Array>();
++      return std::all_of(arr.begin(), arr.end(), [](const ParameterValueView& elem) noexcept {
++        return elem.is<T>();
++      });
++    } catch (...) {
++      return false;
++    }
++]=]
++[=[
++    auto value = this->value();
++    if (!value.has_value() || !value->is<ParameterValueView::Array>()) {
++      return false;
++    }
++    try {
++      const auto& arr = value->get<ParameterValueView::Array>();
++      return std::all_of(arr.begin(), arr.end(), [](const ParameterValueView& elem) noexcept {
++        return elem.is<T>();
++      });
++    } catch (...) {
++      return false;
++    }
++]=]
++      _foxglove_parameter_hpp
++      "${_foxglove_parameter_hpp}"
++    )
++    string(REPLACE
++[=[
++    if (!this->isDict<ParameterValueView>()) {
++      return false;
++    }
++    try {
++      const auto& dict = this->get<ParameterValueView::Dict>();
++      return std::all_of(
++]=]
++[=[
++    auto value = this->value();
++    if (!value.has_value() || !value->is<ParameterValueView::Dict>()) {
++      return false;
++    }
++    try {
++      const auto& dict = value->get<ParameterValueView::Dict>();
++      return std::all_of(
++]=]
++      _foxglove_parameter_hpp
++      "${_foxglove_parameter_hpp}"
++    )
++    file(WRITE
++      "${foxglove_sdk_SOURCE_DIR}/include/foxglove/server/parameter.hpp"
++      "${_foxglove_parameter_hpp}"
++    )
++  endif()
++
+   add_library(foxglove_cpp_static STATIC)
+   target_include_directories(foxglove_cpp_static SYSTEM
+     PUBLIC
+@@ -96,7 +160,19 @@ else()
    file(GLOB_RECURSE FOXGLOVE_SDK_SOURCES CONFIGURE_DEPENDS "${foxglove_sdk_SOURCE_DIR}/src/*.cpp")
    target_sources(foxglove_cpp_static PRIVATE ${FOXGLOVE_SDK_SOURCES})
    set_target_properties(foxglove_cpp_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
