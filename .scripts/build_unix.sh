@@ -48,9 +48,15 @@ for recipe in ${CURRENT_RECIPES[@]}; do
 
 done
 
-# Check if it build something, this is a hotfix for the skips inside additional_recipes 
-if compgen -G "${CONDA_BLD_PATH}/${target}*/*.conda" > /dev/null; then
-    pixi run upload "${CONDA_BLD_PATH}/${target}"*/*.conda --skip-existing
+# Check if it build something, this is a hotfix for the skips inside additional_recipes
+shopt -s nullglob
+conda_packages=( "${CONDA_BLD_PATH}/${target}"*/*.conda )
+if (( ${#conda_packages[@]} > 0 )); then
+    # Upload packages one-by-one to avoid rattler-upload returning after the first
+    # package skipped by --skip-existing.
+    for conda_package in "${conda_packages[@]}"; do
+        pixi run upload "${conda_package}" --skip-existing
+    done
 else
     echo "Warning: No .conda files found in ${CONDA_BLD_PATH}/${target}"
     echo "This might be due to all the packages being skipped"
