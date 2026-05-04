@@ -423,6 +423,3 @@ ur_client_library:
   tag: release/rolling/ur_client_library/2.10.0-1
   url: https://github.com/ros2-gbp/Universal_Robots_Client_Library-release.git
   version: 2.10.0
-# Remove all lines after this one on new full rebuild
-moveit_setup_srdf_plugins:
-  build_number: 19
