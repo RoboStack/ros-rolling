@@ -74,8 +74,12 @@ index 97e3dc4..cf515fc 100644
 +  return (dir / "config" / config_filename).string();
  }
 
- std::string get_absolute_path_to_trajectory(const std::string & package_name)
-@@ -394,7 +394,7 @@ std::optional<std::string> resolve_or_missing(const std::string & uri_path)
+diff --git a/src/autoware_test_utils.cpp b/src/autoware_test_utils.cpp
+index cf515fc..64d80a1 100644
+--- a/src/autoware_test_utils.cpp
++++ b/src/autoware_test_utils.cpp
+@@ -392,11 +392,11 @@ std::optional<std::string> resolve_pkg_share_uri(const std::string & uri_path)
+ {
    std::smatch match;
    std::regex pattern(R"(package://([^/]+)/(.+))");
    if (std::regex_match(uri_path, match, pattern)) {
@@ -84,6 +88,9 @@ index 97e3dc4..cf515fc 100644
      const std::string resource_path = match[2].str();
      const auto path = std::filesystem::path(pkg_name) / std::filesystem::path(resource_path);
      return std::filesystem::exists(path) ? std::make_optional<std::string>(path) : std::nullopt;
+   }
+   return std::nullopt;
+ }
 diff --git a/test/test_mock_data_parser.cpp b/test/test_mock_data_parser.cpp
 index 3e972d2..d3ef49c 100644
 --- a/test/test_mock_data_parser.cpp
