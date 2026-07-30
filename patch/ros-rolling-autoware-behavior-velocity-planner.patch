@@ -1,0 +1,46 @@
+diff --git a/src/test_utils.cpp b/src/test_utils.cpp
+index dc62bd6..2305a0e 100644
+--- a/src/test_utils.cpp
++++ b/src/test_utils.cpp
+@@ -17 +17 @@
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+@@ -44 +44 @@
+-    ament_index_cpp::get_package_share_directory("autoware_test_utils");
++    ament_index_cpp::get_package_share_path("autoware_test_utils");
+@@ -46 +46 @@
+-    ament_index_cpp::get_package_share_directory("autoware_behavior_velocity_planner_common");
++    ament_index_cpp::get_package_share_path("autoware_behavior_velocity_planner_common");
+@@ -48 +48 @@
+-    ament_index_cpp::get_package_share_directory("autoware_behavior_velocity_planner");
++    ament_index_cpp::get_package_share_path("autoware_behavior_velocity_planner");
+@@ -50 +50 @@
+-    ament_index_cpp::get_package_share_directory("autoware_velocity_smoother");
++    ament_index_cpp::get_package_share_path("autoware_velocity_smoother");
+@@ -54 +54 @@
+-    const auto package_path = ament_index_cpp::get_package_share_directory(package_name);
++    const auto package_path = ament_index_cpp::get_package_share_path(package_name);
+@@ -55 +55 @@
+-    return package_path + "/config/" + module + ".param.yaml";
++    return (package_path / "config" / (module + ".param.yaml")).string();
+@@ -69 +69 @@
+-    autoware_test_utils_dir + "/config/test_common.param.yaml",
++    (autoware_test_utils_dir / "config/test_common.param.yaml").string(),
+@@ -70 +70 @@
+-    autoware_test_utils_dir + "/config/test_nearest_search.param.yaml",
++    (autoware_test_utils_dir / "config/test_nearest_search.param.yaml").string(),
+@@ -71 +71 @@
+-    autoware_test_utils_dir + "/config/test_vehicle_info.param.yaml",
++    (autoware_test_utils_dir / "config/test_vehicle_info.param.yaml").string(),
+@@ -72 +72 @@
+-    velocity_smoother_dir + "/config/default_velocity_smoother.param.yaml",
++    (velocity_smoother_dir / "config/default_velocity_smoother.param.yaml").string(),
+@@ -73 +73 @@
+-    velocity_smoother_dir + "/config/Analytical.param.yaml",
++    (velocity_smoother_dir / "config/Analytical.param.yaml").string(),
+@@ -74 +74 @@
+-    behavior_velocity_planner_common_dir + "/config/behavior_velocity_planner_common.param.yaml",
++    (behavior_velocity_planner_common_dir / "config/behavior_velocity_planner_common.param.yaml").string(),
+@@ -75 +75 @@
+-    behavior_velocity_planner_dir + "/config/behavior_velocity_planner.param.yaml"};
++    (behavior_velocity_planner_dir / "config/behavior_velocity_planner.param.yaml").string()};
