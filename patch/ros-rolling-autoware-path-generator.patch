@@ -1,0 +1,7 @@
+diff --git a/src/utils.cpp b/src/utils.cpp
+index f6e853d..eb09682 100644
+--- a/src/utils.cpp
++++ b/src/utils.cpp
+@@ -29,0 +30,2 @@
++#include <rclcpp/utilities.hpp>
++
