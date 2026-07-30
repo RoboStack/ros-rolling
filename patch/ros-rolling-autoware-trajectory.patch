@@ -157,3 +157,68 @@ index b8beb1b8..db8aec3f 100644
  }
  
  bool is_waypoint_inside_lanelet(
+diff --git a/examples/example_reference_path.cpp b/examples/example_reference_path.cpp
+index 46260af7..bbd90a3b 100644
+--- a/examples/example_reference_path.cpp
++++ b/examples/example_reference_path.cpp
+@@ -18 +18 @@
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+@@ -50 +50 @@
+-    fs::path(ament_index_cpp::get_package_share_directory("autoware_lanelet2_utils")) /
++    fs::path(ament_index_cpp::get_package_share_path("autoware_lanelet2_utils")) /
+@@ -111 +111 @@
+-    fs::path(ament_index_cpp::get_package_share_directory("autoware_test_utils")) /
++    fs::path(ament_index_cpp::get_package_share_path("autoware_test_utils")) /
+@@ -179 +179 @@
+-    std::filesystem::path(ament_index_cpp::get_package_share_directory("autoware_lanelet2_utils")) /
++    std::filesystem::path(ament_index_cpp::get_package_share_path("autoware_lanelet2_utils")) /
+@@ -214 +214 @@
+-    fs::path(ament_index_cpp::get_package_share_directory("autoware_trajectory")) /
++    fs::path(ament_index_cpp::get_package_share_path("autoware_trajectory")) /
+@@ -273 +273 @@
+-    fs::path(ament_index_cpp::get_package_share_directory("autoware_trajectory")) /
++    fs::path(ament_index_cpp::get_package_share_path("autoware_trajectory")) /
+diff --git a/test/test_case.hpp b/test/test_case.hpp
+index 0a11b7b3..559bd44b 100644
+--- a/test/test_case.hpp
++++ b/test/test_case.hpp
+@@ -18 +18 @@
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+@@ -45 +45 @@
+-    std::filesystem::path(ament_index_cpp::get_package_share_directory("autoware_lanelet2_utils")) /
++    std::filesystem::path(ament_index_cpp::get_package_share_path("autoware_lanelet2_utils")) /
+diff --git a/test/test_reference_path.cpp b/test/test_reference_path.cpp
+index 9e4c8ff9..2ac292ed 100644
+--- a/test/test_reference_path.cpp
++++ b/test/test_reference_path.cpp
+@@ -19 +19 @@
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+@@ -56 +56 @@
+-      fs::path(ament_index_cpp::get_package_share_directory(Parameter::pkg)) / "sample_map" /
++      fs::path(ament_index_cpp::get_package_share_path(Parameter::pkg)) / "sample_map" /
+@@ -429 +429 @@
+-//       fs::path(ament_index_cpp::get_package_share_directory(Parameter_Map_Overlap_Lane_00::pkg))
++//       fs::path(ament_index_cpp::get_package_share_path(Parameter_Map_Overlap_Lane_00::pkg))
+diff --git a/test/test_reference_path_vm_10_spec.cpp b/test/test_reference_path_vm_10_spec.cpp
+index 89f2ee43..870184c1 100644
+--- a/test/test_reference_path_vm_10_spec.cpp
++++ b/test/test_reference_path_vm_10_spec.cpp
+@@ -20 +20 @@
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+@@ -95 +95 @@
+-      std::filesystem::path(ament_index_cpp::get_package_share_directory("autoware_trajectory")) /
++      std::filesystem::path(ament_index_cpp::get_package_share_path("autoware_trajectory")) /
+diff --git a/test/test_reference_path_vm_10_spec_invalid.cpp b/test/test_reference_path_vm_10_spec_invalid.cpp
+index 53d632cf..007b7302 100644
+--- a/test/test_reference_path_vm_10_spec_invalid.cpp
++++ b/test/test_reference_path_vm_10_spec_invalid.cpp
+@@ -20 +20 @@
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+@@ -95 +95 @@
+-      std::filesystem::path(ament_index_cpp::get_package_share_directory("autoware_trajectory")) /
++      std::filesystem::path(ament_index_cpp::get_package_share_path("autoware_trajectory")) /
