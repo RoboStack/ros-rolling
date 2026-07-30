@@ -98,3 +98,12 @@ diff --git a/ConfigExtras.cmake b/ConfigExtras.cmake
  
 -find_package(Boost REQUIRED COMPONENTS system thread)
 +find_package(Boost REQUIRED COMPONENTS thread)
+diff --git a/src/controller_manager_plugin.cpp b/src/controller_manager_plugin.cpp
+--- a/src/controller_manager_plugin.cpp
++++ b/src/controller_manager_plugin.cpp
+@@ -54,4 +54,5 @@
+ #include <map>
+ #include <memory>
+ #include <queue>
++#include <unordered_set>
+ #include <moveit/utils/logger.hpp>
