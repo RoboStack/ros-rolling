@@ -21,7 +21,7 @@ index 9b4136d01..3c1cfdcd8 100644
 @@ -100,8 +102,13 @@ add_subdirectory(robot_model_loader)
  add_subdirectory(srdf_publisher_node)
  add_subdirectory(trajectory_execution_manager)
- 
+
 +# Create an umbrella INTERFACE target so downstream packages can use
 +# moveit_ros_planning::moveit_ros_planning to link all libraries at once.
 +add_library(moveit_ros_planning INTERFACE)
@@ -45,14 +45,14 @@ index bc34ed5ec..577f6dcd2 100644
 -                          pluginlib)
 +target_link_libraries(moveit_collision_plugin_loader moveit_core::moveit_core
 +                      rclcpp::rclcpp pluginlib::pluginlib)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/constraint_sampler_manager_loader/CMakeLists.txt b/constraint_sampler_manager_loader/CMakeLists.txt
 index 222a564a7..0b457167f 100644
 --- a/constraint_sampler_manager_loader/CMakeLists.txt
 +++ b/constraint_sampler_manager_loader/CMakeLists.txt
 @@ -3,9 +3,8 @@ add_library(moveit_constraint_sampler_manager_loader SHARED
- 
+
  set_target_properties(moveit_constraint_sampler_manager_loader
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
 -ament_target_dependencies(moveit_constraint_sampler_manager_loader moveit_core
@@ -62,7 +62,7 @@ index 222a564a7..0b457167f 100644
 +target_link_libraries(
 +  moveit_constraint_sampler_manager_loader moveit_rdf_loader
 +  moveit_core::moveit_core rclcpp::rclcpp Boost::headers pluginlib::pluginlib)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/kinematics_plugin_loader/CMakeLists.txt b/kinematics_plugin_loader/CMakeLists.txt
 index cbc9d6d0f..61f9c3897 100644
@@ -79,7 +79,7 @@ index cbc9d6d0f..61f9c3897 100644
    kinematics_parameters # cmake target name for the parameter library
    src/kinematics_parameters.yaml # path to input yaml file
  )
- 
+
 -target_link_libraries(moveit_kinematics_plugin_loader moveit_rdf_loader
 -                      kinematics_parameters)
 +target_link_libraries(
@@ -91,7 +91,7 @@ index cbc9d6d0f..61f9c3897 100644
 +  pluginlib::pluginlib
 +  class_loader::class_loader
 +  moveit_core::moveit_core)
- 
+
  install(
    TARGETS kinematics_parameters
 diff --git a/kinematics_plugin_loader/src/kinematics_plugin_loader.cpp b/kinematics_plugin_loader/src/kinematics_plugin_loader.cpp
@@ -105,7 +105,7 @@ index ead7aa044..464d6fbf0 100644
 -    if (cached.unique())
 +    if (cached.use_count() == 1)
        return std::move(cached);  // pass on unique instance
- 
+
      // create a new instance and store in instances_
 diff --git a/moveit_cpp/CMakeLists.txt b/moveit_cpp/CMakeLists.txt
 index 59850df90..a6e6f6350 100644
@@ -126,9 +126,9 @@ index 59850df90..a6e6f6350 100644
 +  moveit_trajectory_execution_manager
 +  rclcpp::rclcpp
 +  moveit_core::moveit_core)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
- 
+
 diff --git a/plan_execution/CMakeLists.txt b/plan_execution/CMakeLists.txt
 index 95c11fd8e..1a9cda295 100644
 --- a/plan_execution/CMakeLists.txt
@@ -150,7 +150,7 @@ index 95c11fd8e..1a9cda295 100644
 +  Boost::headers
 +  class_loader::class_loader
 +  pluginlib::pluginlib)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/planning_components_tools/CMakeLists.txt b/planning_components_tools/CMakeLists.txt
 index 0eb2bd3fa..d38479aa7 100644
@@ -163,20 +163,20 @@ index 0eb2bd3fa..d38479aa7 100644
 -                      moveit_robot_model_loader)
 -ament_target_dependencies(moveit_print_planning_model_info rclcpp)
 +                      moveit_robot_model_loader rclcpp::rclcpp)
- 
+
  add_executable(moveit_print_planning_scene_info
                 src/print_planning_scene_info.cpp)
  target_link_libraries(moveit_print_planning_scene_info
 -                      moveit_planning_scene_monitor)
 -ament_target_dependencies(moveit_print_planning_scene_info rclcpp)
 +                      moveit_planning_scene_monitor rclcpp::rclcpp)
- 
+
  add_executable(moveit_display_random_state src/display_random_state.cpp)
 -target_link_libraries(moveit_display_random_state moveit_planning_scene_monitor)
 -ament_target_dependencies(moveit_display_random_state rclcpp)
 +target_link_libraries(moveit_display_random_state moveit_planning_scene_monitor
 +                      rclcpp::rclcpp)
- 
+
  add_executable(moveit_visualize_robot_collision_volume
                 src/visualize_robot_collision_volume.cpp)
 -target_link_libraries(moveit_visualize_robot_collision_volume
@@ -187,7 +187,7 @@ index 0eb2bd3fa..d38479aa7 100644
 +  moveit_visualize_robot_collision_volume
 +  PRIVATE moveit_planning_scene_monitor
 +  PUBLIC rclcpp::rclcpp tf2_ros::tf2_ros)
- 
+
  add_executable(moveit_evaluate_collision_checking_speed
                 src/evaluate_collision_checking_speed.cpp)
 -target_link_libraries(moveit_evaluate_collision_checking_speed
@@ -196,11 +196,11 @@ index 0eb2bd3fa..d38479aa7 100644
 +target_link_libraries(
 +  moveit_evaluate_collision_checking_speed moveit_planning_scene_monitor
 +  rclcpp::rclcpp Boost::headers Boost::program_options)
- 
+
  if("${catkin_LIBRARIES}" MATCHES "moveit_collision_detection_bullet")
    add_executable(moveit_compare_collision_checking_speed_fcl_bullet
 @@ -41,9 +39,9 @@ endif()
- 
+
  add_executable(moveit_publish_scene_from_text src/publish_scene_from_text.cpp)
  target_link_libraries(
 -  moveit_publish_scene_from_text PRIVATE moveit_planning_scene_monitor
@@ -209,7 +209,7 @@ index 0eb2bd3fa..d38479aa7 100644
 +  moveit_publish_scene_from_text
 +  PRIVATE moveit_planning_scene_monitor moveit_robot_model_loader
 +  PUBLIC rclcpp::rclcpp)
- 
+
  install(
    TARGETS moveit_print_planning_model_info
 diff --git a/planning_pipeline/CMakeLists.txt b/planning_pipeline/CMakeLists.txt
@@ -218,7 +218,7 @@ index d3e9c7579..836d1f0d4 100644
 +++ b/planning_pipeline/CMakeLists.txt
 @@ -2,7 +2,10 @@ generate_parameter_library(planning_pipeline_parameters
                             res/planning_pipeline_parameters.yaml)
- 
+
  add_library(moveit_planning_pipeline SHARED src/planning_pipeline.cpp)
 -target_link_libraries(moveit_planning_pipeline planning_pipeline_parameters)
 +target_link_libraries(
@@ -231,13 +231,13 @@ index d3e9c7579..836d1f0d4 100644
 @@ -11,9 +14,6 @@ target_include_directories(
  set_target_properties(moveit_planning_pipeline
                        PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
- 
+
 -ament_target_dependencies(moveit_planning_pipeline moveit_core moveit_msgs
 -                          rclcpp pluginlib)
 -
  if(BUILD_TESTING)
    find_package(ament_cmake_gtest REQUIRED)
- 
+
 @@ -22,8 +22,8 @@ if(BUILD_TESTING)
    target_include_directories(
      moveit_pipeline_test_plugins
@@ -248,7 +248,7 @@ index d3e9c7579..836d1f0d4 100644
 +                        rclcpp::rclcpp pluginlib::pluginlib)
    set_target_properties(moveit_pipeline_test_plugins
                          PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
- 
+
 @@ -33,9 +33,10 @@ if(BUILD_TESTING)
    target_include_directories(
      moveit_planning_pipeline_test
@@ -260,7 +260,7 @@ index d3e9c7579..836d1f0d4 100644
 +    moveit_planning_pipeline_test moveit_planning_pipeline
 +    moveit_core::moveit_core ${moveit_msgs_TARGETS} rclcpp::rclcpp
 +    pluginlib::pluginlib)
- 
+
    install(
      TARGETS moveit_pipeline_test_plugins
 diff --git a/planning_pipeline_interfaces/CMakeLists.txt b/planning_pipeline_interfaces/CMakeLists.txt
@@ -279,7 +279,7 @@ index a6ccb228c..34105f391 100644
 +target_link_libraries(
 +  moveit_planning_pipeline_interfaces moveit_planning_pipeline
 +  moveit_core::moveit_core ${moveit_msgs_TARGETS} rclcpp::rclcpp)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
  install(
 diff --git a/planning_request_adapter_plugins/CMakeLists.txt b/planning_request_adapter_plugins/CMakeLists.txt
@@ -289,7 +289,7 @@ index 54cb62da1..fe0d43ef2 100644
 @@ -7,13 +7,12 @@ add_library(
    src/check_start_state_collision.cpp src/validate_workspace_bounds.cpp
    src/resolve_constraint_frames.cpp)
- 
+
 -target_link_libraries(moveit_default_planning_request_adapter_plugins
 -                      default_request_adapter_parameters)
 -
@@ -301,7 +301,7 @@ index 54cb62da1..fe0d43ef2 100644
 +  moveit_default_planning_request_adapter_plugins
 +  default_request_adapter_parameters moveit_core::moveit_core rclcpp::rclcpp
 +  pluginlib::pluginlib)
- 
+
  if(BUILD_TESTING)
    find_package(ament_cmake_gtest REQUIRED)
 diff --git a/planning_response_adapter_plugins/CMakeLists.txt b/planning_response_adapter_plugins/CMakeLists.txt
@@ -311,7 +311,7 @@ index 7471eefa3..59edb807c 100644
 @@ -6,10 +6,9 @@ add_library(
    src/add_ruckig_traj_smoothing.cpp src/add_time_optimal_parameterization.cpp
    src/display_motion_path.cpp src/validate_path.cpp)
- 
+
 -target_link_libraries(moveit_default_planning_response_adapter_plugins
 -                      default_response_adapter_parameters)
 -
@@ -352,7 +352,7 @@ index 03eab4077..32feb33e0 100644
 +  rclcpp::rclcpp
 +  fmt::fmt
 +  ${moveit_msgs_TARGETS})
- 
+
  add_executable(demo_scene demos/demo_scene.cpp)
 -ament_target_dependencies(
 +target_link_libraries(
@@ -368,11 +368,11 @@ index 03eab4077..32feb33e0 100644
 +  PRIVATE moveit_planning_scene_monitor
 +  PUBLIC rclcpp::rclcpp fmt::fmt ${moveit_msgs_TARGETS} urdf::urdf
 +         message_filters::message_filters pluginlib::pluginlib)
- 
+
  install(TARGETS demo_scene DESTINATION lib/${PROJECT_NAME})
- 
+
 @@ -55,10 +50,9 @@ if(BUILD_TESTING)
- 
+
    ament_add_gtest_executable(planning_scene_monitor_test
                               test/planning_scene_monitor_test.cpp)
 -  target_link_libraries(planning_scene_monitor_test
@@ -382,9 +382,54 @@ index 03eab4077..32feb33e0 100644
 +  target_link_libraries(
 +    planning_scene_monitor_test moveit_planning_scene_monitor
 +    moveit_core::moveit_core rclcpp::rclcpp ${moveit_msgs_TARGETS})
- 
+
    add_ros_test(test/launch/planning_scene_monitor.test.py TIMEOUT 30 ARGS
                 "test_binary_dir:=${CMAKE_CURRENT_BINARY_DIR}")
+diff --git a/rdf_loader/src/rdf_loader.cpp b/rdf_loader/src/rdf_loader.cpp
+index de43e05..ad79eae 100644
+--- a/rdf_loader/src/rdf_loader.cpp
++++ b/rdf_loader/src/rdf_loader.cpp
+@@ -38,7 +38,26 @@
+ #include <moveit/rdf_loader/rdf_loader.hpp>
+ #include <std_msgs/msg/string.hpp>
+ #include <ament_index_cpp/get_package_prefix.hpp>
++// ament_index_cpp's get_package_share_directory API changed twice.
++// Guard on ament_index_cpp's own version, not rclcpp, because the
++// changes live in ament_index_cpp and its release cadence is independent
++// of rclcpp's.
++//   1.14+:
++//     get_package_share_directory.hpp was removed, replaced with
++//     get_package_share_path.hpp exposing get_package_share_path(pkg)
++//     returning std::filesystem::path directly.
++//   1.5+:
++//     2-arg out-param overload get_package_share_directory(pkg, path)
++//     is available; the 1-arg form is deprecated starting in 1.13.
++//   Older:
++//     only the non-deprecated 1-arg get_package_share_directory(pkg)
++//     returning std::string is available.
++#include <ament_index_cpp/version.h>
++#if AMENT_INDEX_CPP_VERSION_GTE(1, 14, 0)
++#include <ament_index_cpp/get_package_share_path.hpp>
++#else
+ #include <ament_index_cpp/get_package_share_directory.hpp>
++#endif
+ #include <moveit/utils/logger.hpp>
+
+ #include <rclcpp/duration.hpp>
+@@ -220,7 +239,13 @@ bool RDFLoader::loadPkgFileToString(std::string& buffer, const std::string& pack
+   std::string package_path;
+   try
+   {
++#if AMENT_INDEX_CPP_VERSION_GTE(1, 14, 0)
++    package_path = ament_index_cpp::get_package_share_path(package_name).string();
++#elif AMENT_INDEX_CPP_VERSION_GTE(1, 5, 0)
++    ament_index_cpp::get_package_share_directory(package_name, package_path);
++#else
+     package_path = ament_index_cpp::get_package_share_directory(package_name);
++#endif
+   }
+   catch (const ament_index_cpp::PackageNotFoundError& e)
+   {
 diff --git a/rdf_loader/CMakeLists.txt b/rdf_loader/CMakeLists.txt
 index 70b73b8b5..6c3a08d3f 100644
 --- a/rdf_loader/CMakeLists.txt
@@ -398,7 +443,7 @@ index 70b73b8b5..6c3a08d3f 100644
 +target_link_libraries(
 +  moveit_rdf_loader rclcpp::rclcpp ament_index_cpp::ament_index_cpp urdf::urdf
 +  srdfdom::srdfdom moveit_core::moveit_core)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
  install(DIRECTORY test/data test/launch
 diff --git a/robot_model_loader/CMakeLists.txt b/robot_model_loader/CMakeLists.txt
@@ -422,7 +467,7 @@ index 284ea4a36..ce7baa5d7 100644
 +  Boost::headers
 +  moveit_core::moveit_core
 +  ${moveit_msgs_TARGETS})
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
 diff --git a/srdf_publisher_node/CMakeLists.txt b/srdf_publisher_node/CMakeLists.txt
 index d548d2f1e..e858e7f53 100644
@@ -435,7 +480,7 @@ index d548d2f1e..e858e7f53 100644
 +target_link_libraries(
 +  srdf_publisher_node PUBLIC ${std_msgs_TARGETS} rclcpp::rclcpp
 +                             rclcpp_components::component)
- 
+
  if(BUILD_TESTING)
    find_package(launch_testing_ament_cmake REQUIRED)
 diff --git a/trajectory_execution_manager/CMakeLists.txt b/trajectory_execution_manager/CMakeLists.txt
@@ -468,7 +513,7 @@ index 929e8c88f..0d2f81c0c 100644
 +  ${sensor_msgs_TARGETS}
 +  ${moveit_msgs_TARGETS}
 +  tf2_eigen::tf2_eigen)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_ros_planning)
  install(
 diff --git a/ConfigExtras.cmake b/ConfigExtras.cmake

@@ -4,7 +4,7 @@ index 2e08aa6..49bdf1e 100644
 +++ b/CMakeLists.txt
 @@ -5,7 +5,7 @@ find_package(moveit_common REQUIRED)
  moveit_package()
- 
+
  # Load  all dependencies required for this package
 -find_package(Boost REQUIRED system)
 +find_package(Boost REQUIRED COMPONENTS filesystem)
@@ -33,7 +33,7 @@ index 2e08aa6..49bdf1e 100644
 +  ${visualization_msgs_TARGETS}
 +  interactive_markers::interactive_markers
  )
- 
+
  # Visualization Tools Library
 @@ -46,7 +63,7 @@ target_include_directories(${PROJECT_NAME}
    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -41,7 +41,7 @@ index 2e08aa6..49bdf1e 100644
  )
 -ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 +target_link_libraries(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_TARGET_DEPENDS})
- 
+
  # Demo executable
  add_executable(${PROJECT_NAME}_demo
 @@ -55,7 +72,7 @@ add_executable(${PROJECT_NAME}_demo
@@ -50,6 +50,54 @@ index 2e08aa6..49bdf1e 100644
  )
 -ament_target_dependencies(${PROJECT_NAME}_demo ${THIS_PACKAGE_INCLUDE_DEPENDS})
 +target_link_libraries(${PROJECT_NAME}_demo ${THIS_PACKAGE_INCLUDE_TARGET_DEPENDS})
- 
- 
+
+
  # Exports
+
+diff --git a/src/moveit_visual_tools_demo.cpp b/src/moveit_visual_tools_demo.cpp
+index 4e4fe28..e2a83d6 100644
+--- a/src/moveit_visual_tools_demo.cpp
++++ b/src/moveit_visual_tools_demo.cpp
+@@ -33,7 +33,26 @@
+
+ // ROS
+ #include <rclcpp/rclcpp.hpp>
++// ament_index_cpp's get_package_share_directory API changed twice.
++// Guard on ament_index_cpp's own version, not rclcpp, because the
++// changes live in ament_index_cpp and its release cadence is independent
++// of rclcpp's.
++//   1.14+:
++//     get_package_share_directory.hpp was removed, replaced with
++//     get_package_share_path.hpp exposing get_package_share_path(pkg)
++//     returning std::filesystem::path directly.
++//   1.5+:
++//     2-arg out-param overload get_package_share_directory(pkg, path)
++//     is available; the 1-arg form is deprecated starting in 1.13.
++//   Older:
++//     only the non-deprecated 1-arg get_package_share_directory(pkg)
++//     returning std::string is available.
++#include <ament_index_cpp/version.h>
++#if AMENT_INDEX_CPP_VERSION_GTE(1, 14, 0)
++#include <ament_index_cpp/get_package_share_path.hpp>
++#else
+ #include <ament_index_cpp/get_package_share_directory.hpp>
++#endif
+
+ // For visualizing things in rviz
+ #include <moveit_visual_tools/moveit_visual_tools.h>
+@@ -205,7 +224,15 @@ public:
+     // --------------------------------------------------------------------
+     RCLCPP_INFO_STREAM(LOGGER, "Publishing Collision Mesh");
+     // TODO: Catch exception
++#if AMENT_INDEX_CPP_VERSION_GTE(1, 14, 0)
++    std::string file_path = "file://" + ament_index_cpp::get_package_share_path(THIS_PACKAGE).string();
++#elif AMENT_INDEX_CPP_VERSION_GTE(1, 5, 0)
++    std::string package_path;
++    ament_index_cpp::get_package_share_directory(THIS_PACKAGE, package_path);
++    std::string file_path = "file://" + package_path;
++#else
+     std::string file_path = "file://" + ament_index_cpp::get_package_share_directory(THIS_PACKAGE);
++#endif
+     if (file_path == "file://")
+       RCLCPP_FATAL_STREAM(LOGGER, "Unable to get " << THIS_PACKAGE << " package path ");
+     file_path.append("/resources/demo_mesh.stl");

@@ -23,9 +23,9 @@ index 3e3d417fb..fc6d922c4 100644
  find_package(rclcpp REQUIRED)
  find_package(rviz_common REQUIRED)
 @@ -23,12 +31,21 @@ find_package(urdf REQUIRED)
- 
+
  set(CMAKE_INCLUDE_CURRENT_DIR ON)
- 
+
 -qt5_wrap_cpp(
 -  MOC_FILES
 -  include/moveit_setup_framework/qt/helper_widgets.hpp
@@ -47,7 +47,7 @@ index 3e3d417fb..fc6d922c4 100644
 +    include/moveit_setup_framework/qt/rviz_panel.hpp
 +    include/moveit_setup_framework/qt/double_list_widget.hpp)
 +endif()
- 
+
  add_library(
    moveit_setup_framework
 @@ -43,30 +60,35 @@ add_library(
@@ -89,14 +89,14 @@ index 3e3d417fb..fc6d922c4 100644
 +         rviz_rendering::rviz_rendering
 +         srdfdom::srdfdom
 +         urdf::urdf)
- 
+
  install(DIRECTORY include/ DESTINATION include/moveit_setup_framework)
  install(FILES moveit_setup_framework_plugins.xml
          DESTINATION share/moveit_setup_framework)
- 
+
  install(DIRECTORY templates DESTINATION share/moveit_setup_framework)
 +install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_export.h DESTINATION include)
- 
+
  ament_export_targets(moveit_setup_frameworkTargets HAS_LIBRARY_TARGET)
  install(
 diff --git a/include/moveit_setup_framework/qt/setup_step_widget.hpp b/include/moveit_setup_framework/qt/setup_step_widget.hpp
@@ -106,7 +106,7 @@ index f32e7b5ad..c6f472682 100644
 @@ -40,12 +40,14 @@
  #include <moveit_setup_framework/qt/rviz_panel.hpp>
  #include <QWidget>
- 
+
 +#include <moveit_setup_framework_export.h>
 +
  namespace moveit_setup
@@ -124,21 +124,21 @@ index 5a5fbdd29..aea5aa8cc 100644
 --- a/include/moveit_setup_framework/qt/xml_syntax_highlighter.hpp
 +++ b/include/moveit_setup_framework/qt/xml_syntax_highlighter.hpp
 @@ -38,6 +38,7 @@
- 
+
  #include <QtGui/QSyntaxHighlighter>
  #include <QRegularExpression>
 +#include <QStringView>
  #include <map>
- 
+
  namespace moveit_setup
 @@ -63,7 +64,7 @@ private:
    using Rules = std::map<int, Rule>;
    Rules rules_;
- 
+
 -  Rules::const_iterator highlight(Rules::const_iterator active, QStringRef text, int start, bool search_end, int& end);
 +  Rules::const_iterator highlight(Rules::const_iterator active, QStringView text, int start, bool search_end, int& end);
  };
- 
+
  }  // namespace moveit_setup
 diff --git a/include/moveit_setup_framework/templates.hpp b/include/moveit_setup_framework/templates.hpp
 index 1555eee16..b02d52024 100644
@@ -147,40 +147,65 @@ index 1555eee16..b02d52024 100644
 @@ -38,6 +38,8 @@
  #include <moveit_setup_framework/generated_file.hpp>
  #include <string>
- 
+
 +#include <moveit_setup_framework_export.h>
 +
  namespace moveit_setup
  {
  /**
 @@ -69,7 +71,7 @@ public:
- 
+
    bool write() override;
- 
+
 -  static std::vector<TemplateVariable> variables;
 +  static MOVEIT_SETUP_FRAMEWORK_EXPORT std::vector<TemplateVariable> variables;
  };
- 
+
  }  // namespace moveit_setup
 diff --git a/include/moveit_setup_framework/utilities.hpp b/include/moveit_setup_framework/utilities.hpp
-index ace3237c6..b7ba031fd 100644
+index ace3237..039d6f7 100644
 --- a/include/moveit_setup_framework/utilities.hpp
 +++ b/include/moveit_setup_framework/utilities.hpp
-@@ -37,7 +37,7 @@
+@@ -37,7 +37,26 @@
  #pragma once
- 
+
  #include <ament_index_cpp/get_package_prefix.hpp>
--#include <ament_index_cpp/get_package_share_directory.hpp>
++// ament_index_cpp's get_package_share_directory API changed twice.
++// Guard on ament_index_cpp's own version, not rclcpp, because the
++// changes live in ament_index_cpp and its release cadence is independent
++// of rclcpp's.
++//   1.14+:
++//     get_package_share_directory.hpp was removed, replaced with
++//     get_package_share_path.hpp exposing get_package_share_path(pkg)
++//     returning std::filesystem::path directly.
++//   1.5+:
++//     2-arg out-param overload get_package_share_directory(pkg, path)
++//     is available; the 1-arg form is deprecated starting in 1.13.
++//   Older:
++//     only the non-deprecated 1-arg get_package_share_directory(pkg)
++//     returning std::string is available.
++#include <ament_index_cpp/version.h>
++#if AMENT_INDEX_CPP_VERSION_GTE(1, 14, 0)
 +#include <ament_index_cpp/get_package_share_path.hpp>
++#else
+ #include <ament_index_cpp/get_package_share_directory.hpp>
++#endif
  #include <filesystem>
  #include <string>
  #include <tinyxml2.h>
-@@ -52,7 +52,7 @@ inline std::filesystem::path getSharePath(const std::string& package_name)
+@@ -52,7 +71,15 @@ inline std::filesystem::path getSharePath(const std::string& package_name)
  {
    try
    {
--    return std::filesystem::path(ament_index_cpp::get_package_share_directory(package_name));
++#if AMENT_INDEX_CPP_VERSION_GTE(1, 14, 0)
 +    return ament_index_cpp::get_package_share_path(package_name);
++#elif AMENT_INDEX_CPP_VERSION_GTE(1, 5, 0)
++    std::filesystem::path path;
++    ament_index_cpp::get_package_share_directory(package_name, path);
++    return path;
++#else
+     return std::filesystem::path(ament_index_cpp::get_package_share_directory(package_name));
++#endif
    }
    catch (const std::runtime_error& e)
    {
@@ -193,7 +218,7 @@ index eab682326..5d17cec95 100644
  #include <moveit/rdf_loader/rdf_loader.hpp>
  #include <fmt/format.h>
 +#include <fmt/ranges.h>
- 
+
  namespace moveit_setup
  {
 diff --git a/src/xml_syntax_highlighter.cpp b/src/xml_syntax_highlighter.cpp
@@ -202,7 +227,7 @@ index 1733943ce..53203b1ef 100644
 +++ b/src/xml_syntax_highlighter.cpp
 @@ -64,7 +64,7 @@ void XmlSyntaxHighlighter::addTag(const QString& tag, const QTextCharFormat& for
  }
- 
+
  XmlSyntaxHighlighter::Rules::const_iterator
 -XmlSyntaxHighlighter::highlight(Rules::const_iterator active, QStringRef text, int start, bool search_end, int& end)
 +XmlSyntaxHighlighter::highlight(Rules::const_iterator active, QStringView text, int start, bool search_end, int& end)
@@ -217,4 +242,4 @@ index 1733943ce..53203b1ef 100644
 +  active = highlight(active, QStringView{ text }, 0, active != rules_.cend(), unused);
    setCurrentBlockState(active != rules_.cend() ? active->first : -1);
  }
- 
+
