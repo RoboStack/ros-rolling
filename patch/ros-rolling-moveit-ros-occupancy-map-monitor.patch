@@ -51,3 +51,16 @@ index b8dd549bc..ec355bf1d 100644
  
  install(
    TARGETS moveit_ros_occupancy_map_monitor
+diff --git a/src/occupancy_map_server.cpp b/src/occupancy_map_server.cpp
+index c9642f9a0..0038a11b9 100644
+--- a/src/occupancy_map_server.cpp
++++ b/src/occupancy_map_server.cpp
+@@ -99,7 +99,7 @@ int main(int argc, char** argv)
+       node->create_publisher<octomap_msgs::msg::Octomap>("octomap_binary", RMW_QOS_POLICY_HISTORY_KEEP_LAST);
+   auto clock_ptr = std::make_shared<rclcpp::Clock>(RCL_ROS_TIME);
+   std::shared_ptr<tf2_ros::Buffer> buffer = std::make_shared<tf2_ros::Buffer>(clock_ptr, tf2::durationFromSec(5.0));
+-  tf2_ros::TransformListener listener(*buffer, node, false /* spin_thread - disables executor */);
++  tf2_ros::TransformListener listener(*buffer, *node, false /* spin_thread - disables executor */);
+   occupancy_map_monitor::OccupancyMapMonitor server(node, buffer);
+   server.setUpdateCallback(
+       [&octree_binary_pub, &server, logger = node->get_logger()] { return publishOctomap(octree_binary_pub, server); });
