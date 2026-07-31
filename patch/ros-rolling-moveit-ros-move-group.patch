@@ -113,3 +113,10 @@ diff --git a/ConfigExtras.cmake b/ConfigExtras.cmake
    filesystem
    date_time
    program_options
+diff --git a/src/default_capabilities/tf_publisher_capability.cpp b/src/default_capabilities/tf_publisher_capability.cpp
+index 9323b6cc71..256cb91ce0 100644
+--- a/src/default_capabilities/tf_publisher_capability.cpp
++++ b/src/default_capabilities/tf_publisher_capability.cpp
+@@ -79 +79 @@ void TfPublisher::publishPlanningSceneFrames()
+-  tf2_ros::TransformBroadcaster broadcaster(context_->moveit_cpp_->getNode());
++  tf2_ros::TransformBroadcaster broadcaster(*context_->moveit_cpp_->getNode());
