@@ -42,6 +42,11 @@ pcl_conversions:
   add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}", "libboost-devel", "eigen-abi-devel"]
 pcl_ros:
   add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}", "libboost-devel"]
+easynav_octomap_maps_manager:
+  # "octomap" isn't auto-resolved from rosdep for this package; without it
+  # CMake fails to find octomapConfig.cmake (same gap fixed for jazzy/kilted/lyrical).
+  add_host: ["octomap"]
+  add_run: ["octomap"]
 rviz_rendering:
   add_host: ["glew"]
 behaviortree_cpp:

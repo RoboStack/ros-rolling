@@ -354,6 +354,176 @@ cm_executors:
   tag: 0.9.1
   url: https://github.com/cellumation/cm_executors.git
   version: 0.9.1
+easynav:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav
+easynav_bonxai_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: maps_managers/easynav_bonxai_maps_manager
+easynav_common:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_common
+easynav_controller:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_controller
+easynav_core:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_core
+easynav_costmap_common:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: common/easynav_costmap_common
+easynav_costmap_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: localizers/easynav_costmap_localizer
+easynav_costmap_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: maps_managers/easynav_costmap_maps_manager
+easynav_costmap_planner:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: planners/easynav_costmap_planner
+easynav_fusion_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: localizers/easynav_fusion_localizer
+easynav_gps_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: localizers/easynav_gps_localizer
+easynav_interfaces:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_interfaces
+easynav_localizer:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_localizer
+easynav_maps_manager:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_maps_manager
+easynav_mpc_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: controllers/easynav_mpc_controller
+easynav_mppi_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: controllers/easynav_mppi_controller
+easynav_navmap_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: localizers/easynav_navmap_localizer
+easynav_navmap_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: maps_managers/easynav_navmap_maps_manager
+easynav_navmap_planner:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: planners/easynav_navmap_planner
+easynav_octomap_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: maps_managers/easynav_octomap_maps_manager
+easynav_planner:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_planner
+easynav_regulated_pp_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: controllers/easynav_regulated_pp_controller
+easynav_routes_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: maps_managers/easynav_routes_maps_manager
+easynav_sensors:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_sensors
+easynav_serest_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: controllers/easynav_serest_controller
+easynav_simple_common:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: common/easynav_simple_common
+easynav_simple_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: controllers/easynav_simple_controller
+easynav_simple_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: localizers/easynav_simple_localizer
+easynav_simple_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: maps_managers/easynav_simple_maps_manager
+easynav_simple_planner:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: planners/easynav_simple_planner
+easynav_support_py:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_support_py
+easynav_system:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_system
+easynav_tools:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 9f0865e766db191ff0061dfbf517d5c48019f5c9
+  version: 0.4.2
+  additional_folder: easynav_tools
+easynav_vff_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: f93b81a3c798b531d390a103326d7f31e6574501
+  version: 0.4.2
+  additional_folder: controllers/easynav_vff_controller
 livox_ros_driver2:
   tag: 1.2.4
   url: https://github.com/Livox-SDK/livox_ros_driver2.git
@@ -406,6 +576,108 @@ mocap4r2_robot_gt_msgs:
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
   version: 0.0.7
   additional_folder: mocap4r2_robot_gt/mocap4r2_robot_gt_msgs
+navmap_core:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 01c42c35cf06a2eed7b75a55d0970eaf0bbcf78c
+  version: 0.5.0
+  additional_folder: navmap_core
+navmap_ros:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 01c42c35cf06a2eed7b75a55d0970eaf0bbcf78c
+  version: 0.5.0
+  additional_folder: navmap_ros
+navmap_ros_interfaces:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 01c42c35cf06a2eed7b75a55d0970eaf0bbcf78c
+  version: 0.5.0
+  additional_folder: navmap_ros_interfaces
+# PlanSys2: rosdistro doesn't carry it for "rolling" yet; its own default
+# branch is already named "rolling", so we build straight from it.
+plansys2_bringup:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_bringup
+plansys2_bt_actions:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_bt_actions
+plansys2_core:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_core
+plansys2_domain_expert:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_domain_expert
+plansys2_executor:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_executor
+plansys2_lifecycle_manager:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_lifecycle_manager
+plansys2_msgs:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_msgs
+plansys2_pddl_parser:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_pddl_parser
+plansys2_planner:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_planner
+plansys2_popf_plan_solver:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_popf_plan_solver
+plansys2_problem_expert:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_problem_expert
+plansys2_support_py:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_support_py
+plansys2_terminal:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_terminal
+plansys2_tests:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_tests
+plansys2_tools:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_tools
+plansys2_tui_cli:
+  url: https://github.com/PlanSys2/ros2_planning_system.git
+  rev: c44cf3dff6abc0d0a95ea554b2bace597bf5f9be
+  version: 3.1.0
+  additional_folder: plansys2_tui_cli
+# popf: rolling-devel branch of the upstream source repo (no bloom release for rolling).
+popf:
+  url: https://github.com/fmrico/popf.git
+  rev: aa81a1b8bf75c585ca26a07763e5089e3be86985
+  version: 0.0.20
 rqt_mocap4r2_control:
   tag: 0.0.7
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
