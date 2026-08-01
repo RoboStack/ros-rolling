@@ -23,10 +23,11 @@ index 1111111..2222222 100644
 -target_compile_features(rosx_introspection PUBLIC cxx_std_17)
 +target_compile_features(rosx_introspection PUBLIC cxx_std_20)
 diff --git a/plotjuggler_app/mainwindow.cpp b/plotjuggler_app/mainwindow.cpp
-index 5e7a7451..76c22b66 100644
+index c84d9066..b493dd0d 100644
 --- a/plotjuggler_app/mainwindow.cpp
 +++ b/plotjuggler_app/mainwindow.cpp
-@@ -69,7 +69,8 @@
+@@ -68,8 +68,8 @@
+ 
  #endif
  #ifdef COMPILED_WITH_AMENT
 +#include <filesystem>
@@ -35,7 +36,9 @@ index 5e7a7451..76c22b66 100644
  #endif
  
  // Serialize a QDomDocument to XML with attributes in sorted order.
-@@ -673,6 +674,7 @@ MainWindow::MainWindow(const PlotJuggler::PlotDataMapRef& mapped_plot_data,
+@@ -671,8 +671,9 @@ void MainWindow::loadAllPlugins(QStringList command_line_plugin_folders)
+     }
+ #endif
  #ifdef COMPILED_WITH_AMENT
 -    auto ros2_path = QString::fromStdString(ament_index_cpp::get_package_prefix("plotjuggler_ros"));
 -    ros2_path += "/lib/plotjuggler_ros";
@@ -44,3 +47,4 @@ index 5e7a7451..76c22b66 100644
 +    auto ros2_path = QString::fromStdString((ros2_prefix / "lib" / "plotjuggler_ros").string());
      _plugin_manager.loadPluginsFromFolder(ros2_path);
  #endif
+   }
