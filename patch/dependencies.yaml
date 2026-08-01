@@ -115,6 +115,8 @@ rqt_gui_cpp:
 ur_moveit_config:
   add_host: ["ros-rolling-rclpy"]
   add_run: ["ros-rolling-rclpy"]
+ur_controllers:
+  add_build: ["${{ 'clang-tools 18.*' if osx }}"]
 gscam:
   add_host: ["glib"]
 dolly_ignition:
@@ -283,7 +285,7 @@ grid_map_octomap:
   add_host: ["octomap"]
   add_run: ["octomap"]
 py_trees:
-  add_host: ["poetry-core"]
+  add_host: ["hatchling"]
 py_trees_js:
   add_host: ["poetry-core"]
 py_trees_ros:
