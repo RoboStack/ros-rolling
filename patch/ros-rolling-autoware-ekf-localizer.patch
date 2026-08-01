@@ -11,3 +11,18 @@ index 6ace0b4..5781ddc 100644
  
  function(add_testcase filepath)
    get_filename_component(filename ${filepath} NAME)
+diff --git a/src/ekf_localizer.cpp b/src/ekf_localizer.cpp
+index 77dbddc..e34f765 100644
+--- a/src/ekf_localizer.cpp
++++ b/src/ekf_localizer.cpp
+@@ -96,8 +96,7 @@ EKFLocalizer::EKFLocalizer(const rclcpp::NodeOptions & node_options)
+     std::bind(
+       &EKFLocalizer::service_trigger_node, this, std::placeholders::_1, std::placeholders::_2),
+     service_trigger_qos);
+ 
+-  tf_br_ = std::make_shared<tf2_ros::TransformBroadcaster>(
+-    std::shared_ptr<rclcpp::Node>(this, [](auto) {}));
++  tf_br_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+ 
+   ekf_module_ = std::make_unique<EKFModule>(warning_, params_);
+   logger_configure_ = std::make_unique<autoware_utils_logging::LoggerLevelConfigure>(this);
