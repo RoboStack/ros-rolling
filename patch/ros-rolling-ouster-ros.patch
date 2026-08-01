@@ -126,3 +126,16 @@ index 8a73c8c..ea3efaf 100644
      imu_packet_pub->publish(imu_packet_msg);
  }
  
+diff --git a/src/os_static_transforms_broadcaster.h b/src/os_static_transforms_broadcaster.h
+index 94d50eb..b1e05ce 100644
+--- a/src/os_static_transforms_broadcaster.h
++++ b/src/os_static_transforms_broadcaster.h
+@@ -16,7 +16,7 @@ template <typename NodeT>
+ class OusterStaticTransformsBroadcaster {
+    public:
+     OusterStaticTransformsBroadcaster(NodeT* parent)
+-        : node(parent), tf_bcast(parent) {}
++        : node(parent), tf_bcast(*parent) {}
+ 
+     void declare_parameters() {
+         node->declare_parameter("sensor_frame", "os_sensor");
