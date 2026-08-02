@@ -19,15 +19,15 @@ graphviz:
 # Mitigation for
 # https://github.com/RoboStack/ros-jazzy/pull/126#issuecomment-3515455380
 libcap:
-  - 2.77
+  - 2.78
 fmt:
   - 12.1
 lua:
   - 5.4
 tbb:
-  - '2022'
+  - '2023'
 tbb_devel:
-  - '2022'
+  - '2023'
 
 # Workaround for https://github.com/RoboStack/ros-jazzy/pull/40#issuecomment-2782226697
 cmake:
@@ -51,22 +51,22 @@ c_compiler:
   - vs2022                     # [win]
 c_compiler_version:            # [unix]
   - 14                         # [linux]
-  - 18                         # [osx]
+  - 19                         # [osx]
 c_stdlib:
   - sysroot                    # [linux]
   - macosx_deployment_target   # [osx]
   - vs                         # [win]
 c_stdlib_version:              # [unix]
   - 2.28                       # [linux]
-  - 13.3                       # [osx and x86_64]
-  - 13.3                       # [osx and arm64]
+  - 14.0                       # [osx and x86_64]
+  - 14.0                       # [osx and arm64]
 cxx_compiler:
   - gxx                        # [linux]
   - clangxx                    # [osx]
   - vs2022                     # [win]
 cxx_compiler_version:          # [unix]
   - 14                         # [linux]
-  - 18                         # [osx]
+  - 19                         # [osx]
 
 libzenohc:
   - 1.9.0
@@ -74,4 +74,4 @@ libzenohcxx:
   - 1.9.0
 
 libhwloc:
-  - 2.12.2
+  - 2.13.0
