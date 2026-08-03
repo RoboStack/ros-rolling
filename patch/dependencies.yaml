@@ -115,8 +115,6 @@ rqt_gui_cpp:
 ur_moveit_config:
   add_host: ["ros-rolling-rclpy"]
   add_run: ["ros-rolling-rclpy"]
-ur_controllers:
-  add_build: ["${{ 'clang-tools 18.*' if osx }}"]
 gscam:
   add_host: ["glib"]
 dolly_ignition:

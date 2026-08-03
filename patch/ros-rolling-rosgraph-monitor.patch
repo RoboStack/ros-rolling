@@ -1,0 +1,12 @@
+diff --git a/src/monitor.cpp b/src/monitor.cpp
+index 757fb41..a2e3d89 100644
+--- a/src/monitor.cpp
++++ b/src/monitor.cpp
+@@ -15,6 +15,7 @@
+ #include "rosgraph_monitor/monitor.hpp"
+ 
+ #include <cstdio>
++#include <cstring>
+ #include <functional>
+ #include <string>
+ #include <utility>
