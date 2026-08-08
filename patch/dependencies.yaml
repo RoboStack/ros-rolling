@@ -155,6 +155,16 @@ force_torque_sensor_broadcaster:
   add_host: ["typeguard", "jinja2"]
 ros_gz_sim:
   add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}", "ros-rolling-gz-sensors-vendor"]
+cyclonedds:
+  add_host: ["libiceoryx-hoofs-devel", "libiceoryx-posh-devel", "iceoryx"]
+  add_run: ["libiceoryx-hoofs", "libiceoryx-posh"]
+  remove_host: ["ros-rolling-iceoryx-hoofs", "ros-rolling-iceoryx-posh"]
+  remove_run: ["ros-rolling-iceoryx-hoofs", "ros-rolling-iceoryx-posh"]
+rmw_cyclonedds_cpp:
+  add_host: ["libiceoryx-binding-c-devel"]
+  add_run: ["libiceoryx-binding-c"]
+  remove_host: ["ros-rolling-iceoryx-binding-c"]
+  remove_run: ["ros-rolling-iceoryx-binding-c"]
 geometric_shapes:
   add_host: ["libboost-devel", "octomap"]
 ros_image_to_qimage:
