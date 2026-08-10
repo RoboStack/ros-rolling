@@ -32,7 +32,6 @@ tbb_devel:
 eigen_abi_devel:
   - 5.0.1
 
-
 cdt_name:  # [linux]
   - conda  # [linux]
 
