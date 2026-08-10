@@ -1,0 +1,12 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b17c512..27ae95a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -29,6 +29,7 @@ macro(build_osqp)
+     UPDATE_COMMAND ""
+     CMAKE_ARGS
+       -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/osqp_install
++      -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+       ${extra_cmake_args}
+   )
+ 
