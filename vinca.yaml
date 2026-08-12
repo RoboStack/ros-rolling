@@ -91,7 +91,6 @@ packages_select_by_deps:
   - bond_core
   - bondcpp
   - can_msgs
-  - cm_executors
   - data_tamer_cpp  # Requested in https://github.com/RoboStack/ros-humble/issues/325
   - desktop
   - desktop_full
