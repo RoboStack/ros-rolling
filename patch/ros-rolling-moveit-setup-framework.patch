@@ -1,3 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8c6e1f792..de1670de3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -51,6 +51,9 @@ add_library(
+   include/moveit_setup_framework/qt/setup_step_widget.hpp
+   include/moveit_setup_framework/qt/rviz_panel.hpp
+   include/moveit_setup_framework/qt/double_list_widget.hpp)
++include(GenerateExportHeader)
++generate_export_header(${PROJECT_NAME})
++
+ target_include_directories(
+   moveit_setup_framework
+   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -78 +81,2 @@ install(FILES moveit_setup_framework_plugins.xml
+ install(DIRECTORY templates DESTINATION share/moveit_setup_framework)
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_export.h DESTINATION include)
 diff --git a/include/moveit_setup_framework/qt/setup_step_widget.hpp b/include/moveit_setup_framework/qt/setup_step_widget.hpp
 index f32e7b5ad3..c6f472682d 100644
 --- a/include/moveit_setup_framework/qt/setup_step_widget.hpp
