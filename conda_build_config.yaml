@@ -16,6 +16,10 @@ libxml2:
   - 2.14.*
 graphviz:
   - 14.*
+libgdal:
+  - '3.13'
+libgdal_core:
+  - '3.13'
 # Mitigation for
 # https://github.com/RoboStack/ros-jazzy/pull/126#issuecomment-3515455380
 libcap:
