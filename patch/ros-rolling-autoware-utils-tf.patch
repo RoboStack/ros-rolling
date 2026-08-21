@@ -1,0 +1,14 @@
+diff --git a/include/autoware_utils_tf/transform_listener.hpp b/include/autoware_utils_tf/transform_listener.hpp
+index fa07f87..f61d57a 100644
+--- a/include/autoware_utils_tf/transform_listener.hpp
++++ b/include/autoware_utils_tf/transform_listener.hpp
+@@ -35,8 +35,7 @@ public:
+   : clock_(node->get_clock()), logger_(node->get_logger())
+   {
+     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
+-    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+-      node->get_node_base_interface(), node->get_node_timers_interface());
++    auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node);
+     tf_buffer_->setCreateTimerInterface(timer_interface);
+     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+   }

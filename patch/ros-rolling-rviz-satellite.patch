@@ -1,0 +1,54 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6efce00..b1d19f1 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -19,12 +19,11 @@ find_package(angles REQUIRED)
+ 
+ # rviz switched to Qt6: https://github.com/ros2/rviz/pull/1635
+-if(rviz_common_VERSION_MAJOR GREATER_EQUAL 15 AND rviz_common_VERSION_MINOR GREATER_EQUAL 1)
+-  find_package(Qt6 COMPONENTS Network REQUIRED)
+-  set(QT_VERSION_MAJOR 6)
++find_package(Qt6 COMPONENTS Network QUIET)
++if(Qt6_FOUND)
++  set(QT_VERSION_MAJOR 6)
+ else()
+   find_package(Qt5 COMPONENTS Network REQUIRED)
+   set(QT_VERSION_MAJOR 5)
+ endif()
+ 
+ add_library(${PROJECT_NAME} SHARED
+   src/aerialmap_display.cpp
+diff --git a/src/aerialmap_display.cpp b/src/aerialmap_display.cpp
+index 671121a..6728788 100644
+--- a/src/aerialmap_display.cpp
++++ b/src/aerialmap_display.cpp
+@@ -443,7 +443,7 @@ void AerialMapDisplay::transformMapTileToFixedFrame(
+   orientation = rviz_common::quaternionMsgToOgre(pose_out.pose.orientation);
+ }
+ 
+-void AerialMapDisplay::update(float, float)
++void AerialMapDisplay::update(std::chrono::nanoseconds, std::chrono::nanoseconds)
+ {
+   std::unique_lock<std::mutex> lock(tiles_mutex_, std::try_to_lock);
+   if (!lock.owns_lock()) {
+diff --git a/src/aerialmap_display.hpp b/src/aerialmap_display.hpp
+index bd90e05..fcecc94 100644
+--- a/src/aerialmap_display.hpp
++++ b/src/aerialmap_display.hpp
+@@ -16,6 +16,7 @@ limitations under the License. */
+ 
+ #pragma once
+ 
++#include <chrono>
+ #include <map>
+ #include <memory>
+ #include <rclcpp/rclcpp.hpp>
+@@ -45,7 +46,7 @@ public:
+ 
+   void onInitialize() override;
+   void reset() override;
+-  void update(float, float) override;
++  void update(std::chrono::nanoseconds, std::chrono::nanoseconds) override;
+ 
+ protected Q_SLOTS:
+   void updateAlpha();

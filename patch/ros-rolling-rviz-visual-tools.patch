@@ -182,3 +182,6 @@ index 99d7aca..acf429a 100644
  
  // C++
  #include <string>
+@@ -63 +63 @@ TFVisualTools::TFVisualTools(const std::shared_ptr<rclcpp::Node>& node, double l
+-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node);
++  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*node);

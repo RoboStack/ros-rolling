@@ -350,10 +350,6 @@ better_launch:
   tag: 1.3.0
   url: https://github.com/dfki-ric/better_launch.git
   version: 1.3.0
-cm_executors:
-  tag: 0.9.1
-  url: https://github.com/cellumation/cm_executors.git
-  version: 0.9.1
 livox_ros_driver2:
   tag: 1.2.4
   url: https://github.com/Livox-SDK/livox_ros_driver2.git

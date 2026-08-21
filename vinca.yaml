@@ -1,23 +1,25 @@
 ros_distro: rolling
 
+package_name_mode: both
+
 # mapping for package keys
 conda_index:
   - robostack.yaml
   - packages-ignore.yaml
 
-# Reminder for next full rebuild, the next build number should be 24
-build_number: 23
+# Reminder for next full rebuild, the next build number should be 25
+build_number: 24
 
 mutex_package:
   name: "ros2-distro-mutex"
-  version: "0.18.0"
+  version: "0.19.0"
   upper_bound: "x.x"
   run_constraints:
     - libboost 1.90.*
     - libboost-devel 1.90.*
     - pcl 1.15.1.*
     - gazebo 11.*
-    - libprotobuf 6.33.5.*
+    - libprotobuf 7.35.1.*
     - vtk 9.6.2.*
 
 packages_skip_by_deps:
@@ -81,7 +83,6 @@ packages_select_by_deps:
   - bond_core
   - bondcpp
   - can_msgs
-  - cm_executors
   - data_tamer_cpp  # Requested in https://github.com/RoboStack/ros-humble/issues/325
   - desktop
   - desktop_full

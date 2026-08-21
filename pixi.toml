@@ -3,11 +3,14 @@ name = "ros-rolling"
 description = "RoboStack repo to package ros-rolling packages as conda packages"
 authors = ["Tobias Fischer <tobias.fischer@qut.edu.au>", "Wolf Vollprecht <w.vollprecht@gmail.com>", "Silvio Traversaro <silvio@traversaro.it>", "Daisuke Nishimatsu <daisuke.nishimatsu1021@gmail.com>"]
 channels = ["https://repo.prefix.dev/conda-forge"]
-platforms = ["osx-arm64", "linux-64", "osx-64", "linux-aarch64", "win-64"]
-
-[system-requirements]
-# 2.17 is the glibc version used in centos 7
-libc = { family="glibc", version="2.17" }
+platforms = [
+  "osx-arm64",
+  # 2.17 is the glibc version used in CentOS 7
+  { platform = "linux-64", glibc = "2.17" },
+  "osx-64",
+  { platform = "linux-aarch64", glibc = "2.17" },
+  "win-64",
+]
 
 [dependencies]
 python = ">=3.14.0,<3.15"
@@ -26,7 +29,7 @@ git = "*"
 
 [pypi-dependencies]
 # This is typically the latest commit on main branch
-vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "ee9f94d55137a49aba76ae15047947c171ed4605" }
+vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "431fdf84c33f931570d8885dc3c788ac9331ba46" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
@@ -53,4 +56,3 @@ description = "Remove all generated recipes, before regenerating them."
 cmd = "cp ./patch/{{ PACKAGE }}.*patch ./recipes/{{ PACKAGE }}/patch/; rattler-build build --recipe ./recipes/{{ PACKAGE }}/recipe.yaml -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge"
 args = [{ arg = "PACKAGE", default = "ros-rolling-ros-workspace" }]
 description = "Build a single package, from the ./recipes dir. Add the `ros-rolling-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"
-

@@ -1,22 +1,20 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0452e0485..38b72376a 100644
+index 22751c921..b4b3fc649 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -17,8 +17,10 @@ if(WITH_OPENGL)
- 
+@@ -18,7 +18,8 @@ if(WITH_OPENGL)
    set(GL_LIBS ${GL_LIBS} ${OPENGL_LIBRARIES})
    if(APPLE)
 -    find_package(FreeGLUT REQUIRED)
--    set(SYSTEM_GL_LIBRARIES ${GLEW_LIBRARIES} GLEW::GLEW FreeGLUT::freeglut)
+-    set(SYSTEM_GL_LIBRARIES GLEW::GLEW FreeGLUT::freeglut)
 +    list(INSERT CMAKE_FRAMEWORK_PATH 0 /System/Library/Frameworks)
 +    find_package(GLUT REQUIRED)
-+    # find_package(FreeGLUT REQUIRED)
-+    set(SYSTEM_GL_LIBRARIES ${GLEW_LIBRARIES} GLEW::GLEW GLUT::GLUT)
++    set(SYSTEM_GL_LIBRARIES GLEW::GLEW GLUT::GLUT)
    else()
      find_package(GLUT REQUIRED)
      if(WIN32)
 diff --git a/mesh_filter/src/gl_renderer.cpp b/mesh_filter/src/gl_renderer.cpp
-index e528cb5b5..9d1689cf6 100644
+index e528cb5b55..9d1689cf6d 100644
 --- a/mesh_filter/src/gl_renderer.cpp
 +++ b/mesh_filter/src/gl_renderer.cpp
 @@ -37,11 +37,13 @@

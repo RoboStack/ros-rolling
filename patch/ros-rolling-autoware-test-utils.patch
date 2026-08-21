@@ -9,7 +9,7 @@ index eb50d67..6be3b86 100644
 -  yaml-cpp
 +  yaml-cpp::yaml-cpp
  )
- 
+
 +if(NOT MSVC)
 +  target_compile_options(autoware_test_utils
 +    PUBLIC
@@ -18,5 +18,113 @@ index eb50d67..6be3b86 100644
 +endif()
 +
  ament_auto_add_executable(topic_snapshot_saver src/topic_snapshot_saver.cpp)
- 
+
  target_link_libraries(topic_snapshot_saver autoware_test_utils yaml-cpp)
+diff --git a/include/autoware_test_utils/autoware_test_utils.hpp b/include/autoware_test_utils/autoware_test_utils.hpp
+index 39a4689..7c20e90 100644
+--- a/include/autoware_test_utils/autoware_test_utils.hpp
++++ b/include/autoware_test_utils/autoware_test_utils.hpp
+@@ -15,7 +15,7 @@
+ #ifndef AUTOWARE_TEST_UTILS__AUTOWARE_TEST_UTILS_HPP_
+ #define AUTOWARE_TEST_UTILS__AUTOWARE_TEST_UTILS_HPP_
+
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+ #include <rclcpp/rclcpp.hpp>
+
+ #include <autoware_adapi_v1_msgs/msg/operation_mode_state.hpp>
+diff --git a/src/autoware_test_utils.cpp b/src/autoware_test_utils.cpp
+index 97e3dc4..cf515fc 100644
+--- a/src/autoware_test_utils.cpp
++++ b/src/autoware_test_utils.cpp
+@@ -12,7 +12,7 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+
+-#include <ament_index_cpp/get_package_share_directory.hpp>
++#include <ament_index_cpp/get_package_share_path.hpp>
+ #include <autoware_lanelet2_extension/io/autoware_osm_parser.hpp>
+ #include <autoware_lanelet2_extension/projection/mgrs_projector.hpp>
+ #include <autoware_lanelet2_extension/utility/message_conversion.hpp>
+@@ -174,21 +174,21 @@ builtin_interfaces::msg::Time generate_ros_time(const double t)
+ std::string get_absolute_path_to_lanelet_map(
+   const std::string & package_name, const std::string & map_filename)
+ {
+-  const auto dir = ament_index_cpp::get_package_share_directory(package_name);
+-  return dir + "/test_map/" + map_filename;
++  const auto dir = ament_index_cpp::get_package_share_path(package_name);
++  return (dir / "test_map" / map_filename).string();
+ }
+
+ std::string get_absolute_path_to_route(
+   const std::string & package_name, const std::string & route_filename)
+ {
+-  const auto dir = ament_index_cpp::get_package_share_directory(package_name);
+-  return dir + "/test_route/" + route_filename;
++  const auto dir = ament_index_cpp::get_package_share_path(package_name);
++  return (dir / "test_route" / route_filename).string();
+ }
+
+ std::string get_absolute_path_to_config(
+   const std::string & package_name, const std::string & config_filename)
+ {
+-  const auto dir = ament_index_cpp::get_package_share_directory(package_name);
+-  return dir + "/config/" + config_filename;
++  const auto dir = ament_index_cpp::get_package_share_path(package_name);
++  return (dir / "config" / config_filename).string();
+ }
+
+diff --git a/src/autoware_test_utils.cpp b/src/autoware_test_utils.cpp
+index cf515fc..64d80a1 100644
+--- a/src/autoware_test_utils.cpp
++++ b/src/autoware_test_utils.cpp
+@@ -392,11 +392,11 @@ std::optional<std::string> resolve_pkg_share_uri(const std::string & uri_path)
+ {
+   std::smatch match;
+   std::regex pattern(R"(package://([^/]+)/(.+))");
+   if (std::regex_match(uri_path, match, pattern)) {
+-    const std::string pkg_name = ament_index_cpp::get_package_share_directory(match[1].str());
++    const auto pkg_name = ament_index_cpp::get_package_share_path(match[1].str());
+     const std::string resource_path = match[2].str();
+     const auto path = std::filesystem::path(pkg_name) / std::filesystem::path(resource_path);
+     return std::filesystem::exists(path) ? std::make_optional<std::string>(path) : std::nullopt;
+   }
+   return std::nullopt;
+ }
+diff --git a/test/test_mock_data_parser.cpp b/test/test_mock_data_parser.cpp
+index 3e972d2..d3ef49c 100644
+--- a/test/test_mock_data_parser.cpp
++++ b/test/test_mock_data_parser.cpp
+@@ -15,7 +15,7 @@
+ #include <gtest/gtest.h>
+
+ // Assuming the parseRouteFile function is in 'RouteHandler.h'
+-#include "ament_index_cpp/get_package_share_directory.hpp"
++#include "ament_index_cpp/get_package_share_path.hpp"
+ #include "autoware_test_utils/mock_data_parser.hpp"
+
+ #include <autoware_internal_planning_msgs/msg/path_with_lane_id.hpp>
+@@ -787,9 +787,9 @@ TEST(ParseFunction, Complete)
+ TEST(ParseFunction, CompleteFromFilename)
+ {
+   const auto autoware_test_utils_dir =
+-    ament_index_cpp::get_package_share_directory("autoware_test_utils");
++    ament_index_cpp::get_package_share_path("autoware_test_utils");
+   const auto parser_test_route =
+-    autoware_test_utils_dir + "/test_data/lanelet_route_parser_test.yaml";
++    (autoware_test_utils_dir / "test_data/lanelet_route_parser_test.yaml").string();
+
+   if (const auto lanelet_route_opt = parse<std::optional<LaneletRoute>>(parser_test_route)) {
+     const auto & lanelet_route = *lanelet_route_opt;
+@@ -834,9 +834,9 @@ TEST(ParseFunction, CompleteFromFilename)
+ TEST(ParseFunction, ParsePathWithLaneID)
+ {
+   const auto autoware_test_utils_dir =
+-    ament_index_cpp::get_package_share_directory("autoware_test_utils");
++    ament_index_cpp::get_package_share_path("autoware_test_utils");
+   const auto parser_test_path =
+-    autoware_test_utils_dir + "/test_data/path_with_lane_id_parser_test.yaml";
++    (autoware_test_utils_dir / "test_data/path_with_lane_id_parser_test.yaml").string();
+
+   if (const auto path_opt = parse<std::optional<PathWithLaneId>>(parser_test_path)) {
+     const auto & path = *path_opt;
