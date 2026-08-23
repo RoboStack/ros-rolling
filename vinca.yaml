@@ -98,8 +98,6 @@ packages_select_by_deps:
   - gz_ros2_control_demos
   - lanelet2
   - magic_enum
-  - mavlink
-  - mavros_msgs
   - moveit
   - moveit-chomp-optimizer-adapter  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
   - moveit-planners-chomp
