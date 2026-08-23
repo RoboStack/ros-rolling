@@ -105,6 +105,9 @@ packages_select_by_deps:
   - moveit-ros-trajectory-cache
   - moveit-servo
   - moveit-visual-tools
+  - mujoco_ros2_control
+  - mujoco_ros2_control_msgs
+  - mujoco_vendor
   - nav2_minimal_tb3_sim
   - nav2_minimal_tb4_sim
   - navigation2
@@ -118,6 +121,19 @@ packages_select_by_deps:
   - py-trees-ros-interfaces
   - py-trees-ros-viewer
   - rmw_zenoh_cpp  # requested in https://github.com/RoboStack/ros-humble/issues/252
+  - roboplan  # requested in https://github.com/RoboStack/ros-rolling/issues/28
+  - roboplan_cartesian_planning
+  - roboplan_example_models
+  - roboplan_examples
+  - roboplan_oink
+  - roboplan_ros_cpp
+  - roboplan_ros_examples
+  - roboplan_ros_franka
+  - roboplan_ros_py
+  - roboplan_ros_visualization
+  - roboplan_rrt
+  - roboplan_simple_ik
+  - roboplan_toppra
   - robot
   - robot-localization
   - ros2_control
@@ -138,6 +154,7 @@ packages_select_by_deps:
   - simulation
   - slam_toolbox
   - teleop
+  - toppra
   - turtlebot3
   - twist_mux  # requested in https://github.com/RoboStack/ros-humble/issues/249
   - ublox
