@@ -125,6 +125,7 @@ packages_select_by_deps:
   - roboplan_oink
   - roboplan_ros_cpp
   - roboplan_ros_examples
+  # - roboplan_ros_franka  # TODO: Requires mujoco_ros2_control
   - roboplan_ros_py
   - roboplan_ros_visualization
   - roboplan_rrt
@@ -183,11 +184,7 @@ packages_select_by_deps:
       - camera_ros  # Depends on libcamera that is only available on linux
       - livox_ros_driver2
       - mavros  # libmavconn currently fails to build on macOS and windows
-      - mujoco_ros2_control
-      - mujoco_ros2_control_msgs
-      - mujoco_vendor
       - py_binding_tools
-      - roboplan_ros_franka  # depends on mujoco_ros2_control
       - swri_serial_util  # Serial communication only implemented for linux
       - v4l2_camera  # Depends on v4l that is only available on linux
 

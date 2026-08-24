@@ -301,6 +301,3 @@ roboplan_ros_examples:
   # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
   # Fixed for roboplan_ros 0.7.0, so it can be removed when this releases.
   add_host: ["ros-rolling-ament-cmake"]
-mujoco_ros2_control:
-  # This was added to the package.xml in version 0.1.0, so it can be removed then.
-  add_host: ["ros-rolling-ament-index-cpp"]
