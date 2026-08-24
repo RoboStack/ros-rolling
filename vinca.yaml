@@ -128,7 +128,6 @@ packages_select_by_deps:
   - roboplan_oink
   - roboplan_ros_cpp
   - roboplan_ros_examples
-  - roboplan_ros_franka
   - roboplan_ros_py
   - roboplan_ros_visualization
   - roboplan_rrt
@@ -232,6 +231,7 @@ packages_select_by_deps:
       - pinocchio
       - plotjuggler-ros
       - pointcloud-to-laserscan
+      - roboplan_ros_franka  # needs mujoco_ros2_control to work on Windows
       - rplidar_ros
       - rqt_mocap4r2_control
       - rqt_tf_tree
