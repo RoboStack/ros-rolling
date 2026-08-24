@@ -105,9 +105,6 @@ packages_select_by_deps:
   - moveit-ros-trajectory-cache
   - moveit-servo
   - moveit-visual-tools
-  - mujoco_ros2_control
-  - mujoco_ros2_control_msgs
-  - mujoco_vendor
   - nav2_minimal_tb3_sim
   - nav2_minimal_tb4_sim
   - navigation2
@@ -186,7 +183,11 @@ packages_select_by_deps:
       - camera_ros  # Depends on libcamera that is only available on linux
       - livox_ros_driver2
       - mavros  # libmavconn currently fails to build on macOS and windows
+      - mujoco_ros2_control
+      - mujoco_ros2_control_msgs
+      - mujoco_vendor
       - py_binding_tools
+      - roboplan_ros_franka  # depends on mujoco_ros2_control
       - swri_serial_util  # Serial communication only implemented for linux
       - v4l2_camera  # Depends on v4l that is only available on linux
 
@@ -231,7 +232,6 @@ packages_select_by_deps:
       - pinocchio
       - plotjuggler-ros
       - pointcloud-to-laserscan
-      - roboplan_ros_franka  # needs mujoco_ros2_control to work on Windows
       - rplidar_ros
       - rqt_mocap4r2_control
       - rqt_tf_tree
