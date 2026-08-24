@@ -1,8 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5764b78..13249cc 100644
+index ed34a38..93ee3fc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -83,8 +83,18 @@ set(ouster_ros_library_deps
+@@ -97,8 +97,18 @@ set(ouster_ros_library_deps
    tf2_eigen
  )
  
@@ -23,7 +23,7 @@ index 5764b78..13249cc 100644
  )
  
  target_link_libraries(ouster_ros_library
-@@ -111,14 +121,14 @@ function(create_ros2_component
+@@ -125,14 +135,14 @@ function(create_ros2_component
        "OUSTER_ROS_BUILDING_DLL"
    )
  
@@ -46,7 +46,7 @@ index 5764b78..13249cc 100644
      ${additional_dependencies}
    )
  
-@@ -132,7 +142,7 @@ endfunction()
+@@ -146,7 +156,7 @@ endfunction()
  # ==== os_sensor_component ====
  create_ros2_component(os_sensor_component
    "src/os_sensor_node_base.cpp;src/os_sensor_node.cpp"
@@ -55,7 +55,7 @@ index 5764b78..13249cc 100644
  )
  rclcpp_components_register_node(os_sensor_component
    PLUGIN "ouster_ros::OusterSensor"
-@@ -152,7 +162,7 @@ rclcpp_components_register_node(os_replay_component
+@@ -166,7 +176,7 @@ rclcpp_components_register_node(os_replay_component
  # ==== os_cloud_component ====
  create_ros2_component(os_cloud_component
    "src/os_processing_node_base.cpp;src/os_cloud_node.cpp"
@@ -64,7 +64,7 @@ index 5764b78..13249cc 100644
  )
  rclcpp_components_register_node(os_cloud_component
    PLUGIN "ouster_ros::OusterCloud"
-@@ -172,7 +182,7 @@ rclcpp_components_register_node(os_image_component
+@@ -186,7 +196,7 @@ rclcpp_components_register_node(os_image_component
  # ==== os_driver_component ====
  create_ros2_component(os_driver_component
    "src/os_sensor_node_base.cpp;src/os_sensor_node.cpp;src/os_driver_node.cpp"
@@ -73,7 +73,7 @@ index 5764b78..13249cc 100644
  )
  rclcpp_components_register_node(os_driver_component
    PLUGIN "ouster_ros::OusterDriver"
-@@ -203,9 +213,9 @@ if(BUILD_TESTING)
+@@ -217,9 +227,9 @@ if(BUILD_TESTING)
      test/point_transform_test.cpp
      test/point_cloud_compose_test.cpp
    )
@@ -107,25 +107,6 @@ index 7867e3a..6994f3d 100644
  namespace ouster {
  namespace sdk {
  namespace core {
-diff --git a/src/os_sensor_node.cpp b/src/os_sensor_node.cpp
-index 8a73c8c..ea3efaf 100644
---- a/src/os_sensor_node.cpp
-+++ b/src/os_sensor_node.cpp
-@@ -1028,12 +1028,12 @@ void OusterSensor::stop_sensor_connection_thread() {
- }
- 
- void OusterSensor::on_lidar_packet_msg(const LidarPacket&) {
--    lidar_packet_msg.buf.swap(lidar_packet.buf);
-+    static_cast<std::vector<uint8_t>&>(lidar_packet_msg.buf).swap(lidar_packet.buf);
-     lidar_packet_pub->publish(lidar_packet_msg);
- }
- 
- void OusterSensor::on_imu_packet_msg(const ImuPacket&) {
--    imu_packet_msg.buf.swap(imu_packet.buf);
-+    static_cast<std::vector<uint8_t>&>(imu_packet_msg.buf).swap(imu_packet.buf);
-     imu_packet_pub->publish(imu_packet_msg);
- }
- 
 diff --git a/src/os_static_transforms_broadcaster.h b/src/os_static_transforms_broadcaster.h
 index 94d50eb..b1e05ce 100644
 --- a/src/os_static_transforms_broadcaster.h

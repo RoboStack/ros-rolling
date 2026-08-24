@@ -125,7 +125,6 @@ packages_select_by_deps:
   - roboplan_oink
   - roboplan_ros_cpp
   - roboplan_ros_examples
-  # - roboplan_ros_franka  # TODO: Requires mujoco_ros2_control
   - roboplan_ros_py
   - roboplan_ros_visualization
   - roboplan_rrt
