@@ -60,6 +60,11 @@ jobs:
       with:
         frozen: true
 
+    - name: Disable git auto-maintenance in source caches
+      shell: bash -l {0}
+      run: |
+        git config --global maintenance.auto false
+
     - name: Long paths workarounds for win-64
       shell: bash -l {0}
       if: matrix.platform == 'win-64'
