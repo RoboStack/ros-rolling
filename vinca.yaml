@@ -289,7 +289,6 @@ packages_select_by_deps:
   - rosidl_typesupport_introspection_cpp
   - rqt_robot_monitor
   - rqt_runtime_monitor
-  - rtabmap
   - rtest
   - rviz_2d_overlay_msgs
   - teleop_tools
@@ -372,7 +371,6 @@ packages_select_by_deps:
       - rqt_gui
   - if: not win
     then:
-      - rqt_image_overlay
       - rqt_mocap4r2_control
       - rqt_moveit
       - rqt_robot_dashboard
