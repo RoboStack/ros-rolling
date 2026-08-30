@@ -87,6 +87,11 @@ jobs:
         rm -rf /c/Strawberry
         rm -rf "/c/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/"
 
+    - name: Disable git auto-maintenance in source caches
+      shell: bash -l {0}
+      run: |
+        git config --global maintenance.auto false
+
     - name: Generate recipes
       shell: bash -l {0}
       run: |
@@ -118,7 +123,9 @@ jobs:
     - name: Delete specific outdated cache entries
       shell: bash -l {0}
       run: |
-        # rm -rf ${{ matrix.folder_cache }}/ros-rolling-moveit-ros-perception* 2>/dev/null || true
+        # You can uncomment/modify the line below in case the cache for some packages becomes corrupted and needs to be regenerated.
+        # Make sure you don't merge these changes, though!
+        # rm -rf ${{ matrix.folder_cache }}/ros-rolling-moveit-core* ${{ matrix.folder_cache }}/ros2-moveit-core* 2>/dev/null || true
         mkdir -p ${{ matrix.folder_cache }}
         pixi run rattler-index fs ${{ matrix.folder_cache }}/.. --force
 

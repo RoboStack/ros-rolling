@@ -294,3 +294,10 @@ rqt_mocap4r2_control:
   remove_run: ["qt-main"]
 zstd_point_cloud_transport:
   add_host: ["ros-rolling-zstd-cmake-module", "zstd"]
+mujoco_vendor:
+  add_host: ["libmujoco"]
+roboplan_ros_examples:
+  # package.xml only declares ament_cmake_python, but CMakeLists.txt does
+  # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
+  # Fixed for roboplan_ros 0.7.0, so it can be removed when this releases.
+  add_host: ["ros-rolling-ament-cmake"]

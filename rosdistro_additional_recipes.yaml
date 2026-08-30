@@ -402,6 +402,26 @@ mocap4r2_robot_gt_msgs:
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
   version: 0.0.7
   additional_folder: mocap4r2_robot_gt/mocap4r2_robot_gt_msgs
+roboplan_ros_cpp:
+  tag: release/rolling/roboplan_ros_cpp/0.6.1-1
+  url: https://github.com/ros2-gbp/roboplan_ros-release.git
+  version: 0.6.1
+roboplan_ros_examples:
+  tag: release/rolling/roboplan_ros_examples/0.6.1-1
+  url: https://github.com/ros2-gbp/roboplan_ros-release.git
+  version: 0.6.1
+roboplan_ros_franka:
+  tag: release/rolling/roboplan_ros_franka/0.6.1-1
+  url: https://github.com/ros2-gbp/roboplan_ros-release.git
+  version: 0.6.1
+roboplan_ros_py:
+  tag: release/rolling/roboplan_ros_py/0.6.1-1
+  url: https://github.com/ros2-gbp/roboplan_ros-release.git
+  version: 0.6.1
+roboplan_ros_visualization:
+  tag: release/rolling/roboplan_ros_visualization/0.6.1-1
+  url: https://github.com/ros2-gbp/roboplan_ros-release.git
+  version: 0.6.1
 rqt_mocap4r2_control:
   tag: 0.0.7
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
