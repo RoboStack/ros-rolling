@@ -8,4 +8,15 @@ migrations:
   - pybind11_abi11
   - urdfdom6
   - vtk970
-pinning_overrides: {}
+pinning_overrides:
+  libzenohc:
+    - 1.10.0
+  libzenohcxx:
+    - 1.10.0
+  # Keep a single CPython build variant. `python` and `is_python_min` are zip_keys.
+  python:
+    - 3.14.* *_cp314
+  is_python_min:
+    - false
+  python_impl:
+    - cpython

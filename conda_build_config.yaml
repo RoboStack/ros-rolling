@@ -980,9 +980,6 @@ pythia8:
 python:
   # conda-forge supports only 3.14+ for win-arm64 and linux-riscv64
   # part of a zip_keys: python, is_python_min
-  - 3.11.* *_cpython   # [not ((win and arm64) or riscv64)]
-  - 3.12.* *_cpython   # [not ((win and arm64) or riscv64)]
-  - 3.13.* *_cp313     # [not ((win and arm64) or riscv64)]
   - 3.14.* *_cp314
 python_impl:
   - cpython
@@ -995,10 +992,7 @@ is_freethreading:
   - false
 is_python_min:
   # part of a zip_keys: python, is_python_min
-  - true
-  - false              # [not ((win and arm64) or riscv64)]
-  - false              # [not ((win and arm64) or riscv64)]
-  - false              # [not ((win and arm64) or riscv64)]
+  - false
 is_abi3:
   - true
 pytorch:
@@ -1176,3 +1170,8 @@ zlib_ng:
   - '2.3'
 zstd:
   - '1.5'
+libzenohc:
+  - 1.10.0
+libzenohcxx:
+  - 1.10.0
+  # Keep a single CPython build variant. `python` and `is_python_min` are zip_keys.
