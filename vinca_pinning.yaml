@@ -1,0 +1,11 @@
+conda_forge_pinning_version: 2026.09.01.16.28.00
+migrations:
+  - giflib6
+  - go_macos
+  - gstreamer128
+  - hdf52
+  - libboost190
+  - pybind11_abi11
+  - urdfdom6
+  - vtk970
+pinning_overrides: {}
