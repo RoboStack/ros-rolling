@@ -142,9 +142,6 @@ VERBOSE_AT:
 VERBOSE_CM:
   - VERBOSE=1
 
-channel_sources:
-  - conda-forge
-
 channel_targets:
   - conda-forge main
 
@@ -1174,4 +1171,3 @@ libzenohc:
   - 1.10.0
 libzenohcxx:
   - 1.10.0
-  # Keep a single CPython build variant. `python` and `is_python_min` are zip_keys.
