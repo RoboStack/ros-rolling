@@ -25,6 +25,8 @@ mutex_package:
 packages_skip_by_deps:
   - rplidar_ros
   - rviz_visual_tools
+  # libpointmatcher not yet released for rolling; skip rtabmap until it is
+  - libpointmatcher
 
   - if: not linux
     then:
@@ -34,6 +36,12 @@ packages_skip_by_deps:
       - tlsf_cpp
 
 packages_remove_from_deps:
+
+  # Use the conda-forge iceoryx 2.0.6 packages instead of rebuilding the ROS
+  # release copies.
+  - iceoryx_binding_c
+  - iceoryx_hoofs
+  - iceoryx_posh
 
   - if: not linux
     then:
@@ -145,6 +153,7 @@ packages_select_by_deps:
   - rosidl_buffer_backend
   - rosidl_buffer_backend_registry
   - rosidl_buffer_py
+  - rtabmap
   - rviz_visual_tools
   - sbg_driver
   - simulation
