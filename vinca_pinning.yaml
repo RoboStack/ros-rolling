@@ -12,6 +12,7 @@ pinning_overrides:
   # Build commands provide their channels with `-c`, so omit the inherited
   # conda-forge-pinning channel_sources value from the rendered configuration.
   channel_sources: null
+  channel_targets: null
   libzenohc:
     - 1.10.0
   libzenohcxx:
