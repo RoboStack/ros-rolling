@@ -1,0 +1,28 @@
+From bdf9d85905e6cfa59968a53530a5f514fe41fbb6 Mon Sep 17 00:00:00 2001
+From: Siddhartha Banerjee <sbanerjee@overland.ai>
+Date: Sun, 2 Aug 2026 19:08:13 -0700
+Subject: [PATCH] Add missing stdbool.h include to time.h
+
+The time.h header uses `bool` for the return type of `rmw_time_equal()` but
+does not directly include `<stdbool.h>`. This was previously provided
+transitively through `rcutils/time.h` -> `rcutils/types.h`, but
+ros2/rcutils#580 narrowed that include chain, breaking compilation of
+downstream C translation units.
+
+Signed-off-by: Siddhartha Banerjee <sbanerjee@overland.ai>
+---
+ rmw/include/rmw/time.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rmw/include/rmw/time.h b/rmw/include/rmw/time.h
+index f5ee3efb..99127f9a 100644
+--- a/rmw/include/rmw/time.h
++++ b/rmw/include/rmw/time.h
+@@ -20,6 +20,7 @@ extern "C"
+ {
+ #endif  // __cplusplus
+ 
++#include <stdbool.h>
+ #include <stdint.h>
+ 
+ #include "rcutils/time.h"
