@@ -5,7 +5,22 @@ foxglove_bridge:
 ros_ign_interfaces:
   add_host: ["ros-rolling-rcl-interfaces"]
 cartographer_ros:
-  add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*"]
+  # package.xml's <depend>cartographer</depend> resolves to the REAL released
+  # ros2-cartographer ROS package, but add_host below ALSO pulls in the
+  # conda-forge cartographer C++ library directly -- vinca doesn't dedupe
+  # these, so both end up in host/run with conflicting lua pins (conda-forge
+  # cartographer wants lua 5.4.8, ros2-cartographer wants lua 5.5.0). Drop the
+  # ROS-released one; the conda-forge add_host below is what's actually meant
+  # to satisfy this dependency (see the pinocchio/hpp_fcl entry in build
+  # feedback for the same generate_dummy_package_with_run_deps pattern).
+  remove_host: ["ros2-cartographer"]
+  remove_run: ["ros2-cartographer"]
+  # resolvo mutex-misattribution bug: solver picks ros2-pcl-conversions 2.10.0's
+  # OLDEST published build (mutex rolling_19) instead of the current one
+  # (rolling_25) even though a matching-mutex build exists remotely. Same
+  # pattern as the cv-bridge/libg2o entries elsewhere in this repo.
+  add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*", "ros2-pcl-conversions ==2.10.0 *_26"]
+  add_run: ["ros2-pcl-conversions ==2.10.0 *_26"]
 libyaml_vendor:
   add_host: ["yaml-cpp", "yaml"]
   add_run: ["yaml-cpp", "yaml"]
@@ -301,6 +316,10 @@ roboplan_ros_examples:
   # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
   # Fixed for roboplan_ros 0.7.0, so it can be removed when this releases.
   add_host: ["ros-rolling-ament-cmake"]
+yasmin_pcl:
+  # Same resolvo mutex-misattribution bug as cartographer_ros above.
+  add_host: ["ros2-pcl-conversions ==2.10.0 *_26"]
+  add_run: ["ros2-pcl-conversions ==2.10.0 *_26"]
 rmf_fleet_adapter_python:
   # pybind11_json is used for nlohmann::json <-> pybind11 conversions in the
   # bindings but isn't declared in package.xml (a rosdistro release gap);
