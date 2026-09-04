@@ -232,6 +232,13 @@ visp:
     override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
+pcl_conversions:
+  # The remote build at the current build_number (25) was published against
+  # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
+  # run_constraints now pin vtk 9.7.0.*. Bump the build number so skip_existing
+  # doesn't match that stale remote build, forcing a fresh local build against
+  # the current pins instead.
+  build_number: 26
 ros2cli:
   build_number: 26
 rosidl_cli:
