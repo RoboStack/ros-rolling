@@ -28,6 +28,7 @@ mutex_package:
 packages_skip_by_deps:
   - rplidar_ros
   - rviz_visual_tools
+
   # libpointmatcher not yet released for rolling; skip rtabmap until it is
   - libpointmatcher
 
