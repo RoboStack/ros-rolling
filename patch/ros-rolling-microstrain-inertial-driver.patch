@@ -39,3 +39,51 @@ index 35e036f..4ae5e4d 100644
  
  # Annoying, but the ROS types don't match up with the MIP types for floats and doubles, so ignore those warnings for now
  set_source_files_properties(${COMMON_SRC_DIR}/services.cpp PROPERTIES COMPILE_OPTIONS "-Wno-narrowing")
+diff --git a/microstrain_inertial_driver_common/include/microstrain_inertial_driver_common/utils/ros_compat.h b/microstrain_inertial_driver_common/include/microstrain_inertial_driver_common/utils/ros_compat.h
+index f1fe0879..5b866134 100644
+--- a/microstrain_inertial_driver_common/include/microstrain_inertial_driver_common/utils/ros_compat.h
++++ b/microstrain_inertial_driver_common/include/microstrain_inertial_driver_common/utils/ros_compat.h
+@@ -779,7 +779,7 @@ inline TransformListenerType createTransformListener(TransformBufferType buffer)
+  */
+ inline StaticTransformBroadcasterType createStaticTransformBroadcaster(RosNodeType* node)
+ {
+-  return std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
++  return std::make_shared<tf2_ros::StaticTransformBroadcaster>(*node);
+ }
+ 
+ /**
+@@ -789,7 +789,7 @@ inline StaticTransformBroadcasterType createStaticTransformBroadcaster(RosNodeTy
+  */
+ inline TransformBroadcasterType createTransformBroadcaster(RosNodeType* node)
+ {
+-  return std::make_shared<tf2_ros::TransformBroadcaster>(node);
++  return std::make_shared<tf2_ros::TransformBroadcaster>(*node);
+ }
+ 
+ /**
+diff --git a/src/microstrain_inertial_driver.cpp b/src/microstrain_inertial_driver.cpp
+index e679866b..eaea4f15 100644
+--- a/src/microstrain_inertial_driver.cpp
++++ b/src/microstrain_inertial_driver.cpp
+@@ -18,7 +18,7 @@
+ #include <vector>
+ #include <algorithm>
+ 
+-#include <tf2/LinearMath/Transform.h>
++#include <tf2/LinearMath/Transform.hpp>
+ 
+ #include "lifecycle_msgs/msg/transition.hpp"
+ 
+diff --git a/src/microstrain_inertial_driver_lifecycle.cpp b/src/microstrain_inertial_driver_lifecycle.cpp
+index 1e2a6757..f77bb1d9 100644
+--- a/src/microstrain_inertial_driver_lifecycle.cpp
++++ b/src/microstrain_inertial_driver_lifecycle.cpp
+@@ -18,7 +18,7 @@
+ #include <vector>
+ #include <algorithm>
+ 
+-#include <tf2/LinearMath/Transform.h>
++#include <tf2/LinearMath/Transform.hpp>
+ 
+ #include "lifecycle_msgs/msg/transition.hpp"
+ 

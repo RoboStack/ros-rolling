@@ -357,8 +357,6 @@ packages_select_by_deps:
       - moveit-runtime
       - moveit_resources
       - moveit_task_constructor_demo
-      - mujoco_ros2_control
-      - mujoco_ros2_control_demos
       - nmea_msgs
       - odom_to_tf_ros2
       - ouster_ros  # TODO on windows: cannot open pcl_io.lib
@@ -407,6 +405,15 @@ packages_select_by_deps:
       - rslidar_sdk
       - rtcm_msgs
       - rviz2
+
+  # mujoco_vendor has no prebuilt MuJoCo binary for macOS (see the
+  # packages_skip_by_deps mujoco_3d_lidar/mujoco_ros2_control_plugins entry
+  # above); mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins,
+  # so it can't build there either.
+  - if: not wasm32 and not osx
+    then:
+      - mujoco_ros2_control
+      - mujoco_ros2_control_demos
   - if: linux
     then:
       - rviz_2d_overlay_plugins
