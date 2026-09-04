@@ -13,6 +13,9 @@ build_number: 25
 mutex_package:
   name: "ros2-distro-mutex"
   version: "0.20.0"
+  # Bumped independently of build_number so the mutex is re-published with the new
+  # run_constraints while already-built packages (ros2-distro-mutex 0.20.* rolling_*) stay valid.
+  build_number: 26
   upper_bound: "x.x"
   run_constraints:
     - libboost 1.90.*
@@ -20,7 +23,7 @@ mutex_package:
     - pcl 1.15.1.*
     - gazebo 11.*
     - libprotobuf 7.35.1.*
-    - vtk 9.6.2.*
+    - vtk 9.7.0.*
 
 packages_skip_by_deps:
   - rplidar_ros

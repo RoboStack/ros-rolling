@@ -227,7 +227,8 @@ visp:
   generate_dummy_package_with_run_deps:
     dep_name: visp
     max_pin: 'x.x'
-    # the version on ros is outdated w.r.t. to the conda-forge one
-    override_version: '3.6.0'
+    # the version on ros is outdated w.r.t. to the conda-forge one; 3.7.0 has no
+    # conflicting run_constraints (unlike 3.6.0, which needs an older libprotobuf).
+    override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
