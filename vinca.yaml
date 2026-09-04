@@ -312,6 +312,8 @@ packages_select_by_deps:
   - rtest
   - rviz_2d_overlay_msgs
   - teleop_tools
+  - ntrip_client
+  - rqt_image_overlay
   - tracetools
   - tracetools_launch
   - tracetools_trace
@@ -441,9 +443,21 @@ packages_select_by_deps:
       - velodyne
       - vision_msgs
       - vision_msgs_rviz_plugins
-      - vision_msgs_rviz_plugins
       - visp
       - web_video_server
+      - yasmin
+      - yasmin_cli
+      - yasmin_demos
+      - yasmin_editor
+      - yasmin_factory
+      - yasmin_msgs
+      - yasmin_pcl
+      - yasmin_plugins_manager
+      - yasmin_ros
+
+  # webots_ros2 is linux-only (excluding aarch64); do not merge this block's
+  # sort domain with the block above (vinca-sort-vinca-lists pools then-items
+  # across adjacent if-blocks unless separated by a comment)
   - if: linux and not aarch64
     then:
       - webots_ros2
