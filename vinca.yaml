@@ -232,7 +232,6 @@ packages_select_by_deps:
       - autoware_pose_initializer  # depends on autoware_motion_utils
       - autoware_qp_interface
       - autoware_trajectory  # depends on autoware_motion_utils
-      - avt_vimba_camera
       - bno055
       - cartographer_ros
       - cascade_lifecycle_msgs
@@ -319,6 +318,12 @@ packages_select_by_deps:
   - turtlebot3_gazebo
   - urdf_launch
   - yaml_cpp_vendor
+
+  # Allied Vision only ships prebuilt Vimba SDK binaries (libVimbaC/libVimbaCPP)
+  # for Linux (x86_64/arm), not macOS -- no source-level fix is possible.
+  - if: not win and not osx
+    then:
+      - avt_vimba_camera
   - if: not wasm32
     then:
       - joy_linux
