@@ -301,6 +301,18 @@ roboplan_ros_examples:
   # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
   # Fixed for roboplan_ros 0.7.0, so it can be removed when this releases.
   add_host: ["ros-rolling-ament-cmake"]
+rmf_fleet_adapter_python:
+  # pybind11_json is used for nlohmann::json <-> pybind11 conversions in the
+  # bindings but isn't declared in package.xml (a rosdistro release gap);
+  # header-only, so host-only is sufficient.
+  add_host: ["pybind11_json"]
+rmf_visualization_schedule:
+  # Needed >=3.6.4 to build successfully on macOS during an earlier build
+  # pass; package.xml itself declares openssl with no version constraint.
+  remove_host: ["openssl"]
+  add_host: ["openssl >=3.6.4"]
+  remove_run: ["openssl"]
+  add_run: ["openssl >=3.6.4"]
 rmf_websocket:
   # websocketpp 0.8.2 requires boost::asio APIs (io_service et al.) that
   # Boost 1.90 removed; the patch defines ASIO_STANDALONE so websocketpp

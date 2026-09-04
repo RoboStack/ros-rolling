@@ -313,7 +313,6 @@ packages_select_by_deps:
   - rviz_2d_overlay_msgs
   - teleop_tools
   - ntrip_client
-  - rqt_image_overlay
   - tracetools
   - tracetools_launch
   - tracetools_trace
