@@ -301,3 +301,12 @@ roboplan_ros_examples:
   # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
   # Fixed for roboplan_ros 0.7.0, so it can be removed when this releases.
   add_host: ["ros-rolling-ament-cmake"]
+rmf_websocket:
+  # websocketpp 0.8.2 requires boost::asio APIs (io_service et al.) that
+  # Boost 1.90 removed; the patch defines ASIO_STANDALONE so websocketpp
+  # uses the standalone asio instead, matching ros-lyrical's fix in
+  # RoboStack/ros-lyrical#41. Pinned to 1.29.0 (the newest conda-forge
+  # build that still ships io_service.hpp -- 1.30+ removed it too, same
+  # underlying upstream deprecation that hit Boost.Asio).
+  add_host: ["asio ==1.29.0"]
+  add_run: ["asio ==1.29.0"]

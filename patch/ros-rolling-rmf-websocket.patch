@@ -1,17 +1,28 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0368593..6b258fb 100644
+index 0368593..38a9279 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -21,7 +21,7 @@ find_package(nlohmann_json REQUIRED)
+@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.5)
+ 
+ project(rmf_websocket)
+ 
++# websocketpp 0.8.2 requires Asio APIs (io_service et al.) that Boost 1.90
++# removed. Use the actively-maintained standalone Asio instead (matching
++# RoboStack/ros-lyrical#41's fix), which still provides io_service.
++add_compile_definitions(ASIO_STANDALONE)
++
+ if(NOT CMAKE_CXX_STANDARD)
+   set(CMAKE_CXX_STANDARD 17)
+ endif()
+@@ -21,7 +26,6 @@ find_package(nlohmann_json REQUIRED)
  find_package(nlohmann_json_schema_validator_vendor REQUIRED)
  find_package(nlohmann_json_schema_validator REQUIRED)
  find_package(websocketpp REQUIRED)
 -find_package(Boost COMPONENTS system REQUIRED)
-+find_package(Boost REQUIRED)
  find_package(Threads)
  
  
-@@ -39,7 +39,6 @@ target_link_libraries(rmf_websocket
+@@ -39,7 +43,6 @@ target_link_libraries(rmf_websocket
      nlohmann_json::nlohmann_json
      nlohmann_json_schema_validator
    PRIVATE
@@ -19,165 +30,21 @@ index 0368593..6b258fb 100644
      Threads::Threads
  )
  
-@@ -113,7 +112,6 @@ if(BUILD_TESTING)
-   target_link_libraries(test_ring_buffer
-     PRIVATE
-       rmf_utils::rmf_utils
--      Boost::system
-     )
- 
- #integration test
-@@ -126,7 +124,6 @@ if(BUILD_TESTING)
-     ${websocketpp_LIBRARIES}
-       ${rclcpp_LIBRARIES}
-       rmf_utils::rmf_utils
--      Boost::system
-       rmf_websocket
-       PRIVATE
-       Threads::Threads
-@@ -149,7 +146,6 @@ if(BUILD_TESTING)
-       ${websocketpp_LIBRARIES}
-       ${rclcpp_LIBRARIES}
-       rmf_utils::rmf_utils
--      Boost::system
-       rmf_websocket
-       PRIVATE
-       Threads::Threads
-@@ -171,7 +167,6 @@ if(BUILD_TESTING)
-       ${websocketpp_LIBRARIES}
-       ${rclcpp_LIBRARIES}
-       rmf_utils::rmf_utils
--      Boost::system
-       rmf_websocket
-       PRIVATE
-       Threads::Threads
 diff --git a/src/rmf_websocket/BroadcastClient.cpp b/src/rmf_websocket/BroadcastClient.cpp
-index 01d3ac1..63a2a60 100644
+index 01d3ac1..250f5b1 100644
 --- a/src/rmf_websocket/BroadcastClient.cpp
 +++ b/src/rmf_websocket/BroadcastClient.cpp
-@@ -53,7 +53,7 @@ public:
-           _io_service.run();
-         });
- 
--    _io_service.dispatch([this]()
-+    boost::asio::dispatch(_io_service, [this]()
-       {
-         _endpoint.connect();
-       });
-@@ -113,7 +113,7 @@ public:
-     RCLCPP_INFO(
-       this->_node->get_logger(),
-       "Attempting queue flush if connected");
--    _io_service.dispatch([this]()
-+    boost::asio::dispatch(_io_service, [this]()
-       {
-         _flush_queue_if_connected();
-       });
-@@ -134,7 +134,7 @@ public:
-   {
-     /// _queue is thread safe. No need to lock.
-     _queue.push(msg);
--    _io_service.dispatch([this]()
-+    boost::asio::dispatch(_io_service, [this]()
-       {
-         _flush_queue_if_connected();
-       });
-@@ -151,7 +151,7 @@ public:
-         log("Buffer full dropping oldest message");
-       }
-     }
--    _io_service.dispatch([this]()
-+    boost::asio::dispatch(_io_service, [this]()
-       {
-         _flush_queue_if_connected();
-       });
 @@ -217,7 +217,7 @@ private:
    }
    // create pimpl
    std::string _uri;
 -  boost::asio::io_service _io_service;
-+  boost::asio::io_context _io_service;
++  asio::io_service _io_service;
    std::shared_ptr<rclcpp::Node> _node;
    RingBuffer<nlohmann::json> _queue;
    ProvideJsonUpdates _get_json_updates_cb;
-diff --git a/src/rmf_websocket/BroadcastServer.cpp b/src/rmf_websocket/BroadcastServer.cpp
-index e29bf9e..81b607f 100644
---- a/src/rmf_websocket/BroadcastServer.cpp
-+++ b/src/rmf_websocket/BroadcastServer.cpp
-@@ -112,7 +112,7 @@ public:
-         "Starting BroadcastServer on port " << endpoint.port());
-     }
- 
--    // Start the ASIO io_service run loop
-+    // Start the ASIO io_context run loop
-     _server_thread = std::thread(
-       [data = _data]() { data->echo_server.run(); });
-   }
-@@ -128,7 +128,7 @@ public:
-           _logger_interface->get_logger(), "Stopping BroadcastServer");
-       }
- 
--      _data->echo_server.get_io_service().post(
-+      boost::asio::post(_data->echo_server.get_io_context(),
-           [data = _data]()
-           {
-             data->echo_server.stop_listening();
-diff --git a/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp b/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp
-index 99a823b..82bd297 100644
---- a/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp
-+++ b/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp
-@@ -41,7 +41,7 @@ void ConnectionMetadata::on_fail(WsClient* c, websocketpp::connection_hdl hdl)
-   WsClient::connection_ptr con = c->get_con_from_hdl(hdl);
-   _server = con->get_response_header("Server");
-   _error_reason = con->get_ec().message();
--  c->get_io_service().post(_reconnection_cb);
-+  boost::asio::post(c->get_io_context(), _reconnection_cb);
- }
- 
- //=============================================================================
-@@ -54,7 +54,7 @@ void ConnectionMetadata::on_close(WsClient* c, websocketpp::connection_hdl hdl)
-     << websocketpp::close::status::get_string(con->get_remote_close_code())
-     << "), close reason: " << con->get_remote_close_reason();
-   _error_reason = s.str();
--  c->get_io_service().post(_reconnection_cb);
-+  boost::asio::post(c->get_io_context(), _reconnection_cb);
- }
- 
- //=============================================================================
-@@ -108,7 +108,7 @@ websocketpp::connection_hdl ConnectionMetadata::get_hdl() const
- //=============================================================================
- ClientWebSocketEndpoint::ClientWebSocketEndpoint(
-   std::string const& uri, std::shared_ptr<rclcpp::Node> node,
--  asio::io_service* io_service,
-+  asio::io_context* io_context,
-   ConnectionCallback cb)
- : _uri(uri), _node(node), _init{false}, _reconnect_enqueued(false),
-   _connection_cb(std::move(cb))
-@@ -116,7 +116,7 @@ ClientWebSocketEndpoint::ClientWebSocketEndpoint(
-   _endpoint = std::make_unique<WsClient>();
-   _endpoint->clear_access_channels(websocketpp::log::alevel::all);
-   _endpoint->clear_error_channels(websocketpp::log::elevel::all);
--  _endpoint->init_asio(io_service);
-+  _endpoint->init_asio(io_context);
-   _endpoint->start_perpetual();
- }
- 
-@@ -144,11 +144,11 @@ websocketpp::lib::error_code ClientWebSocketEndpoint::connect()
-         "> Reconnecting in 1s\n"
-         "> Host: %s", _uri.c_str());
-       _endpoint->stop_perpetual();
--      auto io_service = &_endpoint->get_io_service();
-+      auto io_context = &_endpoint->get_io_context();
-       _endpoint = std::make_unique<WsClient>();
-       _endpoint->clear_access_channels(websocketpp::log::alevel::all);
-       _endpoint->clear_error_channels(websocketpp::log::elevel::all);
--      _endpoint->init_asio(io_service);
-+      _endpoint->init_asio(io_context);
-       _endpoint->start_perpetual();
-       websocketpp::lib::error_code ec;
- 
 diff --git a/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp b/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp
-index 55f7105..e19d154 100644
+index 55f7105..6c0cd4b 100644
 --- a/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp
 +++ b/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp
 @@ -101,7 +101,7 @@ public:
@@ -185,7 +52,7 @@ index 55f7105..e19d154 100644
      std::string const& uri,
      std::shared_ptr<rclcpp::Node> node,
 -    boost::asio::io_service* io_service,
-+    boost::asio::io_context* io_context,
++    asio::io_service* io_service,
      ConnectionCallback cb);
  
    /// Delete move constructor
