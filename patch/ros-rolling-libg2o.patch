@@ -1,0 +1,27 @@
+diff --git a/g2o/examples/sphere/create_sphere.cpp b/g2o/examples/sphere/create_sphere.cpp
+index 7788dd9..45b0e92 100644
+--- a/g2o/examples/sphere/create_sphere.cpp
++++ b/g2o/examples/sphere/create_sphere.cpp
+@@ -166,8 +166,8 @@ int main(int argc, char** argv) {
+     cerr << "using seeds:";
+     for (size_t i = 0; i < seeds.size(); ++i) cerr << " " << seeds[i];
+     cerr << endl;
+-    transSampler.seed(seeds[0]);
+-    rotSampler.seed(seeds[1]);
++    transSampler.seed(static_cast<int>(seeds[0]));
++    rotSampler.seed(static_cast<int>(seeds[1]));
+   }
+ 
+   // noise for all the edges
+diff --git a/g2o/stuff/misc.h b/g2o/stuff/misc.h
+index 58a1afd..cd14ccc 100644
+--- a/g2o/stuff/misc.h
++++ b/g2o/stuff/misc.h
+@@ -27,6 +27,7 @@
+ #ifndef G2O_STUFF_MISC_H
+ #define G2O_STUFF_MISC_H
+ 
++#include <cassert>
+ #include <cmath>
+ 
+ /** @addtogroup utils **/

@@ -39,6 +39,14 @@ packages_skip_by_deps:
       - tlsf
       - tlsf_cpp
 
+  # mujoco_vendor has no prebuilt MuJoCo binary for macOS, so mujoco_3d_lidar (which
+  # calls real MuJoCo API functions, unlike mujoco_ros2_control) can't build there;
+  # mujoco_ros2_control_plugins pulls it in transitively.
+  - if: osx
+    then:
+      - mujoco_3d_lidar
+      - mujoco_ros2_control_plugins
+
 packages_remove_from_deps:
 
   # Use the conda-forge iceoryx 2.0.6 packages instead of rebuilding the ROS

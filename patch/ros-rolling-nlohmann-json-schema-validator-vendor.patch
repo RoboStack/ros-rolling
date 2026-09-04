@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2115dd4..5d0ea5f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
+ macro(build_nlohmann_json_schema_validator)
+ 
+   set(cmake_commands)
+-  set(cmake_configure_args -Wno-dev)
++  set(cmake_configure_args -Wno-dev -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+ 
+   if(WIN32)
+     if(DEFINED CMAKE_GENERATOR)

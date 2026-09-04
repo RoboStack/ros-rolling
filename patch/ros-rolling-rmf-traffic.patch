@@ -1,0 +1,156 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ad05ac1..b677893 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -97,6 +97,7 @@ endif()
+ target_link_libraries(rmf_traffic
+   PUBLIC
+     rmf_utils::rmf_utils
++    Eigen3::Eigen
+     Threads::Threads
+   PRIVATE
+     ${FCL_LIBRARIES}
+diff --git a/src/rmf_traffic/blockade/geometry.cpp b/src/rmf_traffic/blockade/geometry.cpp
+index 049351e..d69a999 100644
+--- a/src/rmf_traffic/blockade/geometry.cpp
++++ b/src/rmf_traffic/blockade/geometry.cpp
+@@ -17,6 +17,7 @@
+ 
+ #include "geometry.hpp"
+ 
++#include <cassert>
+ #include <cmath>
+ 
+ namespace rmf_traffic {
+diff --git a/thirdparty/fcl/include/fcl/broadphase/default_broadphase_callbacks.h b/thirdparty/fcl/include/fcl/broadphase/default_broadphase_callbacks.h
+index 1c9b4fe..76f3bde 100644
+--- a/thirdparty/fcl/include/fcl/broadphase/default_broadphase_callbacks.h
++++ b/thirdparty/fcl/include/fcl/broadphase/default_broadphase_callbacks.h
+@@ -37,6 +37,7 @@
+ #ifndef FCL_BROADPHASE_DEFAULTBROADPHASECALLBACKS_H
+ #define FCL_BROADPHASE_DEFAULTBROADPHASECALLBACKS_H
+ 
++#include <cassert>
+ #include "fcl/narrowphase/collision.h"
+ #include "fcl/narrowphase/collision_request.h"
+ #include "fcl/narrowphase/collision_result.h"
+diff --git a/thirdparty/fcl/include/fcl/broadphase/detail/morton.h b/thirdparty/fcl/include/fcl/broadphase/detail/morton.h
+index 6b430c4..9a79cf0 100644
+--- a/thirdparty/fcl/include/fcl/broadphase/detail/morton.h
++++ b/thirdparty/fcl/include/fcl/broadphase/detail/morton.h
+@@ -39,6 +39,7 @@
+ #ifndef FCL_MORTON_H
+ #define FCL_MORTON_H
+ 
++#include <cassert>
+ #include "fcl/common/types.h"
+ #include "fcl/math/bv/AABB.h"
+ 
+diff --git a/thirdparty/fcl/include/fcl/geometry/octree/octree-inl.h b/thirdparty/fcl/include/fcl/geometry/octree/octree-inl.h
+index f50fe81..04781f8 100644
+--- a/thirdparty/fcl/include/fcl/geometry/octree/octree-inl.h
++++ b/thirdparty/fcl/include/fcl/geometry/octree/octree-inl.h
+@@ -38,6 +38,7 @@
+ #ifndef FCL_OCTREE_INL_H
+ #define FCL_OCTREE_INL_H
+ 
++#include <cassert>
+ #include "fcl/geometry/octree/octree.h"
+ 
+ #include "fcl/config.h"
+diff --git a/thirdparty/fcl/include/fcl/geometry/shape/convex-inl.h b/thirdparty/fcl/include/fcl/geometry/shape/convex-inl.h
+index 10adc69..c50b53f 100644
+--- a/thirdparty/fcl/include/fcl/geometry/shape/convex-inl.h
++++ b/thirdparty/fcl/include/fcl/geometry/shape/convex-inl.h
+@@ -39,6 +39,7 @@
+ #ifndef FCL_SHAPE_CONVEX_INL_H
+ #define FCL_SHAPE_CONVEX_INL_H
+ 
++#include <cassert>
+ #include <map>
+ #include <set>
+ #include <utility>
+diff --git a/thirdparty/fcl/include/fcl/math/bv/kDOP-inl.h b/thirdparty/fcl/include/fcl/math/bv/kDOP-inl.h
+index 371fdb6..15737b0 100644
+--- a/thirdparty/fcl/include/fcl/math/bv/kDOP-inl.h
++++ b/thirdparty/fcl/include/fcl/math/bv/kDOP-inl.h
+@@ -38,6 +38,7 @@
+ #ifndef FCL_BV_KDOP_INL_H
+ #define FCL_BV_KDOP_INL_H
+ 
++#include <cassert>
+ #include "fcl/math/bv/kDOP.h"
+ 
+ #include "fcl/common/unused.h"
+diff --git a/thirdparty/fcl/include/fcl/math/bv/utility-inl.h b/thirdparty/fcl/include/fcl/math/bv/utility-inl.h
+index 333ec15..ab9a6f5 100644
+--- a/thirdparty/fcl/include/fcl/math/bv/utility-inl.h
++++ b/thirdparty/fcl/include/fcl/math/bv/utility-inl.h
+@@ -38,6 +38,7 @@
+ #ifndef FCL_MATH_BV_UTILITY_INL_H
+ #define FCL_MATH_BV_UTILITY_INL_H
+ 
++#include <cassert>
+ #include "fcl/math/bv/utility.h"
+ 
+ #include "fcl/common/unused.h"
+diff --git a/thirdparty/fcl/include/fcl/math/constants.h b/thirdparty/fcl/include/fcl/math/constants.h
+index ba24176..dfdf569 100644
+--- a/thirdparty/fcl/include/fcl/math/constants.h
++++ b/thirdparty/fcl/include/fcl/math/constants.h
+@@ -37,6 +37,7 @@
+ #ifndef FCL_MATH_CONSTANTS_
+ #define FCL_MATH_CONSTANTS_
+ 
++#include <cassert>
+ #include "fcl/common/types.h"
+ 
+ #include <limits>
+diff --git a/thirdparty/fcl/include/fcl/math/motion/taylor_model/taylor_model-inl.h b/thirdparty/fcl/include/fcl/math/motion/taylor_model/taylor_model-inl.h
+index 861f72d..f304d5d 100644
+--- a/thirdparty/fcl/include/fcl/math/motion/taylor_model/taylor_model-inl.h
++++ b/thirdparty/fcl/include/fcl/math/motion/taylor_model/taylor_model-inl.h
+@@ -41,6 +41,7 @@
+ #ifndef FCL_CCD_TAYLOR_MODEL_INL_H
+ #define FCL_CCD_TAYLOR_MODEL_INL_H
+ 
++#include <cassert>
+ #include "fcl/math/motion/taylor_model/taylor_model.h"
+ 
+ namespace fcl
+diff --git a/thirdparty/fcl/include/fcl/math/rng-inl.h b/thirdparty/fcl/include/fcl/math/rng-inl.h
+index 1ba9da7..0e04dcd 100644
+--- a/thirdparty/fcl/include/fcl/math/rng-inl.h
++++ b/thirdparty/fcl/include/fcl/math/rng-inl.h
+@@ -38,6 +38,7 @@
+ #ifndef FCL_MATH_RNG_INL_H
+ #define FCL_MATH_RNG_INL_H
+ 
++#include <cassert>
+ #include "fcl/math/rng.h"
+ 
+ namespace fcl
+diff --git a/thirdparty/fcl/include/fcl/narrowphase/detail/convexity_based_algorithm/gjk_libccd-inl.h b/thirdparty/fcl/include/fcl/narrowphase/detail/convexity_based_algorithm/gjk_libccd-inl.h
+index 60fd0ad..0ddc589 100644
+--- a/thirdparty/fcl/include/fcl/narrowphase/detail/convexity_based_algorithm/gjk_libccd-inl.h
++++ b/thirdparty/fcl/include/fcl/narrowphase/detail/convexity_based_algorithm/gjk_libccd-inl.h
+@@ -38,6 +38,7 @@
+ #ifndef FCL_NARROWPHASE_DETAIL_GJKLIBCCD_INL_H
+ #define FCL_NARROWPHASE_DETAIL_GJKLIBCCD_INL_H
+ 
++#include <cassert>
+ #include "fcl/narrowphase/detail/convexity_based_algorithm/gjk_libccd.h"
+ #include "fcl/narrowphase/detail/failed_at_this_configuration.h"
+ 
+diff --git a/thirdparty/fcl/include/fcl/narrowphase/distance-inl.h b/thirdparty/fcl/include/fcl/narrowphase/distance-inl.h
+index 115b710..7011975 100644
+--- a/thirdparty/fcl/include/fcl/narrowphase/distance-inl.h
++++ b/thirdparty/fcl/include/fcl/narrowphase/distance-inl.h
+@@ -38,6 +38,7 @@
+ #ifndef FCL_DISTANCE_INL_H
+ #define FCL_DISTANCE_INL_H
+ 
++#include <cassert>
+ #include "fcl/narrowphase/distance.h"
+ 
+ #include "fcl/narrowphase/collision.h"
