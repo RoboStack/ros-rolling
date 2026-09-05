@@ -23,10 +23,21 @@ index 8e69fa09..2aea30a5 100644
  
  
 diff --git a/include/mavros/utils.hpp b/include/mavros/utils.hpp
-index 1f3dc092..ca8d5149 100644
+index 1f3dc092..bef93350 100644
 --- a/include/mavros/utils.hpp
 +++ b/include/mavros/utils.hpp
-@@ -35,6 +35,15 @@
+@@ -27,14 +27,24 @@
+ #include "mavros_msgs/mavlink_convert.hpp"
+ #include "mavconn/mavlink_dialect.hpp"
+ 
+-// OS X compat: missing error codes
+-#ifdef __APPLE__
++// OS X / Windows compat: missing error codes (Linux-specific errno values
++// used by the FTP plugin's MAVLink-FTP error mapping)
++#if defined(__APPLE__) || defined(_WIN32)
+ #define EBADE 50        /* Invalid exchange */
+ #define EBADFD 81       /* File descriptor in bad state */
+ #define EBADRQC 54      /* Invalid request code */
  #define EBADSLT 55      /* Invalid slot */
  #endif
  
@@ -100,4 +111,33 @@ index 9a00f720..b6005641 100644
  #include <cmath>
  #include <string>
  #include <vector>
+ 
+diff --git a/src/plugins/sys_time.cpp b/src/plugins/sys_time.cpp
+index 42bd903e..7a015e5e 100644
+--- a/src/plugins/sys_time.cpp
++++ b/src/plugins/sys_time.cpp
+@@ -14,6 +14,7 @@
+  * https://github.com/mavlink/mavros/tree/master/LICENSE.md
+  */
+ 
++#include <chrono>
+ #include <string>
+ #include <vector>
+ 
+@@ -546,10 +547,11 @@ private:
+ 
+   uint64_t get_monotonic_now(void)
+   {
+-    struct timespec spec;
+-    clock_gettime(CLOCK_MONOTONIC, &spec);
+-
+-    return spec.tv_sec * 1000000000ULL + spec.tv_nsec;
++    // std::chrono::steady_clock is a portable monotonic clock available on
++    // all platforms, unlike POSIX clock_gettime()/CLOCK_MONOTONIC (not
++    // available on Windows).
++    auto now = std::chrono::steady_clock::now().time_since_epoch();
++    return std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
+   }
+ };
+ 
  
