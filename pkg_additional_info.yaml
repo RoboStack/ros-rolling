@@ -262,6 +262,16 @@ libg2o:
   # import .lib, and solver_csparse fails to link against it. Same fix as the
   # many other packages in this repo hitting this class of Windows issue.
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+libmavconn:
+  # Same win-64 dllexport pattern as libg2o's csparse_extension above: the
+  # mavconn SHARED library exports no dllexport-annotated symbols, so MSVC
+  # built the .dll but no import .lib, breaking downstream mavros's
+  # find_package(libmavconn). Fixed via a new .win.patch
+  # (CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON), but a prior CI run already cached
+  # a successful win-64 build made before that patch existed -- skip_existing
+  # only compares build_number, not patch content, so it kept reusing that
+  # stale build. Bump to force a fresh one.
+  build_number: 26
 mavlink:
   # A prior CI run already cached a successful win-64 build made before the
   # msgmap.hpp endian.h/win32 fix was added to the patch -- skip_existing
