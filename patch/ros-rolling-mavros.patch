@@ -1,8 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8e69fa09..c6b3041a 100644
+index 8e69fa09..2aea30a5 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -10,8 +10,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+@@ -10,13 +10,17 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
    # we dont use add_compile_options with pedantic in message packages
    # because the Python C extensions dont comply with it
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
@@ -12,6 +12,16 @@ index 8e69fa09..c6b3041a 100644
  
  # Allow GNU extensions (-std=gnu++20)
  set(CMAKE_C_EXTENSIONS ON)
+ set(CMAKE_CXX_EXTENSIONS ON)
+ 
++if(MSVC)
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ find_package(ament_cmake REQUIRED)
+ find_package(ament_cmake_python REQUIRED)
+ 
+ 
 diff --git a/include/mavros/utils.hpp b/include/mavros/utils.hpp
 index 1f3dc092..ca8d5149 100644
 --- a/include/mavros/utils.hpp
@@ -32,3 +42,62 @@ index 1f3dc092..ca8d5149 100644
  namespace mavros
  {
  namespace utils
+ 
+diff --git a/src/lib/mavros_uas.cpp b/src/lib/mavros_uas.cpp
+index 9a00f720..b6005641 100644
+--- a/src/lib/mavros_uas.cpp
++++ b/src/lib/mavros_uas.cpp
+@@ -11,7 +11,52 @@
+  * @author Vladimir Ermakov <vooon341@gmail.com>
+  */
+ 
++#ifdef _WIN32
++// Windows has no <fnmatch.h>; provide a minimal case-insensitive glob
++// matcher supporting '*' and '?', sufficient for the plugin
++// blacklist/whitelist patterns matched below.
++#include <cctype>
++#define FNM_NOMATCH 1
++#define FNM_CASEFOLD 0
++static int fnmatch(const char * pattern, const char * str, int)
++{
++  while (*pattern) {
++    if (*pattern == '*') {
++      while (*pattern == '*') {
++        ++pattern;
++      }
++      if (!*pattern) {
++        return 0;
++      }
++      while (*str) {
++        if (fnmatch(pattern, str, 0) == 0) {
++          return 0;
++        }
++        ++str;
++      }
++      return FNM_NOMATCH;
++    } else if (*pattern == '?') {
++      if (!*str) {
++        return FNM_NOMATCH;
++      }
++      ++pattern;
++      ++str;
++    } else {
++      if (!*str ||
++        std::tolower(static_cast<unsigned char>(*pattern)) !=
++        std::tolower(static_cast<unsigned char>(*str)))
++      {
++        return FNM_NOMATCH;
++      }
++      ++pattern;
++      ++str;
++    }
++  }
++  return *str ? FNM_NOMATCH : 0;
++}
++#else
+ #include <fnmatch.h>
++#endif
+ #include <cmath>
+ #include <string>
+ #include <vector>
+ 
