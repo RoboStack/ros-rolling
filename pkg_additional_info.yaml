@@ -288,6 +288,16 @@ pcl_conversions:
   # doesn't match that stale remote build, forcing a fresh local build against
   # the current pins instead.
   build_number: 26
+rmf_utils:
+  # The remote win-64 build (build_number 25) never actually got its
+  # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
+  # it this session -- find_package(rmf_utils) then failed to find any
+  # config file at all. rmf_utils' own CMakeLists.txt export logic looks
+  # completely standard/portable, so this is likely just a broken/stale
+  # published win-64 artifact rather than a real source issue. Bump the
+  # build number so skip_existing doesn't reuse it, forcing a fresh
+  # win-64 build against the current toolchain instead.
+  build_number: 26
 ros2cli:
   build_number: 26
 rosidl_cli:
