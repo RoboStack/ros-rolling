@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2115dd4..5d0ea5f 100644
+index 2115dd4f..94700497 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
@@ -11,3 +11,16 @@ index 2115dd4..5d0ea5f 100644
  
    if(WIN32)
      if(DEFINED CMAKE_GENERATOR)
+@@ -62,7 +62,10 @@ macro(build_nlohmann_json_schema_validator)
+   externalproject_add(nlohmann_json_schema_validator-${nlohmann_json_schema_validator_version}
+     GIT_REPOSITORY https://github.com/pboettch/json-schema-validator.git
+     GIT_TAG ${nlohmann_json_schema_validator_version}
+-    GIT_CONFIG advice.detachedHead=false
++    # core.longpaths avoids "Filename too long" git clone failures on
++    # Windows once the (already-deep) rattler-build work directory plus
++    # this ExternalProject's own nested clone path exceeds MAX_PATH.
++    GIT_CONFIG advice.detachedHead=false core.longpaths=true
+     # Suppress git update due to https://gitlab.kitware.com/cmake/cmake/-/issues/16419
+     UPDATE_COMMAND ""
+     TIMEOUT 6000
+ 
