@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2115dd4f..e259dd4c 100644
+index 2115dd4f..2e81b60d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
@@ -11,7 +11,7 @@ index 2115dd4f..e259dd4c 100644
  
    if(WIN32)
      if(DEFINED CMAKE_GENERATOR)
-@@ -59,10 +59,18 @@ macro(build_nlohmann_json_schema_validator)
+@@ -59,14 +59,30 @@ macro(build_nlohmann_json_schema_validator)
    include(ExternalProject)
    # HEAD of `main` branch on 2022-10-07
    set(nlohmann_json_schema_validator_version "5ef4f903af055550e06955973a193e17efded896")
@@ -32,4 +32,17 @@ index 2115dd4f..e259dd4c 100644
      # Suppress git update due to https://gitlab.kitware.com/cmake/cmake/-/issues/16419
      UPDATE_COMMAND ""
      TIMEOUT 6000
+-    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch_cmakelist
++    # Avoid shell redirection ("patch -p1 < file") in PATCH_COMMAND --
++    # ExternalProject's Windows custom-build-step execution doesn't
++    # reliably honor "<" the way Unix's does, corrupting the argument
++    # list ("patching file 'BUILD_COMMAND ...'", i.e. the win-only
++    # BUILD_COMMAND entry appended to cmake_commands below got
++    # concatenated into what patch treated as its input file). Use
++    # patch's own -i/--input flag instead, parsed directly by patch
++    # itself with no shell redirection involved.
++    PATCH_COMMAND patch -p1 -i ${CMAKE_CURRENT_LIST_DIR}/patch_cmakelist
+     ${cmake_commands}
+     CMAKE_ARGS
+       -DCMAKE_INSTALL_PREFIX=${json_external_project_dir}/install/
  
