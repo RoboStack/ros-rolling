@@ -1,0 +1,26 @@
+diff --git a/include/mujoco_3d_lidar/3dlidar.h b/include/mujoco_3d_lidar/3dlidar.h
+index e6f4810..64cceca 100644
+--- a/include/mujoco_3d_lidar/3dlidar.h
++++ b/include/mujoco_3d_lidar/3dlidar.h
+@@ -29,7 +29,7 @@
+ 
+ #include <mujoco/mjdata.h>
+ #include <mujoco/mjmodel.h>
+-#include <mujoco/mjtnum.h>
++#include <mujoco/mjtype.h>
+ #include <mujoco/mjvisualize.h>
+ 
+ namespace mujoco::plugin::lidar
+diff --git a/src/3dlidar.cpp b/src/3dlidar.cpp
+index c5e30d3..4a99208 100644
+--- a/src/3dlidar.cpp
++++ b/src/3dlidar.cpp
+@@ -30,7 +30,7 @@
+ #include <mujoco/mjdata.h>
+ #include <mujoco/mjmodel.h>
+ #include <mujoco/mjplugin.h>
+-#include <mujoco/mjtnum.h>
++#include <mujoco/mjtype.h>
+ #include <mujoco/mjvisualize.h>
+ #include <mujoco/mujoco.h>
+ 
