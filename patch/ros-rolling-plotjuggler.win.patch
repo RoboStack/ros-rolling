@@ -29,6 +29,25 @@ index 385b7899..b1d6f2ab 100644
      Qt5::WebSockets
      )
 
+@@ -243,6 +241,17 @@ else()
+                                       ${PLOTJUGGLER_BASE_MOCS})
+ endif()
+
++if(WIN32)
++  # plotjuggler_base has no dllexport annotations at all. As a shared
++  # library on Windows with nothing explicitly exported, link.exe does
++  # not produce an import .lib, so every consumer (plotjuggler_app, every
++  # plotjuggler_plugins/* plugin) fails with LNK1181 "cannot open input
++  # file ...plotjuggler_base.lib" even though plotjuggler_base.dll itself
++  # built fine. Auto-export everything, same as every other Windows
++  # shared-library target fixed this session.
++  set_target_properties(plotjuggler_base PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ set(PJ_PLUGIN_INSTALL_DIRECTORY "${CMAKE_INSTALL_PREFIX}/${PJ_PLUGINS_DIRECTORY}")
+
+ target_include_directories(
+
 diff --git a/3rdparty/qwt/src/CMakeLists.txt b/3rdparty/qwt/src/CMakeLists.txt
 index 51e6f088..8971ecab 100644
 --- a/3rdparty/qwt/src/CMakeLists.txt
