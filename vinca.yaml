@@ -29,8 +29,22 @@ packages_skip_by_deps:
   - rplidar_ros
   - rviz_visual_tools
 
-  # libpointmatcher not yet released for rolling; skip rtabmap until it is
+  # libpointmatcher not yet released for rolling; skip rtabmap until it is.
+  # (skip_by_deps on libpointmatcher alone doesn't actually block rtabmap --
+  # same reachability gap as the sick_scan_xd case -- so it's also excluded
+  # directly below.)
   - libpointmatcher
+
+  # rtabmap itself is a direct seed below (packages_select_by_deps), so this
+  # skip_by_deps entry alone wouldn't actually block it -- see the seed-list
+  # removal instead. Its corelib/include/rtabmap/core/stereo/stereoRectifyFisheye.h
+  # uses the legacy OpenCV C API (CvMat, cvMat(), cvCreateMat(), cvMatMul(),
+  # ...) via #include <opencv2/calib3d/calib3d_c.h>, which OpenCV 5 removed
+  # entirely (no compat header, and the CMake COMPONENTS name changed from
+  # calib3d to calib). Porting that file to the modern C++ Mat API is a real
+  # rewrite of calibration math, not a small patch -- skip until someone does
+  # that properly upstream or here.
+  - rtabmap
 
   - if: not linux
     then:
@@ -165,7 +179,6 @@ packages_select_by_deps:
   - rosidl_buffer_backend
   - rosidl_buffer_backend_registry
   - rosidl_buffer_py
-  - rtabmap
   - rviz_visual_tools
   - sbg_driver
   - simulation
