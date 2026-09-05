@@ -1,8 +1,18 @@
 diff --git a/mocap4r2_marker_viz/mocap4r2_marker_viz/CMakeLists.txt b/mocap4r2_marker_viz/mocap4r2_marker_viz/CMakeLists.txt
-index ce11de5..2ad03ac 100644
+index ce11de53..03b817f4 100644
 --- a/mocap4r2_marker_viz/mocap4r2_marker_viz/CMakeLists.txt
 +++ b/mocap4r2_marker_viz/mocap4r2_marker_viz/CMakeLists.txt
-@@ -34,7 +34,13 @@ target_include_directories(${PROJECT_NAME}_NODE
+@@ -28,13 +28,23 @@ find_package(geometry_msgs REQUIRED)
+ add_executable(mocap4r2_marker_viz src/mocap4r2_marker_viz_main.cpp)
+ 
+ add_library(${PROJECT_NAME}_NODE src/mocap4r2_marker_viz_node.cpp)
++# mocap4r2_marker_viz (below) links against this library directly, so it
++# needs an import .lib on Windows -- same missing-dllexport-symbols issue
++# already fixed for mocap4r2_control/mocap4r2_dummy_driver.
++set_target_properties(${PROJECT_NAME}_NODE PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 
+ target_include_directories(${PROJECT_NAME}_NODE
+   PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
      $<INSTALL_INTERFACE:include>)
  
@@ -16,4 +26,5 @@ index ce11de5..2ad03ac 100644
 +)
  
  target_link_libraries(mocap4r2_marker_viz ${PROJECT_NAME}_NODE)
+ 
  
