@@ -24,3 +24,24 @@ index 30c9811..abea531 100644
              DEPENDS ${definitionAbsPath} ${common_xml_path} ${mavgen_path}
              )
          add_custom_target(${definition}.xml-v2.0
+diff --git a/pymavlink/generator/CPP11/include_v2.0/msgmap.hpp b/pymavlink/generator/CPP11/include_v2.0/msgmap.hpp
+index a3956aa..6327113 100644
+--- a/pymavlink/generator/CPP11/include_v2.0/msgmap.hpp
++++ b/pymavlink/generator/CPP11/include_v2.0/msgmap.hpp
+@@ -6,6 +6,16 @@
+ #include <sys/endian.h>
+ #elif __APPLE__
+ #include <machine/endian.h>
++#elif defined(_WIN32)
++// Windows has no <endian.h>, and every Windows target (x86, x64, ARM64) is
++// little-endian, so the little-endian <-> host conversions are no-ops.
++#include <cstdint>
++inline uint16_t htole16(uint16_t x) { return x; }
++inline uint32_t htole32(uint32_t x) { return x; }
++inline uint64_t htole64(uint64_t x) { return x; }
++inline uint16_t le16toh(uint16_t x) { return x; }
++inline uint32_t le32toh(uint32_t x) { return x; }
++inline uint64_t le64toh(uint64_t x) { return x; }
+ #else
+ #include <endian.h>
+ #endif

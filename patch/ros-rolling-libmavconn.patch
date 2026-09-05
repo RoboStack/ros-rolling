@@ -12,3 +12,39 @@ index d349d81..607b852 100644
  
  # Allow GNU extensions (-std=gnu++20)
  set(CMAKE_C_EXTENSIONS ON)
+diff --git a/include/mavconn/thread_utils.hpp b/include/mavconn/thread_utils.hpp
+index d121768..654b8c9 100644
+--- a/include/mavconn/thread_utils.hpp
++++ b/include/mavconn/thread_utils.hpp
+@@ -20,7 +20,9 @@
+ #ifndef MAVCONN__THREAD_UTILS_HPP_
+ #define MAVCONN__THREAD_UTILS_HPP_
+ 
++#ifndef _WIN32
+ #include <pthread.h>
++#endif
+ 
+ #include <array>
+ #include <cstdio>
+@@ -74,14 +76,20 @@ std::string format(const std::string & fmt, Args... args)
+ template<typename ... Args>
+ bool set_this_thread_name(const std::string & name, Args && ... args)
+ {
++#ifdef _WIN32
++  // No pthreads on Windows; naming the thread is a debugging convenience
++  // only, so silently no-op instead of failing to build.
++  (void)format(name, std::forward<Args>(args)...);
++  return false;
++#else
+   auto new_name = format(name, std::forward<Args>(args)...);
+-
+ #ifdef __APPLE__
+   return pthread_setname_np(new_name.c_str()) == 0;
+ #else
+   pthread_t pth = pthread_self();
+   return pthread_setname_np(pth, new_name.c_str()) == 0;
+ #endif
++#endif
+ }
+ 
+ /**
