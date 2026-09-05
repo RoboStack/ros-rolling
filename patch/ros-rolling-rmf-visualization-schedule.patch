@@ -1,0 +1,16 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0000000..0000000 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,6 +1,11 @@
+ cmake_minimum_required(VERSION 3.5)
+ project(rmf_visualization_schedule)
+ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
++
++# websocketpp 0.8.2 requires Asio APIs (io_service et al.) that Boost 1.90
++# removed. Use the actively-maintained standalone Asio instead (matching
++# RoboStack/ros-lyrical#41's fix), which still provides io_service.
++add_compile_definitions(ASIO_STANDALONE)
+
+ # Default to C++17
+ if(NOT CMAKE_CXX_STANDARD)

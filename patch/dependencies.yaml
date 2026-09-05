@@ -329,9 +329,13 @@ rmf_visualization_schedule:
   # Needed >=3.6.4 to build successfully on macOS during an earlier build
   # pass; package.xml itself declares openssl with no version constraint.
   remove_host: ["openssl"]
-  add_host: ["openssl >=3.6.4"]
   remove_run: ["openssl"]
-  add_run: ["openssl >=3.6.4"]
+  # Same websocketpp/Boost.Asio io_service incompatibility as rmf_websocket
+  # above -- this package also uses websocketpp::config::asio directly.
+  # Pinned to 1.29.0 (the newest conda-forge build that still ships
+  # io_service.hpp -- 1.30+ removed it too).
+  add_host: ["openssl >=3.6.4", "asio ==1.29.0"]
+  add_run: ["openssl >=3.6.4", "asio ==1.29.0"]
 rmf_websocket:
   # websocketpp 0.8.2 requires boost::asio APIs (io_service et al.) that
   # Boost 1.90 removed; the patch defines ASIO_STANDALONE so websocketpp
