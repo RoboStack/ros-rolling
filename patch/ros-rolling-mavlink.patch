@@ -49,21 +49,26 @@ index a3956aa..91ce908 100644
  #include <endian.h>
  #endif
 diff --git a/pymavlink/generator/CPP11/include_v2.0/message.hpp b/pymavlink/generator/CPP11/include_v2.0/message.hpp
-index 4d6d424..69b3140 100644
+index 4d6d424..c095ee7 100644
 --- a/pymavlink/generator/CPP11/include_v2.0/message.hpp
 +++ b/pymavlink/generator/CPP11/include_v2.0/message.hpp
-@@ -1,6 +1,17 @@
+@@ -1,6 +1,22 @@
  
  #pragma once
  
 +#ifdef _WIN32
-+// windows.h (pulled in transitively by asio/winsock on Windows) #defines ERROR
-+// as a plain macro (from wingdi.h), which corrupts every generated dialect
-+// header that uses ERROR as an enumerator name (e.g. UAVCAN_NODE_HEALTH::ERROR
-+// in common.hpp) -- the preprocessor rewrites it before the compiler ever sees
-+// an enum. Undefine it here, before any generated header's enums are parsed.
++// windows.h (pulled in transitively by asio/winsock on Windows) #defines
++// several plain object-like macros (ERROR from wingdi.h, NO_ERROR from
++// winerror.h, ...) that collide with enumerator names used throughout the
++// generated dialect headers (e.g. UAVCAN_NODE_HEALTH::ERROR,
++// MAV_PARAM_ERROR::NO_ERROR in common.hpp) -- the preprocessor rewrites
++// them before the compiler ever sees an enum. Undefine them here, before
++// any generated header's enums are parsed.
 +#ifdef ERROR
 +#undef ERROR
++#endif
++#ifdef NO_ERROR
++#undef NO_ERROR
 +#endif
 +#endif
 +

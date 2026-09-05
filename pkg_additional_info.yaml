@@ -266,11 +266,11 @@ mavlink:
   # A prior CI run already cached a successful win-64 build made before the
   # msgmap.hpp endian.h/win32 fix was added to the patch -- skip_existing
   # only compares build_number, not patch content, so it kept reusing that
-  # stale build instead of picking up the fix. Bumped repeatedly (26, 27, 28)
-  # as the same stale-cache pattern hit each successive win-64-only fix:
-  # endian.h, then ssize_t, then windows.h's ERROR macro corrupting every
-  # generated dialect enum that uses ERROR as an enumerator name.
-  build_number: 28
+  # stale build instead of picking up the fix. Bumped repeatedly (26-29) as
+  # the same stale-cache pattern hit each successive win-64-only fix:
+  # endian.h, then ssize_t, then windows.h's ERROR macro, then NO_ERROR too
+  # (both collide with enumerator names used across the generated dialects).
+  build_number: 29
 pcl_conversions:
   # The remote build at the current build_number (25) was published against
   # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
