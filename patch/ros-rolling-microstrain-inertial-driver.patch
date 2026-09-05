@@ -102,3 +102,53 @@ index 1e2a6757..f77bb1d9 100644
  
  #include "lifecycle_msgs/msg/transition.hpp"
  
+diff --git a/include/microstrain_inertial_driver/microstrain_inertial_driver.h b/include/microstrain_inertial_driver/microstrain_inertial_driver.h
+index 8e9c2f0e..63edec08 100644
+--- a/include/microstrain_inertial_driver/microstrain_inertial_driver.h
++++ b/include/microstrain_inertial_driver/microstrain_inertial_driver.h
+@@ -14,7 +14,9 @@
+ #define _MICROSTRAIN_INERTIAL_DRIVER_MICROSTRAIN_INERTIAL_DRIVER_H
+ 
+ #include <cstdio>
++#ifndef _WIN32
+ #include <unistd.h>
++#endif
+ #include <time.h>
+ #include <iostream>
+ #include <fstream>
+ 
+diff --git a/include/microstrain_inertial_driver/microstrain_inertial_driver_lifecycle.h b/include/microstrain_inertial_driver/microstrain_inertial_driver_lifecycle.h
+index c8ef84e9..931163c2 100644
+--- a/include/microstrain_inertial_driver/microstrain_inertial_driver_lifecycle.h
++++ b/include/microstrain_inertial_driver/microstrain_inertial_driver_lifecycle.h
+@@ -14,7 +14,9 @@
+ #define _MICROSTRAIN_INERTIAL_DRIVER_MICROSTRAIN_INERTIAL_DRIVER_LIFECYCLE_H
+ 
+ #include <cstdio>
++#ifndef _WIN32
+ #include <unistd.h>
++#endif
+ #include <time.h>
+ #include <iostream>
+ #include <fstream>
+ 
+diff --git a/microstrain_inertial_driver_common/src/utils/mip/ros_connection.cpp b/microstrain_inertial_driver_common/src/utils/mip/ros_connection.cpp
+index e2eae441..826b8c24 100644
+--- a/microstrain_inertial_driver_common/src/utils/mip/ros_connection.cpp
++++ b/microstrain_inertial_driver_common/src/utils/mip/ros_connection.cpp
+@@ -10,6 +10,14 @@
+ 
+ #include <sys/stat.h>
+ 
++#ifdef _WIN32
++// POSIX localtime_r() has no Windows equivalent; localtime_s() is the
++// closest match, but takes its arguments in the opposite order (struct tm*
++// destination first, time_t* source second) and returns errno_t instead of
++// struct tm*, which the single call site below doesn't check anyway.
++#define localtime_r(timep, result) localtime_s(result, timep)
++#endif
++
+ #include <vector>
+ #include <chrono>
+ #include <string>
+ 
