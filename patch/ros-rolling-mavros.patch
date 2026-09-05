@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8832292..dbee63e 100644
+index 8e69fa09..c6b3041a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -10,8 +10,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -12,11 +12,3 @@ index 8832292..dbee63e 100644
 
  # Allow GNU extensions (-std=gnu++20)
  set(CMAKE_C_EXTENSIONS ON)
-@@ -168,6 +168,7 @@ target_link_libraries(mavros_extras_plugins PUBLIC
-   tf2_ros::static_transform_broadcaster_node
-   tf2_ros::tf2_ros
-   ${mavros_LIBRARIES}
-+  ${GeographicLib_LIBRARIES}
- )
- pluginlib_export_plugin_description_file(mavros mavros_plugins.xml)
- 
