@@ -1,0 +1,42 @@
+diff --git a/src/rs_node_setup.cpp b/src/rs_node_setup.cpp
+index 2103ad9..b11f8b1 100755
+--- a/src/rs_node_setup.cpp
++++ b/src/rs_node_setup.cpp
+@@ -366,7 +366,15 @@ void BaseRealSenseNode::startPublishers(const std::vector<stream_profile>& profi
+         _metadata_publishers[sip] = _node.create_publisher<realsense2_camera_msgs::msg::Metadata>(topic_metadata, 
+             rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(info_qos), info_qos));
+ 
+-        if (!((rs2::stream_profile)profile==(rs2::stream_profile)_base_profile))
++        // rs2::stream_profile::operator== is a non-const member and MSVC
++        // reports it as ambiguous against another candidate here (C2666,
++        // "overloaded functions have similar conversions") even though
++        // GCC/Clang accept it. Compare the same fields the operator itself
++        // checks (all const accessors), sidestepping overload resolution.
++        if (!(profile.stream_index() == _base_profile.stream_index() &&
++              profile.stream_type() == _base_profile.stream_type() &&
++              profile.format() == _base_profile.format() &&
++              profile.fps() == _base_profile.fps()))
+         {
+ 
+             // intra-process do not support latched QoS, so we need to disable intra-process for this topic
+diff --git a/src/ros_sensor.cpp b/src/ros_sensor.cpp
+index fd95c72..b591a88 100644
+--- a/src/ros_sensor.cpp
++++ b/src/ros_sensor.cpp
+@@ -332,7 +332,15 @@ bool profiles_equal(const rs2::stream_profile& a, const rs2::stream_profile& b)
+         auto vb = b.as<rs2::video_stream_profile>();
+         return (va == vb && va.width() == vb.width() && va.height() == vb.height());
+     }
+-    return ((rs2::stream_profile)a==(rs2::stream_profile)b);
++    // rs2::stream_profile::operator== is a non-const member and MSVC
++    // reports it as ambiguous against another candidate here (C2666,
++    // "overloaded functions have similar conversions") even though
++    // GCC/Clang accept it. Compare the same fields the operator itself
++    // checks (all const accessors), sidestepping overload resolution.
++    return (a.stream_index() == b.stream_index() &&
++            a.stream_type() == b.stream_type() &&
++            a.format() == b.format() &&
++            a.fps() == b.fps());
+ }
+ 
+ bool is_profiles_in_profiles(const std::vector<stream_profile>& sub_profiles, const std::vector<stream_profile>& all_profiles)
