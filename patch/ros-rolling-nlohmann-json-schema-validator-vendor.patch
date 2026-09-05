@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2115dd4..7ffba64 100644
+index 2115dd4..5021d26 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
@@ -29,7 +29,7 @@ index 2115dd4..7ffba64 100644
      else()
        list(APPEND cmake_configure_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
      endif()
-@@ -59,14 +66,22 @@ macro(build_nlohmann_json_schema_validator)
+@@ -59,20 +66,35 @@ macro(build_nlohmann_json_schema_validator)
    include(ExternalProject)
    # HEAD of `main` branch on 2022-10-07
    set(nlohmann_json_schema_validator_version "5ef4f903af055550e06955973a193e17efded896")
@@ -55,3 +55,18 @@ index 2115dd4..7ffba64 100644
      ${cmake_commands}
      CMAKE_ARGS
        -DCMAKE_INSTALL_PREFIX=${json_external_project_dir}/install/
+       -DBUILD_SHARED_LIBS:BOOL=ON
+-      -DJSON_VALIDATOR_BUILD_TESTS:BOOL=OFF
+-      -DJSON_VALIDATOR_BUILD_EXAMPLES:BOOL=OFF
++      # This pinned commit's actual option names are BUILD_TESTS/
++      # BUILD_EXAMPLES (no JSON_VALIDATOR_ prefix) -- the old names were
++      # silently ignored ("Manually-specified variables were not used by
++      # the project"), so tests/examples built ON by default. Harmless on
++      # Unix, but the vendored shared library doesn't export symbols for
++      # Windows, so the test executables then fail to link against it
++      # (LNK2019).
++      -DBUILD_TESTS:BOOL=OFF
++      -DBUILD_EXAMPLES:BOOL=OFF
+       ${cmake_configure_args}
+   )
+ 
