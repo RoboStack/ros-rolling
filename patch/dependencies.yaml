@@ -311,6 +311,16 @@ zstd_point_cloud_transport:
   add_host: ["ros-rolling-zstd-cmake-module", "zstd"]
 mujoco_vendor:
   add_host: ["libmujoco"]
+mujoco_ros2_control_plugins:
+  # package.xml's plain "opengl" rosdep only maps to libopengl-devel/libgl-devel
+  # (robostack.yaml), but CMakeLists.txt does
+  # find_package(OpenGL REQUIRED COMPONENTS EGL), which additionally needs
+  # EGL's own headers/lib. conda-forge doesn't ship libegl-devel for win-64,
+  # so restrict the addition to linux (this package is also selected there
+  # per vinca.yaml's "not wasm32 and not osx" block).
+  add_host:
+    - if: linux
+      then: ["libegl-devel"]
 roboplan_ros_examples:
   # package.xml only declares ament_cmake_python, but CMakeLists.txt does
   # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
