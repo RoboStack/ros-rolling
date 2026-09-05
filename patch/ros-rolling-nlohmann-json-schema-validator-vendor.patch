@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2115dd4f..2e81b60d 100644
+index 2115dd4..86bd3da 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
@@ -11,7 +11,25 @@ index 2115dd4f..2e81b60d 100644
  
    if(WIN32)
      if(DEFINED CMAKE_GENERATOR)
-@@ -59,14 +59,30 @@ macro(build_nlohmann_json_schema_validator)
+@@ -21,7 +21,16 @@ macro(build_nlohmann_json_schema_validator)
+   if(DEFINED CMAKE_BUILD_TYPE)
+     if(WIN32)
+       build_command(_build_command CONFIGURATION ${CMAKE_BUILD_TYPE})
+-      list(APPEND cmake_commands "BUILD_COMMAND ${_build_command}")
++      # Must NOT be a single quoted string ("BUILD_COMMAND ${_build_command}") --
++      # that merges the BUILD_COMMAND keyword and the command text into ONE
++      # list element. Spliced into externalproject_add() below via
++      # ${cmake_commands}, cmake_parse_arguments then never sees a standalone
++      # "BUILD_COMMAND" keyword to split on, so the whole blob gets swallowed
++      # as trailing arguments of the preceding PATCH_COMMAND instead --
++      # corrupting what patch.exe is invoked with ("patching file
++      # 'BUILD_COMMAND ...'"). Appending as separate list elements lets
++      # BUILD_COMMAND be recognized as its own keyword.
++      list(APPEND cmake_commands BUILD_COMMAND ${_build_command})
+     else()
+       list(APPEND cmake_configure_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+     endif()
+@@ -59,14 +68,22 @@ macro(build_nlohmann_json_schema_validator)
    include(ExternalProject)
    # HEAD of `main` branch on 2022-10-07
    set(nlohmann_json_schema_validator_version "5ef4f903af055550e06955973a193e17efded896")
@@ -33,16 +51,7 @@ index 2115dd4f..2e81b60d 100644
      UPDATE_COMMAND ""
      TIMEOUT 6000
 -    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch_cmakelist
-+    # Avoid shell redirection ("patch -p1 < file") in PATCH_COMMAND --
-+    # ExternalProject's Windows custom-build-step execution doesn't
-+    # reliably honor "<" the way Unix's does, corrupting the argument
-+    # list ("patching file 'BUILD_COMMAND ...'", i.e. the win-only
-+    # BUILD_COMMAND entry appended to cmake_commands below got
-+    # concatenated into what patch treated as its input file). Use
-+    # patch's own -i/--input flag instead, parsed directly by patch
-+    # itself with no shell redirection involved.
 +    PATCH_COMMAND patch -p1 -i ${CMAKE_CURRENT_LIST_DIR}/patch_cmakelist
      ${cmake_commands}
      CMAKE_ARGS
        -DCMAKE_INSTALL_PREFIX=${json_external_project_dir}/install/
- 
