@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2115dd4..86bd3da 100644
+index 2115dd4..7ffba64 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
@@ -11,25 +11,25 @@ index 2115dd4..86bd3da 100644
  
    if(WIN32)
      if(DEFINED CMAKE_GENERATOR)
-@@ -21,7 +21,16 @@ macro(build_nlohmann_json_schema_validator)
+@@ -20,8 +20,15 @@ macro(build_nlohmann_json_schema_validator)
+ 
    if(DEFINED CMAKE_BUILD_TYPE)
      if(WIN32)
-       build_command(_build_command CONFIGURATION ${CMAKE_BUILD_TYPE})
+-      build_command(_build_command CONFIGURATION ${CMAKE_BUILD_TYPE})
 -      list(APPEND cmake_commands "BUILD_COMMAND ${_build_command}")
-+      # Must NOT be a single quoted string ("BUILD_COMMAND ${_build_command}") --
-+      # that merges the BUILD_COMMAND keyword and the command text into ONE
-+      # list element. Spliced into externalproject_add() below via
-+      # ${cmake_commands}, cmake_parse_arguments then never sees a standalone
-+      # "BUILD_COMMAND" keyword to split on, so the whole blob gets swallowed
-+      # as trailing arguments of the preceding PATCH_COMMAND instead --
-+      # corrupting what patch.exe is invoked with ("patching file
-+      # 'BUILD_COMMAND ...'"). Appending as separate list elements lets
-+      # BUILD_COMMAND be recognized as its own keyword.
-+      list(APPEND cmake_commands BUILD_COMMAND ${_build_command})
++      # build_command() returns ONE pre-quoted command-line string (meant
++      # for shell/execute_process use), not a token list. Appending it as
++      # a single BUILD_COMMAND argument makes the VS generator wrap that
++      # whole string in an extra layer of quotes, so cmd.exe then treats
++      # the entire quoted blob (cmake.exe path and all) as one program
++      # name ("... is not recognized as an internal or external command").
++      # Build BUILD_COMMAND from separate tokens using ${CMAKE_COMMAND}
++      # directly instead, matching normal ExternalProject_Add usage.
++      list(APPEND cmake_commands BUILD_COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE})
      else()
        list(APPEND cmake_configure_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
      endif()
-@@ -59,14 +68,22 @@ macro(build_nlohmann_json_schema_validator)
+@@ -59,14 +66,22 @@ macro(build_nlohmann_json_schema_validator)
    include(ExternalProject)
    # HEAD of `main` branch on 2022-10-07
    set(nlohmann_json_schema_validator_version "5ef4f903af055550e06955973a193e17efded896")
