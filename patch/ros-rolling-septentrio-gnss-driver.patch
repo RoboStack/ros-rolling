@@ -1,0 +1,15 @@
+diff --git a/include/septentrio_gnss_driver/abstraction/typedefs.hpp b/include/septentrio_gnss_driver/abstraction/typedefs.hpp
+index 0000000..0000000 100644
+--- a/include/septentrio_gnss_driver/abstraction/typedefs.hpp
++++ b/include/septentrio_gnss_driver/abstraction/typedefs.hpp
+@@ -40,8 +40,10 @@
+ // tf2 includes
+ #ifdef ROS2_VER_N520
+ #include <tf2_ros/transform_broadcaster.hpp>
++#include <tf2_ros/buffer.hpp>
+ #include <tf2_ros/transform_listener.hpp>
+ #else
+ #include <tf2_ros/transform_broadcaster.h>
++#include <tf2_ros/buffer.h>
+ #include <tf2_ros/transform_listener.h>
+ #endif

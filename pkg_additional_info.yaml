@@ -232,6 +232,14 @@ visp:
     override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
+distro_mutex:
+  # vinca.yaml's mutex_package.build_number was bumped to 26 to re-publish
+  # ros2-distro-mutex with vtk 9.7.0.* (was 9.6.2.*), but should_skip_mutex_package
+  # only compares against this file's per-package override (falling back to the
+  # top-level build_number: 25) -- without this entry it still matched the stale
+  # remote 0.20.0 rolling_25 build and skipped generating a fresh recipe entirely,
+  # so every package needing pcl/vtk resolved against the old vtk 9.6.2 constraint.
+  build_number: 26
 pcl_conversions:
   # The remote build at the current build_number (25) was published against
   # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
