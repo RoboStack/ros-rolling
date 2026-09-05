@@ -24,3 +24,27 @@ index c5e30d3..4a99208 100644
  #include <mujoco/mjvisualize.h>
  #include <mujoco/mujoco.h>
  
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1fe40b85..86d04647 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,6 +1,18 @@
+ cmake_minimum_required(VERSION 3.22)
+ project(mujoco_3d_lidar)
+ 
++# mjspec.h uses std::byte and nested-namespace-definition syntax, both
++# C++17 features; without an explicit standard, MSVC doesn't enable
++# them by default (error C2429/C2039/C2065/C2923/C2976).
++if(NOT CMAKE_CXX_STANDARD)
++  set(CMAKE_CXX_STANDARD 17)
++  set(CMAKE_CXX_STANDARD_REQUIRED ON)
++endif()
++if(MSVC)
++  # 3dlidar.cpp uses bare M_PI, only defined by <cmath> when this is set.
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ find_package(ament_cmake QUIET)
+ # Link MuJoCo via the vendor package
+ find_package(mujoco_vendor REQUIRED)
+ 
