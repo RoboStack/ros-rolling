@@ -266,8 +266,11 @@ mavlink:
   # A prior CI run already cached a successful win-64 build made before the
   # msgmap.hpp endian.h/win32 fix was added to the patch -- skip_existing
   # only compares build_number, not patch content, so it kept reusing that
-  # stale build instead of picking up the fix. Bump to force a fresh one.
-  build_number: 26
+  # stale build instead of picking up the fix. Bumped once already (26) for
+  # the endian.h fix; bumped again (27) after that same stale-cache pattern
+  # hit a second, separate fix (msgmap.hpp also needs a Windows ssize_t
+  # typedef -- POSIX-only, MSVC has no ssize_t).
+  build_number: 27
 pcl_conversions:
   # The remote build at the current build_number (25) was published against
   # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
