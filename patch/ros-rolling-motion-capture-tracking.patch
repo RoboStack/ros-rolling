@@ -11,3 +11,20 @@ index ace9626..5d99a63 100644
    std::vector<geometry_msgs::msg::TransformStamped> transforms;
  
    pcl::PointCloud<pcl::PointXYZ>::Ptr markers(new pcl::PointCloud<pcl::PointXYZ>);
+diff --git a/deps/libmotioncapture/deps/vrpn/quat/CMakeLists.txt b/deps/libmotioncapture/deps/vrpn/quat/CMakeLists.txt
+index e6009d9d..037befcc 100644
+--- a/deps/libmotioncapture/deps/vrpn/quat/CMakeLists.txt
++++ b/deps/libmotioncapture/deps/vrpn/quat/CMakeLists.txt
+@@ -13,6 +13,11 @@ set(QUATLIB_HEADER quat.h)
+ 
+ # Build the library itself and declare what bits need to be installed
+ add_library(quat ${QUATLIB_SOURCES} ${QUATLIB_HEADER})
++# vrpn (the sibling library one level up) links against this library
++# directly, so it needs an import .lib on Windows -- this SHARED library
++# has no dllexport-annotated symbols, so without this MSVC produces the
++# .dll but no .lib (LNK1181: cannot open input file).
++set_target_properties(quat PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ if(UNIX)
+ 	target_link_libraries(quat -lm)
+ endif()
+ 
