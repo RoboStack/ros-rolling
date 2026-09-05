@@ -76,3 +76,19 @@ index c23b4ee3..4a4b5981 100644
    ${PCL_LIBRARIES}
  )
  
+diff --git a/deps/libmotioncapture/deps/qualisys_cpp_sdk/CMakeLists.txt b/deps/libmotioncapture/deps/qualisys_cpp_sdk/CMakeLists.txt
+index ea440917..97b65b28 100644
+--- a/deps/libmotioncapture/deps/qualisys_cpp_sdk/CMakeLists.txt
++++ b/deps/libmotioncapture/deps/qualisys_cpp_sdk/CMakeLists.txt
+@@ -9,6 +9,10 @@ add_library(${PROJECT_NAME}
+         RTPacket.cpp
+         RTProtocol.cpp
+ )
++# libmotioncapture (one level up) links against this library directly, so
++# it needs an import .lib on Windows -- same missing-dllexport-symbols
++# issue already fixed for quat/vrpn/libmotioncapture/librigidbodytracker.
++set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ target_include_directories(${PROJECT_NAME} PUBLIC
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
+ 
