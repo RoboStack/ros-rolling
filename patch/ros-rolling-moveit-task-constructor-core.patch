@@ -161,3 +161,29 @@ index 82e98756..18ccfc27 100644
  	PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
  	       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
  
+diff --git a/python/bindings/CMakeLists.txt b/python/bindings/CMakeLists.txt
+index 26c86ac6..3d8eeb60 100644
+--- a/python/bindings/CMakeLists.txt
++++ b/python/bindings/CMakeLists.txt
+@@ -7,6 +7,20 @@ target_link_libraries(${PROJECT_NAME}_python_tools PUBLIC ${PROJECT_NAME}
+ 	pybind11::pybind11 py_binding_tools::py_binding_tools)
+ # Use minimum-size optimization for pybind11 bindings
+ target_link_libraries(${PROJECT_NAME}_python_tools PUBLIC pybind11::opt_size)
++if(WIN32)
++  # py_binding_tools::py_binding_tools transitively pulls in conda's own
++  # (differently-versioned) system pybind11 include directory alongside
++  # this project's vendored smart_holder pybind11 fork. Angle-bracket
++  # includes like <pybind11/pybind11.h> (e.g. from
++  # py_binding_tools/ros_msg_typecasters.h) resolve via the compiler's
++  # global include search order rather than "next to the including
++  # file", so whichever copy's directory comes first wins -- on Windows
++  # that ends up being conda's, causing both copies' headers to be
++  # processed in the same translation unit (ODR violations / "already
++  # defined" cascades). Force the vendored copy first.
++  target_include_directories(${PROJECT_NAME}_python_tools BEFORE PUBLIC
++    $<TARGET_PROPERTY:pybind11::pybind11,INTERFACE_INCLUDE_DIRECTORIES>)
++endif()
+ 
+ # moveit.task_constructor
+ pybind11_add_module(pymoveit_mtc
+ 
