@@ -240,6 +240,12 @@ distro_mutex:
   # remote 0.20.0 rolling_25 build and skipped generating a fresh recipe entirely,
   # so every package needing pcl/vtk resolved against the old vtk 9.6.2 constraint.
   build_number: 26
+libg2o:
+  # The remote build was published against ros2-distro-mutex 0.19.* rolling_*,
+  # which is long gone now that the mutex is at 0.20.0 rolling_26 -- same
+  # stale-remote-build pattern as pcl_conversions/ros2cli/distro_mutex above.
+  # Bump so skip_existing forces a fresh local build against the current mutex.
+  build_number: 26
 pcl_conversions:
   # The remote build at the current build_number (25) was published against
   # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
