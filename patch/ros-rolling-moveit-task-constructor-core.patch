@@ -136,7 +136,7 @@ index a96b292e..10461494 100644
  	py::classh<Property>(m, "Property", "Holds an arbitrarily typed value and a default value")
  
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 82e98756..147aa7bd 100644
+index 82e98756..18ccfc27 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -38,7 +38,7 @@ add_library(${PROJECT_NAME} SHARED
@@ -148,4 +148,16 @@ index 82e98756..147aa7bd 100644
  	${moveit_core_TARGETS}
  	${moveit_ros_planning_TARGETS}
  	${moveit_ros_planning_interface_TARGETS}
+@@ -47,6 +47,11 @@ target_link_libraries(${PROJECT_NAME}
+ 	${moveit_task_constructor_msgs_TARGETS}
+ 	${visualization_msgs_TARGETS}
+ )
++if(WIN32)
++  # introspection.cpp's gethostname() call is declared via <winsock.h>
++  # but implemented in ws2_32.lib, which isn't linked by default.
++  target_link_libraries(${PROJECT_NAME} ws2_32)
++endif()
+ target_include_directories(${PROJECT_NAME}
+ 	PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+ 	       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
  
