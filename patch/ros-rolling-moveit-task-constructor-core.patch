@@ -106,3 +106,32 @@ index 7c6a12f4..f1d60b31 100644
  	        "workspace_parameters",
  	        ":moveit_msgs:`WorkspaceParameters`: Specifies workspace box to be used for Cartesian sampling")
  
+diff --git a/src/container.cpp b/src/container.cpp
+index 797a6fb6..d92a5a40 100644
+--- a/src/container.cpp
++++ b/src/container.cpp
+@@ -57,7 +57,7 @@ namespace moveit {
+ namespace task_constructor {
+ 
+ // for debugging of how children interfaces evolve over time
+-__attribute__((unused))  // silent unused-function warning
++[[maybe_unused]]  // silent unused-function warning
+ static void printChildrenInterfaces(const ContainerBasePrivate& container, bool success, const Stage& creator,
+                                     std::ostream& os = std::cerr) {
+ 	static unsigned int id = 0;
+ 
+diff --git a/python/bindings/src/properties.cpp b/python/bindings/src/properties.cpp
+index a96b292e..10461494 100644
+--- a/python/bindings/src/properties.cpp
++++ b/python/bindings/src/properties.cpp
+@@ -158,7 +158,9 @@ bool PropertyConverterBase::insert(const std::type_index& type_index, const std:
+ 	return REGISTRY_SINGLETON.insert(type_index, ros_msg_name, to, from);
+ }
+ 
++#if defined(__GNUC__) || defined(__clang__)
+ __attribute__((visibility("default")))  // export this symbol as visible in the shared library
++#endif
+ void export_properties(py::module& m) {
+ 	// clang-format off
+ 	py::classh<Property>(m, "Property", "Holds an arbitrarily typed value and a default value")
+ 
