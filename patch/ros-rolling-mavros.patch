@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8e69fa09..ee3bc340 100644
+index 8e69fa09..24148d30 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -10,13 +10,17 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -21,7 +21,7 @@ index 8e69fa09..ee3bc340 100644
  find_package(ament_cmake REQUIRED)
  find_package(ament_cmake_python REQUIRED)
  
-@@ -125,6 +129,13 @@ add_library(mavros SHARED
+@@ -125,6 +129,14 @@ add_library(mavros SHARED
    src/lib/uas_timesync.cpp
    # [[[end]]] (sum: MjnRb8h5gp)
  )
@@ -32,6 +32,7 @@ index 8e69fa09..ee3bc340 100644
 +# all. Only the core mavros library (linked by mavros_node and the unit
 +# tests below) needs WINDOWS_EXPORT_ALL_SYMBOLS.
 +set_target_properties(mavros PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++target_compile_definitions(mavros PRIVATE MAVROS_BUILDING_DLL)
  target_link_libraries(mavros PUBLIC
    ${mavros_msgs_TARGETS}
    ${sensor_msgs_TARGETS}
@@ -67,6 +68,41 @@ index 1f3dc092..bef93350 100644
  namespace mavros
  {
  namespace utils
+ 
+diff --git a/include/mavros/mavros_uas.hpp b/include/mavros/mavros_uas.hpp
+index c1d10b1e..15d50971 100644
+--- a/include/mavros/mavros_uas.hpp
++++ b/include/mavros/mavros_uas.hpp
+@@ -53,6 +53,20 @@
+ #include "mavros/frame_tf.hpp"
+ #include "mavros/uas_executor.hpp"
+ 
++// egm96_5 is a static data member shared across the mavros DLL boundary
++// (defined in uas_data.cpp, used by mavros_plugins) -- MSVC's
++// WINDOWS_EXPORT_ALL_SYMBOLS only auto-exports functions, not data, so
++// this needs an explicit dllexport/dllimport toggle on Windows.
++#ifdef _WIN32
++#ifdef MAVROS_BUILDING_DLL
++#define MAVROS_UAS_DATA_EXPORT __declspec(dllexport)
++#else
++#define MAVROS_UAS_DATA_EXPORT __declspec(dllimport)
++#endif
++#else
++#define MAVROS_UAS_DATA_EXPORT
++#endif
++
+ namespace mavros
+ {
+ namespace uas
+@@ -158,7 +172,7 @@ public:
+    *
+    * That class loads egm96_5 dataset to RAM, it is about 24 MiB.
+    */
+-  static std::shared_ptr<GeographicLib::Geoid> egm96_5;
++  static MAVROS_UAS_DATA_EXPORT std::shared_ptr<GeographicLib::Geoid> egm96_5;
+ 
+   /**
+    * @brief Conversion from height above geoid (AMSL)
  
 diff --git a/src/lib/mavros_uas.cpp b/src/lib/mavros_uas.cpp
 index 9a00f720..b6005641 100644
