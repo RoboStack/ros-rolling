@@ -212,6 +212,8 @@ jupyter-notebook:
   robostack: [notebook]
 kitchen:
   robostack: [kitchen]
+konsole:
+  robostack: [konsole]
 lcov:
   robostack: [lcov]
 leveldb:
@@ -220,6 +222,8 @@ libabsl-dev:
   robostack: [libabseil]
 libblas-dev:
   robostack: [libblas, libcblas]
+libblosc-dev:
+  robostack: [blosc]
 libboost:
   robostack: [libboost]
 libboost-chrono-dev:
@@ -435,8 +439,12 @@ libopencv-imgproc-dev:
     linux: [py-opencv, libopencv, libopengl-devel, libgl-devel]
     osx: [py-opencv, libopencv]
     win64: [py-opencv, libopencv]
+libopenexr-dev:
+  robostack: [openexr]
 libopenni-dev:
   robostack: []
+libopenvdb-dev:
+  robostack: [openvdb]
 liborocos-kdl:
   robostack: [orocos-kdl]
 liborocos-kdl-dev:
@@ -1094,10 +1102,16 @@ python3-termcolor:
   robostack: [termcolor]
 python3-texttable:
   robostack: [texttable]
+python3-textual:
+  robostack: [textual]
 python3-tk:
   robostack: [tk]
 python3-toml:
   robostack: [toml]
+python3-torchvision:
+  robostack: [torchvision]
+python3-torchvision-pip:
+  robostack: [torchvision]
 python3-tornado:
   robostack: [tornado]
 python3-tqdm:
@@ -1110,6 +1124,8 @@ python3-typeguard:
   robostack: [typeguard]
 python3-ujson:
   robostack: [ujson]
+python3-ultralytics-pip:
+  robostack: [ultralytics]
 python3-unidiff:
   robostack: [unidiff]
 python3-usb:
