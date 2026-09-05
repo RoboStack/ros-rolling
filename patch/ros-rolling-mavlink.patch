@@ -1,0 +1,26 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 30c9811..abea531 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -77,7 +77,7 @@ macro(generateMavlink_v10 definitions)
+         message(STATUS "processing v1.0: ${definitionAbsPath}")
+         add_custom_command(
+             OUTPUT include/v1.0/${definition}/${definition}.h
+-            COMMAND /usr/bin/env PYTHONPATH="${CMAKE_SOURCE_DIR}:$ENV{PYTHONPATH}"
++            COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH="${CMAKE_SOURCE_DIR}:$ENV{PYTHONPATH}"
+                 ${Python_EXECUTABLE} ${mavgen_path} --lang=C --wire-protocol=1.0
+                 --output=include/v1.0 ${definitionAbsPath}
+             DEPENDS ${definitionAbsPath} ${common_xml_path} ${mavgen_path}
+@@ -96,10 +96,10 @@ macro(generateMavlink_v20 definitions)
+         add_custom_command(
+             OUTPUT ${definition}-v2.0-cxx-stamp
+             #OUTPUT include/v2.0/${definition}/${definition}.hpp
+-            COMMAND /usr/bin/env PYTHONPATH="${CMAKE_SOURCE_DIR}:$ENV{PYTHONPATH}"
++            COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH="${CMAKE_SOURCE_DIR}:$ENV{PYTHONPATH}"
+                 ${Python_EXECUTABLE} ${mavgen_path} --lang=C++11 --wire-protocol=2.0
+                 --output=include/v2.0 ${definitionAbsPath}
+-            COMMAND touch ${definition}-v2.0-cxx-stamp
++            COMMAND ${CMAKE_COMMAND} -E touch ${definition}-v2.0-cxx-stamp
+             DEPENDS ${definitionAbsPath} ${common_xml_path} ${mavgen_path}
+             )
+         add_custom_target(${definition}.xml-v2.0
