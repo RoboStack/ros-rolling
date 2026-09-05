@@ -89,7 +89,13 @@ tvm_vendor:
 libphidget22:
   add_host: ["libusb"]
 libg2o:
-  add_host: ["qt", "${{ 'libglu' if linux }}", "${{ 'freeglut' if not osx }}"]
+  # "qt" was previously added here but package.xml never declares a Qt/QGLViewer
+  # dependency, and CMakeLists.txt's find_package(QGLViewer) is optional (not
+  # REQUIRED) -- it just disables the optional viewer GUI when absent. Pulling
+  # in "qt" (pinned to Qt5 in conda_build_config.yaml) conflicts with vtk-base,
+  # which now only ships Qt6 builds, breaking anything that needs both (e.g.
+  # rtabmap, which also depends on pcl -> vtk-base).
+  add_host: ["${{ 'libglu' if linux }}", "${{ 'freeglut' if not osx }}"]
 fmilibrary_vendor:
   add_host: ["fmilib"]
 mrpt2:
