@@ -246,6 +246,11 @@ libg2o:
   # stale-remote-build pattern as pcl_conversions/ros2cli/distro_mutex above.
   # Bump so skip_existing forces a fresh local build against the current mutex.
   build_number: 26
+  # On win-64, csparse_extension builds as a DLL that exports no symbols
+  # (no dllexport macro is defined for it), so MSVC produces the .dll but no
+  # import .lib, and solver_csparse fails to link against it. Same fix as the
+  # many other packages in this repo hitting this class of Windows issue.
+  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 pcl_conversions:
   # The remote build at the current build_number (25) was published against
   # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
