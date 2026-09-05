@@ -29,26 +29,6 @@ index 385b7899..b1d6f2ab 100644
      Qt5::WebSockets
      )
  
-diff --git a/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt b/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt
-index 588c69ba..ab94a3df 100644
---- a/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt
-+++ b/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt
-@@ -1,13 +1,6 @@
--if(BUILDING_WITH_CONAN)
--    message(STATUS "Finding Protobuf with conan")
--    set(Protobuf_LIBS protobuf::libprotobuf)
--else()
--    message(STATUS "Finding Protobuf without package managers")
--    find_package(Protobuf QUIET)
--    set(Protobuf_LIBS ${Protobuf_LIBRARIES})
--endif()
-+set(Protobuf_LIBS protobuf::libprotobuf)
- 
--find_package(Protobuf QUIET)
-+find_package(Protobuf QUIET CONFIG)
- 
- if( Protobuf_FOUND)
- 
 diff --git a/plotjuggler_plugins/ParserProtobuf/error_collectors.cpp b/plotjuggler_plugins/ParserProtobuf/error_collectors.cpp
 index 761e0b73..b7ce4129 100644
 --- a/plotjuggler_plugins/ParserProtobuf/error_collectors.cpp
