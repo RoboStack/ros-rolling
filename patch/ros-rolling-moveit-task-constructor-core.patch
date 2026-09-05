@@ -135,3 +135,17 @@ index a96b292e..10461494 100644
  	// clang-format off
  	py::classh<Property>(m, "Property", "Holds an arbitrarily typed value and a default value")
  
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 82e98756..147aa7bd 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -38,7 +38,7 @@ add_library(${PROJECT_NAME} SHARED
+ 	solvers/multi_planner.cpp
+ )
+ target_link_libraries(${PROJECT_NAME}
+-	fmt
++	fmt::fmt
+ 	${moveit_core_TARGETS}
+ 	${moveit_ros_planning_TARGETS}
+ 	${moveit_ros_planning_interface_TARGETS}
+ 
