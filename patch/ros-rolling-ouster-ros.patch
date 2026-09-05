@@ -138,28 +138,26 @@ index 0de2ad5..266cf93 100644
    HINTS ${pkg_libzip_LIBRARY_DIRS})
  mark_as_advanced(libzip_LIBRARIES)
  
-diff --git a/ouster-sdk/CMakeLists.txt b/ouster-sdk/CMakeLists.txt
-index 4c6e3ac..0937a63 100644
---- a/ouster-sdk/CMakeLists.txt
-+++ b/ouster-sdk/CMakeLists.txt
-@@ -13,6 +13,20 @@ endif()
- list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
- include(DefaultBuildType)
+diff --git a/ouster-sdk/thirdparty/spdlog/tweakme.h b/ouster-sdk/thirdparty/spdlog/tweakme.h
+index a47a907..73db884 100644
+--- a/ouster-sdk/thirdparty/spdlog/tweakme.h
++++ b/ouster-sdk/thirdparty/spdlog/tweakme.h
+@@ -81,6 +81,18 @@
+ // #define SPDLOG_FMT_EXTERNAL
+ ///////////////////////////////////////////////////////////////////////////////
  
-+# When built as part of the ouster_ros ROS wrapper (add_subdirectory()'d
-+# from its CMakeLists.txt, not as a standalone project), some ROS
-+# dependency's exported CMake config leaves SPDLOG_FMT_EXTERNAL defined
-+# at directory scope, which cascades down into this subtree. That makes
-+# spdlog's own headers (spdlog.h -> fmt.h) pull in the external/system
-+# fmt, while ouster_client/src/logging.cpp unconditionally includes
-+# spdlog's *bundled* fmt copy (<spdlog/fmt/bundled/args.h>, upstream
-+# spdlog design, not conditional on SPDLOG_FMT_EXTERNAL) -- both then
-+# get processed in the same translation unit and their fmt::v10
-+# template declarations collide (MSVC C2990/C2955/... "already
-+# declared"/"already has a body"). Force this subtree back to spdlog's
-+# bundled fmt consistently, matching what logging.cpp already assumes.
-+remove_definitions(-DSPDLOG_FMT_EXTERNAL)
++// Force spdlog's bundled fmt copy regardless of any SPDLOG_FMT_EXTERNAL
++// baked into this build's compiler flags (e.g. by a ROS/ament toolchain
++// setting): ouster_client/src/logging.cpp unconditionally includes
++// spdlog's *bundled* fmt headers directly (<spdlog/fmt/bundled/args.h>,
++// upstream spdlog's own design, not gated on SPDLOG_FMT_EXTERNAL). If the
++// rest of spdlog's headers resolve to the *external* system fmt instead,
++// both copies' fmt::v10 template declarations collide in the same
++// translation unit (MSVC C2990/C2955/C2011/...). #undef here -- not a
++// CMake-level fix -- so it wins even over a compiler-flag-level define.
++#undef SPDLOG_FMT_EXTERNAL
++#undef SPDLOG_USE_STD_FORMAT
 +
- # configure vcpkg from environment variables, if present
- include(VcpkgEnv)
- 
+ ///////////////////////////////////////////////////////////////////////////////
+ // Uncomment to use C++20 std::format instead of fmt.
+ //
