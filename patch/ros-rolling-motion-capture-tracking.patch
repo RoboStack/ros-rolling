@@ -28,3 +28,51 @@ index e6009d9d..037befcc 100644
  	target_link_libraries(quat -lm)
  endif()
  
+diff --git a/deps/libmotioncapture/deps/vrpn/CMakeLists.txt b/deps/libmotioncapture/deps/vrpn/CMakeLists.txt
+index 41ce8558..31f6d711 100644
+--- a/deps/libmotioncapture/deps/vrpn/CMakeLists.txt
++++ b/deps/libmotioncapture/deps/vrpn/CMakeLists.txt
+@@ -1353,6 +1353,10 @@ endif()
+ 
+ if(VRPN_BUILD_CLIENT_LIBRARY)
+ 	add_library(vrpn ${VRPN_CLIENT_SOURCES} ${VRPN_CLIENT_PUBLIC_HEADERS})
++	# libmotioncapture (one level up) links against this library directly,
++	# so it needs an import .lib on Windows -- same missing-dllexport-symbols
++	# issue already fixed for the sibling quat library.
++	set_target_properties(vrpn PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 	target_link_libraries(vrpn ${EXTRA_LIBS})
+ 	set(VRPN_CLIENT_LIBRARY vrpn)
+ 
+ 
+diff --git a/deps/libmotioncapture/CMakeLists.txt b/deps/libmotioncapture/CMakeLists.txt
+index 61a4af9f..0f41148d 100644
+--- a/deps/libmotioncapture/CMakeLists.txt
++++ b/deps/libmotioncapture/CMakeLists.txt
+@@ -234,6 +234,10 @@ include_directories(
+ add_library(libmotioncapture
+   ${my_files}
+ )
++# motion_capture_tracking_node (the top-level ROS node) links against this
++# library directly, so it needs an import .lib on Windows -- same
++# missing-dllexport-symbols issue already fixed for quat/vrpn.
++set_target_properties(libmotioncapture PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ 
+ ## Specify libraries to link a library or executable target against
+ target_link_directories(libmotioncapture PUBLIC
+ 
+diff --git a/deps/librigidbodytracker/CMakeLists.txt b/deps/librigidbodytracker/CMakeLists.txt
+index c23b4ee3..4a4b5981 100644
+--- a/deps/librigidbodytracker/CMakeLists.txt
++++ b/deps/librigidbodytracker/CMakeLists.txt
+@@ -24,6 +24,10 @@ include_directories(
+ add_library(librigidbodytracker
+   src/rigid_body_tracker.cpp
+ )
++# motion_capture_tracking_node (the top-level ROS node) links against this
++# library directly, so it needs an import .lib on Windows -- same
++# missing-dllexport-symbols issue already fixed for quat/vrpn/libmotioncapture.
++set_target_properties(librigidbodytracker PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ target_link_libraries(librigidbodytracker
+   ${PCL_LIBRARIES}
+ )
+ 
