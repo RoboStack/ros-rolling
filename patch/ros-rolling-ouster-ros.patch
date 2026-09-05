@@ -120,3 +120,21 @@ index 94d50eb..b1e05ce 100644
  
      void declare_parameters() {
          node->declare_parameter("sensor_frame", "os_sensor");
+diff --git a/ouster-sdk/cmake/Findlibzip.cmake b/ouster-sdk/cmake/Findlibzip.cmake
+index 0de2ad5..266cf93 100644
+--- a/ouster-sdk/cmake/Findlibzip.cmake
++++ b/ouster-sdk/cmake/Findlibzip.cmake
+@@ -37,9 +37,11 @@ find_path(libzip_INCLUDE_DIRS
+   HINTS ${pkg_libzip_INCLUDE_DIRS})
+ mark_as_advanced(libzip_INCLUDE_DIRS)
+ 
+-# Linux/macos only
++# conda-forge's libzip ships the Windows import lib as "zip.lib" (no
++# "lib" prefix, matching MSVC convention), so it's never found by the
++# Unix-only names below -- add it too.
+ find_library(libzip_LIBRARIES NAMES
+-  libzip libzip.so libzip.dylib
++  libzip libzip.so libzip.dylib zip
+   HINTS ${pkg_libzip_LIBRARY_DIRS})
+ mark_as_advanced(libzip_LIBRARIES)
+ 
