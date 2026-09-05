@@ -9,6 +9,26 @@ index 8e69fa09..c6b3041a 100644
 +  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment")
  endif()
 -set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wcomment")
-
+ 
  # Allow GNU extensions (-std=gnu++20)
  set(CMAKE_C_EXTENSIONS ON)
+diff --git a/include/mavros/utils.hpp b/include/mavros/utils.hpp
+index 1f3dc092..ca8d5149 100644
+--- a/include/mavros/utils.hpp
++++ b/include/mavros/utils.hpp
+@@ -35,6 +35,15 @@
+ #define EBADSLT 55      /* Invalid slot */
+ #endif
+ 
++// Windows SDK headers define PASSTHROUGH as a numeric macro (used by some
++// print-related APIs), which corrupts the timesync_mode enum below if not
++// undefined first.
++#ifdef _WIN32
++#ifdef PASSTHROUGH
++#undef PASSTHROUGH
++#endif
++#endif
++
+ namespace mavros
+ {
+ namespace utils
