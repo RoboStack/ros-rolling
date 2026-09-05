@@ -1,0 +1,677 @@
+diff --git a/tools/Camera/main.cpp b/tools/Camera/main.cpp
+index e337030..3bf320c 100644
+--- a/tools/Camera/main.cpp
++++ b/tools/Camera/main.cpp
+@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UDirectory.h"
+ #include "rtabmap/utilite/UConversion.h"
+ #include <opencv2/highgui/highgui.hpp>
+-#include <opencv2/highgui/highgui_c.h>
+ #include <stdio.h>
+ 
+ void showUsage()
+@@ -178,7 +177,7 @@ int main(int argc, char * argv[])
+ 
+ 	cv::Mat rgb;
+ 	rgb = camera->takeImage().imageRaw();
+-	cv::namedWindow("Video", CV_WINDOW_AUTOSIZE); // create window
++	cv::namedWindow("Video", cv::WINDOW_AUTOSIZE); // create window
+ 	while(!rgb.empty())
+ 	{
+ 		cv::imshow("Video", rgb); // show frame
+diff --git a/tools/StereoEval/main.cpp b/tools/StereoEval/main.cpp
+index bd3313f..9c15e34 100644
+--- a/tools/StereoEval/main.cpp
++++ b/tools/StereoEval/main.cpp
+@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/UConversion.h>
+ #include <rtabmap/utilite/UTimer.h>
+ #include <rtabmap/utilite/UMath.h>
+-#include <opencv2/imgproc/types_c.h>
+ #include <fstream>
+ #include <string>
+ 
+@@ -222,7 +221,7 @@ int main(int argc, char * argv[])
+ 		cv::Mat leftMono;
+ 		if(left.channels() == 3)
+ 		{
+-			cv::cvtColor(left, leftMono, CV_BGR2GRAY);
++			cv::cvtColor(left, leftMono, cv::COLOR_BGR2GRAY);
+ 		}
+ 		else
+ 		{
+@@ -231,7 +230,7 @@ int main(int argc, char * argv[])
+ 		cv::Mat rightMono;
+ 		if(right.channels() == 3)
+ 		{
+-			cv::cvtColor(right, rightMono, CV_BGR2GRAY);
++			cv::cvtColor(right, rightMono, cv::COLOR_BGR2GRAY);
+ 		}
+ 		else
+ 		{
+@@ -266,7 +265,7 @@ int main(int argc, char * argv[])
+ 			cv::cornerSubPix(leftMono, leftCorners,
+ 				cv::Size( subPixWinSize, subPixWinSize ),
+ 				cv::Size( -1, -1 ),
+-				cv::TermCriteria( CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, subPixIterations, subPixEps ) );
++				cv::TermCriteria( cv::TermCriteria::MAX_ITER | cv::TermCriteria::EPS, subPixIterations, subPixEps ) );
+ 			UDEBUG("cv::cornerSubPix() end");
+ 		}
+ 
+diff --git a/app/android/jni/point_cloud_drawable.cpp b/app/android/jni/point_cloud_drawable.cpp
+index ca23e31..cf38ec1 100644
+--- a/app/android/jni/point_cloud_drawable.cpp
++++ b/app/android/jni/point_cloud_drawable.cpp
+@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/ULogger.h"
+ #include "rtabmap/utilite/UTimer.h"
+ #include "rtabmap/utilite/UConversion.h"
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #include "util.h"
+ #include "pcl/common/transforms.h"
+ 
+diff --git a/corelib/include/rtabmap/core/DBDriverSqlite3.h b/corelib/include/rtabmap/core/DBDriverSqlite3.h
+index 56e410c..fbcd49b 100644
+--- a/corelib/include/rtabmap/core/DBDriverSqlite3.h
++++ b/corelib/include/rtabmap/core/DBDriverSqlite3.h
+@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/core/rtabmap_core_export.h" // DLL export/import defines
+ #include "rtabmap/core/DBDriver.h"
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/include/rtabmap/core/EpipolarGeometry.h b/corelib/include/rtabmap/core/EpipolarGeometry.h
+index ea490d3..cdf7c43 100644
+--- a/corelib/include/rtabmap/core/EpipolarGeometry.h
++++ b/corelib/include/rtabmap/core/EpipolarGeometry.h
+@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UStl.h"
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #if CV_MAJOR_VERSION >= 5
+diff --git a/corelib/include/rtabmap/core/Features2d.h b/corelib/include/rtabmap/core/Features2d.h
+index e110773..9b064c1 100644
+--- a/corelib/include/rtabmap/core/Features2d.h
++++ b/corelib/include/rtabmap/core/Features2d.h
+@@ -30,10 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include "rtabmap/core/rtabmap_core_export.h" // DLL export/import defines
+ 
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/include/rtabmap/core/Memory.h b/corelib/include/rtabmap/core/Memory.h
+index fd8f75a..2fe3640 100644
+--- a/corelib/include/rtabmap/core/Memory.h
++++ b/corelib/include/rtabmap/core/Memory.h
+@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UStl.h"
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/include/rtabmap/core/OdometryInfo.h b/corelib/include/rtabmap/core/OdometryInfo.h
+index 4f96a59..a3ec914 100644
+--- a/corelib/include/rtabmap/core/OdometryInfo.h
++++ b/corelib/include/rtabmap/core/OdometryInfo.h
+@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/core/CameraModel.h"
+ #include "rtabmap/core/LaserScan.h"
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/include/rtabmap/core/SensorCapture.h b/corelib/include/rtabmap/core/SensorCapture.h
+index 20ee01b..4188392 100644
+--- a/corelib/include/rtabmap/core/SensorCapture.h
++++ b/corelib/include/rtabmap/core/SensorCapture.h
+@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include "rtabmap/core/rtabmap_core_export.h" // DLL export/import defines
+ 
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include <rtabmap/core/SensorCaptureInfo.h>
+ #include "rtabmap/core/SensorData.h"
+ #include <set>
+diff --git a/corelib/include/rtabmap/core/SensorData.h b/corelib/include/rtabmap/core/SensorData.h
+index 0db8590..6688988 100644
+--- a/corelib/include/rtabmap/core/SensorData.h
++++ b/corelib/include/rtabmap/core/SensorData.h
+@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/core/Transform.h>
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/include/rtabmap/core/Signature.h b/corelib/include/rtabmap/core/Signature.h
+index 11f6f9c..49390f9 100644
+--- a/corelib/include/rtabmap/core/Signature.h
++++ b/corelib/include/rtabmap/core/Signature.h
+@@ -32,11 +32,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <pcl/point_types.h>
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #include <map>
+ #include <list>
+ #include <vector>
+diff --git a/corelib/include/rtabmap/core/Statistics.h b/corelib/include/rtabmap/core/Statistics.h
+index 8c4cd0a..68491a8 100644
+--- a/corelib/include/rtabmap/core/Statistics.h
++++ b/corelib/include/rtabmap/core/Statistics.h
+@@ -32,11 +32,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #include <list>
+ #include <vector>
+ #include <rtabmap/core/Signature.h>
+diff --git a/corelib/include/rtabmap/core/VWDictionary.h b/corelib/include/rtabmap/core/VWDictionary.h
+index bfd5394..db7d4db 100644
+--- a/corelib/include/rtabmap/core/VWDictionary.h
++++ b/corelib/include/rtabmap/core/VWDictionary.h
+@@ -29,10 +29,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include "rtabmap/core/rtabmap_core_export.h" // DLL export/import defines
+ 
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include <opencv2/core/core.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/include/rtabmap/core/camera/CameraVideo.h b/corelib/include/rtabmap/core/camera/CameraVideo.h
+index bdc90a1..ca65116 100644
+--- a/corelib/include/rtabmap/core/camera/CameraVideo.h
++++ b/corelib/include/rtabmap/core/camera/CameraVideo.h
+@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #pragma once
+ 
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include "rtabmap/core/Camera.h"
+ 
+ namespace rtabmap
+diff --git a/corelib/include/rtabmap/core/stereo/stereoRectifyFisheye.h b/corelib/include/rtabmap/core/stereo/stereoRectifyFisheye.h
+index 9d07bd6..3361aab 100644
+--- a/corelib/include/rtabmap/core/stereo/stereoRectifyFisheye.h
++++ b/corelib/include/rtabmap/core/stereo/stereoRectifyFisheye.h
+@@ -43,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include <opencv2/calib3d/calib3d.hpp>
+ #if CV_MAJOR_VERSION >= 3
+-#include <opencv2/calib3d/calib3d_c.h>
+ 
+ #if CV_MAJOR_VERSION >= 4
+ #include <opencv2/core/core_c.h>
+diff --git a/corelib/include/rtabmap/core/util3d_correspondences.h b/corelib/include/rtabmap/core/util3d_correspondences.h
+index d53ece4..f50a98b 100644
+--- a/corelib/include/rtabmap/core/util3d_correspondences.h
++++ b/corelib/include/rtabmap/core/util3d_correspondences.h
+@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <pcl/point_types.h>
+ #include <opencv2/core/version.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+diff --git a/corelib/src/CameraModel.cpp b/corelib/src/CameraModel.cpp
+index bfcde63..bc37f40 100644
+--- a/corelib/src/CameraModel.cpp
++++ b/corelib/src/CameraModel.cpp
+@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/UConversion.h>
+ #include <rtabmap/utilite/UMath.h>
+ #include <rtabmap/utilite/UStl.h>
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #if CV_MAJOR_VERSION >= 5
+ #include <opencv2/geometry.hpp>
+ #endif
+diff --git a/corelib/src/SensorCapture.cpp b/corelib/src/SensorCapture.cpp
+index 5932787..a86708d 100644
+--- a/corelib/src/SensorCapture.cpp
++++ b/corelib/src/SensorCapture.cpp
+@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/UDirectory.h>
+ #include <rtabmap/utilite/UTimer.h>
+ 
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ 
+ #include <iostream>
+ #include <cmath>
+diff --git a/corelib/src/Signature.cpp b/corelib/src/Signature.cpp
+index 32fca30..a7dc364 100644
+--- a/corelib/src/Signature.cpp
++++ b/corelib/src/Signature.cpp
+@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/core/EpipolarGeometry.h"
+ #include "rtabmap/core/Memory.h"
+ #include "rtabmap/core/Compression.h"
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ 
+ #include <rtabmap/utilite/UtiLite.h>
+ 
+diff --git a/corelib/src/StereoCameraModel.cpp b/corelib/src/StereoCameraModel.cpp
+index 938508e..5b0e88b 100644
+--- a/corelib/src/StereoCameraModel.cpp
++++ b/corelib/src/StereoCameraModel.cpp
+@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/UDirectory.h>
+ #include <rtabmap/utilite/UFile.h>
+ #include <rtabmap/utilite/UConversion.h>
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #if CV_MAJOR_VERSION >= 5
+ #include <opencv2/geometry.hpp>
+ #endif
+diff --git a/corelib/src/clams/discrete_depth_distortion_model_helpers.cpp b/corelib/src/clams/discrete_depth_distortion_model_helpers.cpp
+index 06c348d..dfbdc02 100644
+--- a/corelib/src/clams/discrete_depth_distortion_model_helpers.cpp
++++ b/corelib/src/clams/discrete_depth_distortion_model_helpers.cpp
+@@ -28,8 +28,8 @@ RTAB-Map integration: Mathieu Labbe
+ */
+ 
+ #include <rtabmap/core/clams/discrete_depth_distortion_model.h>
+-#include <opencv2/imgproc/imgproc.hpp>
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/imgproc.hpp>
++#include <opencv2/highgui.hpp>
+ #include <rtabmap/utilite/ULogger.h>
+ #include <rtabmap/utilite/UDirectory.h>
+ 
+diff --git a/corelib/src/clams/frame_projector.cpp b/corelib/src/clams/frame_projector.cpp
+index 3230fcf..2634911 100644
+--- a/corelib/src/clams/frame_projector.cpp
++++ b/corelib/src/clams/frame_projector.cpp
+@@ -31,8 +31,8 @@ RTAB-Map integration: Mathieu Labbe
+ #include <rtabmap/utilite/ULogger.h>
+ #include <rtabmap/core/util3d_transforms.h>
+ #include <rtabmap/core/util3d.h>
+-#include <opencv2/highgui/highgui.hpp>
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/highgui.hpp>
++#include <opencv2/imgproc.hpp>
+ #include <pcl/common/point_tests.h>
+ 
+ using namespace std;
+diff --git a/corelib/src/odometry/OdometryMono.cpp b/corelib/src/odometry/OdometryMono.cpp
+index 6198c41..8cefcf7 100644
+--- a/corelib/src/odometry/OdometryMono.cpp
++++ b/corelib/src/odometry/OdometryMono.cpp
+@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UConversion.h"
+ #include "rtabmap/utilite/UStl.h"
+ #include "rtabmap/utilite/UMath.h"
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #if CV_MAJOR_VERSION < 5
+ #include <opencv2/calib3d/calib3d.hpp>
+ #else
+diff --git a/corelib/src/opencv/ORBextractor.cc b/corelib/src/opencv/ORBextractor.cc
+index 542e169..1197fb6 100644
+--- a/corelib/src/opencv/ORBextractor.cc
++++ b/corelib/src/opencv/ORBextractor.cc
+@@ -63,13 +63,13 @@
+ 
+ 
+ #include <opencv2/core/core.hpp>
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #if CV_MAJOR_VERSION < 5
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #else
+ #include <opencv2/features.hpp>
+ #endif
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #include <vector>
+ #include <algorithm>
+ #include <iterator>
+diff --git a/corelib/src/opencv/Orb.h b/corelib/src/opencv/Orb.h
+index e05ad9d..464ad16 100644
+--- a/corelib/src/opencv/Orb.h
++++ b/corelib/src/opencv/Orb.h
+@@ -46,7 +46,7 @@
+ #ifndef CORELIB_SRC_OPENCV_ORB_H_
+ #define CORELIB_SRC_OPENCV_ORB_H_
+ 
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ 
+ namespace rtabmap {
+ 
+diff --git a/corelib/src/stereo/StereoBM.cpp b/corelib/src/stereo/StereoBM.cpp
+index 57f6b7d..356266e 100644
+--- a/corelib/src/stereo/StereoBM.cpp
++++ b/corelib/src/stereo/StereoBM.cpp
+@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <opencv2/stereo.hpp>
+ #include <opencv2/geometry.hpp>
+ #endif
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ 
+ namespace rtabmap {
+ 
+diff --git a/corelib/src/stereo/StereoSGBM.cpp b/corelib/src/stereo/StereoSGBM.cpp
+index d8e651a..291ba7f 100644
+--- a/corelib/src/stereo/StereoSGBM.cpp
++++ b/corelib/src/stereo/StereoSGBM.cpp
+@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <opencv2/stereo.hpp>
+ #include <opencv2/geometry.hpp>
+ #endif
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ 
+ namespace rtabmap {
+ 
+diff --git a/corelib/src/util2d.cpp b/corelib/src/util2d.cpp
+index 55fdf67..3642e66 100644
+--- a/corelib/src/util2d.cpp
++++ b/corelib/src/util2d.cpp
+@@ -34,14 +34,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/UStl.h>
+ #include <rtabmap/core/util3d_transforms.h>
+ #include <rtabmap/core/StereoDense.h>
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ #include <opencv2/video/tracking.hpp>
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include <map>
+ #include <Eigen/Core>
+ 
+ #if CV_MAJOR_VERSION >= 3
+-#include <opencv2/photo/photo.hpp>
++#include <opencv2/photo.hpp>
+ #endif
+ 
+ #if CV_MAJOR_VERSION < 5
+diff --git a/corelib/src/util3d.cpp b/corelib/src/util3d.cpp
+index c0aa08e..4619868 100644
+--- a/corelib/src/util3d.cpp
++++ b/corelib/src/util3d.cpp
+@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <pcl/io/ply_io.h>
+ #include <pcl/common/transforms.h>
+ #include <pcl/common/common.h>
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/imgproc.hpp>
+ 
+ namespace rtabmap
+ {
+diff --git a/guilib/include/rtabmap/gui/DatabaseViewer.h b/guilib/include/rtabmap/gui/DatabaseViewer.h
+index a11b4c9..28fbc38 100644
+--- a/guilib/include/rtabmap/gui/DatabaseViewer.h
++++ b/guilib/include/rtabmap/gui/DatabaseViewer.h
+@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <QtCore/QSet>
+ #include <QtGui/QImage>
+ #include <opencv2/core/core.hpp>
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #include <set>
+ #include <vector>
+ #include <pcl/point_cloud.h>
+diff --git a/guilib/include/rtabmap/gui/ImageView.h b/guilib/include/rtabmap/gui/ImageView.h
+index 8e8df85..eaf9134 100644
+--- a/guilib/include/rtabmap/gui/ImageView.h
++++ b/guilib/include/rtabmap/gui/ImageView.h
+@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <QtCore/QRectF>
+ #include <QtCore/QMultiMap>
+ #include <QtCore/QSettings>
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #include <map>
+ #include "rtabmap/utilite/UCv2Qt.h"
+ #include <rtabmap/core/CameraModel.h>
+diff --git a/guilib/include/rtabmap/gui/KeypointItem.h b/guilib/include/rtabmap/gui/KeypointItem.h
+index 7f4f9f6..11a896d 100644
+--- a/guilib/include/rtabmap/gui/KeypointItem.h
++++ b/guilib/include/rtabmap/gui/KeypointItem.h
+@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <QGraphicsTextItem>
+ #include <QtGui/QPen>
+ #include <QtGui/QBrush>
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ 
+ namespace rtabmap {
+ 
+diff --git a/guilib/src/CalibrationDialog.cpp b/guilib/src/CalibrationDialog.cpp
+index dd4a052..9e40d6e 100644
+--- a/guilib/src/CalibrationDialog.cpp
++++ b/guilib/src/CalibrationDialog.cpp
+@@ -29,13 +29,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "ui_calibrationDialog.h"
+ 
+ #include <opencv2/core/core.hpp>
+-#include <opencv2/imgproc/imgproc.hpp>
+-#include <opencv2/imgproc/imgproc_c.h>
++#include <opencv2/imgproc.hpp>
+ #include <opencv2/calib3d/calib3d.hpp>
+ #if CV_MAJOR_VERSION >= 3
+-#include <opencv2/calib3d/calib3d_c.h>
+ #endif
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #if CV_MAJOR_VERSION > 2 or (CV_MAJOR_VERSION == 2 and (CV_MINOR_VERSION >4 or (CV_MINOR_VERSION == 4 and CV_SUBMINOR_VERSION >=10)))
+ #include <rtabmap/core/stereo/stereoRectifyFisheye.h>
+ #endif
+diff --git a/guilib/src/DatabaseViewer.cpp b/guilib/src/DatabaseViewer.cpp
+index 586a386..3c328f3 100644
+--- a/guilib/src/DatabaseViewer.cpp
++++ b/guilib/src/DatabaseViewer.cpp
+@@ -44,8 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/UDirectory.h>
+ #include <rtabmap/utilite/UConversion.h>
+ #include <opencv2/core/core_c.h>
+-#include <opencv2/imgproc/types_c.h>
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include <rtabmap/utilite/UTimer.h>
+ #include <rtabmap/utilite/UFile.h>
+ #include "rtabmap/utilite/UPlot.h"
+diff --git a/tools/Camera/main.cpp b/tools/Camera/main.cpp
+index 3bf320c..c856d7b 100644
+--- a/tools/Camera/main.cpp
++++ b/tools/Camera/main.cpp
+@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UFile.h"
+ #include "rtabmap/utilite/UDirectory.h"
+ #include "rtabmap/utilite/UConversion.h"
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ #include <stdio.h>
+ 
+ void showUsage()
+diff --git a/tools/CameraRGBD/main.cpp b/tools/CameraRGBD/main.cpp
+index 1d562d9..a6f29e4 100644
+--- a/tools/CameraRGBD/main.cpp
++++ b/tools/CameraRGBD/main.cpp
+@@ -35,9 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UFile.h"
+ #include "rtabmap/utilite/UDirectory.h"
+ #include "rtabmap/utilite/UConversion.h"
+-#include <opencv2/highgui/highgui.hpp>
+-#include <opencv2/imgproc/imgproc.hpp>
+-#include <opencv2/imgproc/types_c.h>
++#include <opencv2/highgui.hpp>
++#include <opencv2/imgproc.hpp>
+ #if CV_MAJOR_VERSION >= 3
+ #include <opencv2/videoio/videoio_c.h>
+ #endif
+diff --git a/tools/EpipolarGeometry/main.cpp b/tools/EpipolarGeometry/main.cpp
+index aa309fa..d2cb81a 100644
+--- a/tools/EpipolarGeometry/main.cpp
++++ b/tools/EpipolarGeometry/main.cpp
+@@ -27,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include <opencv2/core/core.hpp>
+ #include <opencv2/core/types_c.h>
+-#include <opencv2/highgui/highgui.hpp>
+-#include <opencv2/imgproc/imgproc.hpp>
++#include <opencv2/highgui.hpp>
++#include <opencv2/imgproc.hpp>
+ #include <iostream>
+ #include <rtabmap/utilite/ULogger.h>
+ #include <rtabmap/utilite/UTimer.h>
+diff --git a/tools/ImagesJoiner/main.cpp b/tools/ImagesJoiner/main.cpp
+index ad4d3dd..3cf5264 100644
+--- a/tools/ImagesJoiner/main.cpp
++++ b/tools/ImagesJoiner/main.cpp
+@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UFile.h"
+ #include "rtabmap/utilite/UConversion.h"
+ #include <opencv2/core/core.hpp>
+-#include <opencv2/highgui/highgui.hpp>
++#include <opencv2/highgui.hpp>
+ 
+ void showUsage()
+ {
+diff --git a/tools/VocabularyComparison/main.cpp b/tools/VocabularyComparison/main.cpp
+index 410439b..cc65f02 100644
+--- a/tools/VocabularyComparison/main.cpp
++++ b/tools/VocabularyComparison/main.cpp
+@@ -27,10 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include <opencv2/core/core.hpp>
+ #include <opencv2/core/types_c.h>
+-#include <opencv2/highgui/highgui_c.h>
+-#include <opencv2/imgproc/imgproc_c.h>
+ #include <opencv2/flann/miniflann.hpp>
+-#include <opencv2/features2d/features2d.hpp>
++#include <opencv2/features2d.hpp>
+ #include <opencv2/nonfree/features2d.hpp>
+ #include <rtabmap/utilite/ULogger.h>
+ #include <rtabmap/utilite/UTimer.h>
+diff --git a/guilib/src/DatabaseViewer.cpp b/guilib/src/DatabaseViewer.cpp
+index 3c328f3..25bb8c4 100644
+--- a/guilib/src/DatabaseViewer.cpp
++++ b/guilib/src/DatabaseViewer.cpp
+@@ -43,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <rtabmap/utilite/ULogger.h>
+ #include <rtabmap/utilite/UDirectory.h>
+ #include <rtabmap/utilite/UConversion.h>
+-#include <opencv2/core/core_c.h>
+ #include <opencv2/highgui.hpp>
+ #include <rtabmap/utilite/UTimer.h>
+ #include <rtabmap/utilite/UFile.h>
+diff --git a/guilib/src/CalibrationDialog.cpp b/guilib/src/CalibrationDialog.cpp
+index 9e40d6e..0aebf10 100644
+--- a/guilib/src/CalibrationDialog.cpp
++++ b/guilib/src/CalibrationDialog.cpp
+@@ -30,7 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #include <opencv2/core/core.hpp>
+ #include <opencv2/imgproc.hpp>
+-#include <opencv2/calib3d/calib3d.hpp>
++#include <opencv2/calib3d.hpp>
+ #if CV_MAJOR_VERSION >= 3
+ #endif
+ #include <opencv2/highgui.hpp>
+@@ -734,7 +734,7 @@ void CalibrationDialog::processImages(const cv::Mat & imageLeft, const cv::Mat &
+ 			cv::Size boardSize(ui_->spinBox_boardWidth->value(), ui_->spinBox_boardHeight->value());
+ 			if(!viewGray.empty())
+ 			{
+-				int flags = CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE;
++				int flags = cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE;
+ 
+ 				if(!viewGray.empty())
+ 				{
+@@ -745,7 +745,7 @@ void CalibrationDialog::processImages(const cv::Mat & imageLeft, const cv::Mat &
+ 						if( scale == 1 )
+ 							timg = viewGray;
+ 						else
+-							cv::resize(viewGray, timg, cv::Size(), scale, scale, CV_INTER_CUBIC);
++							cv::resize(viewGray, timg, cv::Size(), scale, scale, cv::INTER_CUBIC);
+ 
+ #ifdef HAVE_CHARUCO
+ 						if(ui_->comboBox_board_type->currentIndex() >= 1 )
+@@ -830,7 +830,7 @@ void CalibrationDialog::processImages(const cv::Mat & imageLeft, const cv::Mat &
+ 					float ratio = ui_->comboBox_board_type->currentIndex() >= 1 ?6.0f:2.0f;
+ 					float radius = minSquareDistance==-1.0f?5.0f:(minSquareDistance/ratio);
+ 					cv::cornerSubPix( viewGray, pointBuf[id], cv::Size(radius, radius), cv::Size(-1,-1),
+-							cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1 ));
++							cv::TermCriteria( cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.1 ));
+ 					
+ 					// Filter points that drifted to far (caused by reflection or bad subpixel gradient)
+ 					float threshold = ui_->doubleSpinBox_subpixel_error->value();
+@@ -1119,7 +1119,7 @@ void CalibrationDialog::processImages(const cv::Mat & imageLeft, const cv::Mat &
+ 			int step = imageSize_[id].height/16;
+ 			for(int i=step; i<imageSize_[id].height; i+=step)
+ 			{
+-				cv::line(images[id], cv::Point(0, i), cv::Point(imageSize_[id].width, i), CV_RGB(0,255,0));
++				cv::line(images[id], cv::Point(0, i), cv::Point(imageSize_[id].width, i), cv::Scalar(0,255,0));
+ 			}
+ 		}
+ 	}
+@@ -1470,7 +1470,7 @@ void CalibrationDialog::calibrate()
+ 			{
+ 				cv::projectPoints( cv::Mat(objectPoints_[id][i]), rvecs[i], tvecs[i], K, D, imagePoints2);
+ 			}
+-			err = cv::norm(cv::Mat(imagePoints_[id][i]), cv::Mat(imagePoints2), CV_L2);
++			err = cv::norm(cv::Mat(imagePoints_[id][i]), cv::Mat(imagePoints2), cv::NORM_L2);
+ 
+ 			int n = (int)objectPoints_[id][i].size();
+ 			reprojErrs[i] = (float) std::sqrt(err*err/n);
+diff --git a/guilib/src/MainWindow.cpp b/guilib/src/MainWindow.cpp
+index 86e6924..f939433 100644
+--- a/guilib/src/MainWindow.cpp
++++ b/guilib/src/MainWindow.cpp
+@@ -125,6 +125,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ #ifdef HAVE_OPENCV_ARUCO
+ #include <opencv2/aruco.hpp>
+ #endif
++#include <opencv2/calib3d.hpp>
+
+ #define LOG_FILE_NAME "LogRtabmap.txt"
