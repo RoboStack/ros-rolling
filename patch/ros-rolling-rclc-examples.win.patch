@@ -1,0 +1,65 @@
+diff --git a/src/example_executor_only_rcl.c b/src/example_executor_only_rcl.c
+index a72202d..392892a 100644
+--- a/src/example_executor_only_rcl.c
++++ b/src/example_executor_only_rcl.c
+@@ -15,6 +15,8 @@
+ 
+ #include <stdio.h>
+ 
++#include <rcl/timer.h>
++
+ #include <rclc/executor.h>
+ #include <std_msgs/msg/string.h>
+ 
+diff --git a/src/example_executor_trigger.c b/src/example_executor_trigger.c
+index 400260e..624898c 100644
+--- a/src/example_executor_trigger.c
++++ b/src/example_executor_trigger.c
+@@ -14,6 +14,8 @@
+ // limitations under the License.
+ #include <stdio.h>
+ 
++#include <rcl/timer.h>
++
+ #include <std_msgs/msg/string.h>
+ #include <std_msgs/msg/int32.h>
+ 
+diff --git a/src/example_executor.c b/src/example_executor.c
+index cf40fda..3c574a2 100644
+--- a/src/example_executor.c
++++ b/src/example_executor.c
+@@ -14,6 +14,8 @@
+ // limitations under the License.
+ 
+ #include <stdio.h>
++
++#include <rcl/timer.h>
+ #include <std_msgs/msg/string.h>
+ #include <rclc/executor.h>
+ #include <rclc/rclc.h>
+diff --git a/src/example_short_timer_long_subscription.c b/src/example_short_timer_long_subscription.c
+index 746b037..f3b0300 100644
+--- a/src/example_short_timer_long_subscription.c
++++ b/src/example_short_timer_long_subscription.c
+@@ -14,6 +14,8 @@
+ // limitations under the License.
+ 
+ #include <stdio.h>
++
++#include <rcl/timer.h>
+ #include <std_msgs/msg/int32.h>
+ #include <rclc/executor.h>
+ #include <rclc/rclc.h>
+diff --git a/src/example_parameter_server.c b/src/example_parameter_server.c
+index 94fd8db..6f6cbd9 100644
+--- a/src/example_parameter_server.c
++++ b/src/example_parameter_server.c
+@@ -15,6 +15,8 @@
+ 
+ #include <stdio.h>
+ 
++#include <rcl/timer.h>
++
+ #include <rcl/rcl.h>
+ #include <rcl/error_handling.h>
+ #include <rclc/rclc.h>
