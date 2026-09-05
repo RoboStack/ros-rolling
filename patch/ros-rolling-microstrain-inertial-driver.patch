@@ -2,6 +2,21 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 35e036f..4ae5e4d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -1,6 +1,14 @@
+ cmake_minimum_required(VERSION 3.5)
+ project(microstrain_inertial_driver)
+ 
++# Windows headers pulled in transitively by the MIP SDK's serial-port code
++# define min/max as function-like macros unless NOMINMAX is set first,
++# which corrupts any std::chrono::duration::max()/min() call downstream
++# (rcpputils/time.hpp, included via rclcpp) with cryptic syntax errors.
++if(WIN32)
++  add_compile_definitions(NOMINMAX)
++endif()
++
+ # C++ 14 required
+ set(CMAKE_CXX_STANDARD 14)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 @@ -187,6 +187,14 @@ set(COMMON_INC_FILES
  )
  set(COMMON_FILES ${COMMON_SRC_FILES} ${COMMON_INC_FILES})
