@@ -1,0 +1,108 @@
+diff --git a/include/moveit/task_constructor/properties.h b/include/moveit/task_constructor/properties.h
+index e217ad60..d6e332f6 100644
+--- a/include/moveit/task_constructor/properties.h
++++ b/include/moveit/task_constructor/properties.h
+@@ -90,7 +90,7 @@ public:
+ 	/// exception thrown when trying to set a value not matching the declared type
+ 	class type_error;
+ 
+-	using SourceFlags = uint;
++	using SourceFlags = unsigned int;
+ 	/// function callback used to initialize property value from another PropertyMap
+ 	using InitializerFunction = std::function<boost::any(const PropertyMap&)>;
+ 
+ 
+diff --git a/include/moveit/task_constructor/introspection.h b/include/moveit/task_constructor/introspection.h
+index cf4dfb76..ae396128 100644
+--- a/include/moveit/task_constructor/introspection.h
++++ b/include/moveit/task_constructor/introspection.h
+@@ -111,7 +111,7 @@ private:
+ 	/// retrieve or set id of given stage
+ 	uint32_t stageId(const moveit::task_constructor::Stage* const s);
+ 	/// retrieve solution with given id
+-	const SolutionBase* solutionFromId(uint id) const;
++	const SolutionBase* solutionFromId(unsigned int id) const;
+ };
+ }  // namespace task_constructor
+ }  // namespace moveit
+ 
+diff --git a/src/introspection.cpp b/src/introspection.cpp
+index 5dfed5d9..134588ea 100644
+--- a/src/introspection.cpp
++++ b/src/introspection.cpp
+@@ -218,7 +218,7 @@ void Introspection::publishAllSolutions(bool wait) {
+ 	};
+ }
+ 
+-const SolutionBase* Introspection::solutionFromId(uint id) const {
++const SolutionBase* Introspection::solutionFromId(unsigned int id) const {
+ 	auto it = impl->id_solution_bimap_.left.find(id);
+ 	if (it == impl->id_solution_bimap_.left.end())
+ 		return nullptr;
+ 
+diff --git a/src/stages/generate_place_pose.cpp b/src/stages/generate_place_pose.cpp
+index 76b9559f..04e2a8cc 100644
+--- a/src/stages/generate_place_pose.cpp
++++ b/src/stages/generate_place_pose.cpp
+@@ -109,11 +109,11 @@ void GeneratePlacePose::compute() {
+ 	scene->getTransforms().transformPose(pose_msg.header.frame_id, target_pose, target_pose);
+ 
+ 	// spawn the nominal target object pose, considering flip about z and rotations about z-axis
+-	auto spawner = [&s, &scene, &ik_frame, this](const Eigen::Isometry3d& nominal, uint z_flips, uint z_rotations = 10) {
+-		for (uint flip = 0; flip <= z_flips; ++flip) {
++	auto spawner = [&s, &scene, &ik_frame, this](const Eigen::Isometry3d& nominal, unsigned int z_flips, unsigned int z_rotations = 10) {
++		for (unsigned int flip = 0; flip <= z_flips; ++flip) {
+ 			// flip about object's x-axis
+ 			Eigen::Isometry3d object = nominal * Eigen::AngleAxisd(flip * M_PI, Eigen::Vector3d::UnitX());
+-			for (uint i = 0; i < z_rotations; ++i) {
++			for (unsigned int i = 0; i < z_rotations; ++i) {
+ 				// rotate object at target pose about world's z-axis
+ 				Eigen::Vector3d pos = object.translation();
+ 				object.pretranslate(-pos)
+@@ -139,7 +139,7 @@ void GeneratePlacePose::compute() {
+ 		}
+ 	};
+ 
+-	uint z_flips = props.get<bool>("allow_z_flip") ? 1 : 0;
++	unsigned int z_flips = props.get<bool>("allow_z_flip") ? 1 : 0;
+ 	if (object && object->getShapes().size() == 1) {
+ 		switch (object->getShapes()[0]->type) {
+ 			case shapes::CYLINDER:
+ 
+diff --git a/src/solvers/pipeline_planner.cpp b/src/solvers/pipeline_planner.cpp
+index 9e30131a..bad168ee 100644
+--- a/src/solvers/pipeline_planner.cpp
++++ b/src/solvers/pipeline_planner.cpp
+@@ -59,7 +59,7 @@ PipelinePlanner::PipelinePlanner(
+   , stopping_criterion_callback_(stopping_criterion_callback)
+   , solution_selection_function_(solution_selection_function) {
+ 	// Declare properties of the MotionPlanRequest
+-	properties().declare<uint>("num_planning_attempts", 1u, "number of planning attempts");
++	properties().declare<unsigned int>("num_planning_attempts", 1u, "number of planning attempts");
+ 	properties().declare<moveit_msgs::msg::WorkspaceParameters>(
+ 	    "workspace_parameters", moveit_msgs::msg::WorkspaceParameters(), "allowed workspace of mobile base?");
+ 
+@@ -182,7 +182,7 @@ PlannerInterface::Result PipelinePlanner::plan(const planning_scene::PlanningSce
+ 		request.planner_id = planner_id;
+ 		request.allowed_planning_time = timeout;
+ 		request.start_state.is_diff = true;  // we don't specify an extra start state
+-		request.num_planning_attempts = properties().get<uint>("num_planning_attempts");
++		request.num_planning_attempts = properties().get<unsigned int>("num_planning_attempts");
+ 		request.max_velocity_scaling_factor = properties().get<double>("max_velocity_scaling_factor");
+ 		request.max_acceleration_scaling_factor = properties().get<double>("max_acceleration_scaling_factor");
+ 		request.workspace_parameters = properties().get<moveit_msgs::msg::WorkspaceParameters>("workspace_parameters");
+ 
+diff --git a/python/bindings/src/solvers.cpp b/python/bindings/src/solvers.cpp
+index 7c6a12f4..f1d60b31 100644
+--- a/python/bindings/src/solvers.cpp
++++ b/python/bindings/src/solvers.cpp
+@@ -73,7 +73,7 @@ void export_solvers(py::module& m) {
+ 				pipelinePlanner = core.PipelinePlanner(node, 'ompl', 'PRMkConfigDefault')
+ 				pipelinePlanner.num_planning_attempts = 10
+ 			)")
+-	    .property<uint>("num_planning_attempts", "int: Number of planning attempts")
++	    .property<unsigned int>("num_planning_attempts", "int: Number of planning attempts")
+ 	    .property<moveit_msgs::msg::WorkspaceParameters>(
+ 	        "workspace_parameters",
+ 	        ":moveit_msgs:`WorkspaceParameters`: Specifies workspace box to be used for Cartesian sampling")
+ 
