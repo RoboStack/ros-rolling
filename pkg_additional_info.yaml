@@ -244,8 +244,13 @@ libg2o:
   # The remote build was published against ros2-distro-mutex 0.19.* rolling_*,
   # which is long gone now that the mutex is at 0.20.0 rolling_26 -- same
   # stale-remote-build pattern as pcl_conversions/ros2cli/distro_mutex above.
-  # Bump so skip_existing forces a fresh local build against the current mutex.
-  build_number: 26
+  # Bumped to 26 first for that fix, then to 27: a CI cache from that first
+  # bump already holds a build_26 artifact with the old "qt" host dep baked
+  # in (see the dependencies.yaml entry below), and vinca's skip_existing
+  # check only compares build_number, not the full package hash, so it would
+  # otherwise keep matching that stale cached build instead of rebuilding
+  # without qt (same issue independently hit on humble/jazzy's libg2o).
+  build_number: 27
   # On win-64, csparse_extension builds as a DLL that exports no symbols
   # (no dllexport macro is defined for it), so MSVC produces the .dll but no
   # import .lib, and solver_csparse fails to link against it. Same fix as the
