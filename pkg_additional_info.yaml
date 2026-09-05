@@ -232,6 +232,12 @@ visp:
     override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
+cv_bridge:
+  # Same stale-remote-build pattern as libg2o below: the remote build was
+  # published against ros2-distro-mutex 0.19.* rolling_*, several versions
+  # behind the current 0.20.0 rolling_27. Bump so skip_existing forces a
+  # fresh local build against the current mutex.
+  build_number: 26
 distro_mutex:
   # vinca.yaml's mutex_package.build_number was bumped to 26 to re-publish
   # ros2-distro-mutex with vtk 9.7.0.* (was 9.6.2.*), but should_skip_mutex_package
