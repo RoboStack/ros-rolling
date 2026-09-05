@@ -1,0 +1,29 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2c0bf30..5b5354f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -25,6 +25,15 @@ find_package(rosidl_typesupport_cpp REQUIRED)
+ find_package(lifecycle_msgs REQUIRED)
+ find_package(system_modes_msgs REQUIRED)
+ 
++# ament_target_dependencies() was removed on Rolling; every ament_cmake
++# package that exports targets populates a <pkg>_TARGETS list, which is the
++# modern replacement.
++macro(link_ament_dependencies target)
++  foreach(_ament_dep ${ARGN})
++    target_link_libraries(${target} ${${_ament_dep}_TARGETS})
++  endforeach()
++endmacro()
++
+ add_library(mode SHARED
+   src/system_modes/mode.cpp
+   src/system_modes/mode_impl.cpp
+@@ -34,7 +43,7 @@ add_library(mode SHARED
+ target_include_directories(mode PUBLIC
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+   $<INSTALL_INTERFACE:include>)
+-ament_target_dependencies(mode
++link_ament_dependencies(mode
+   "rclcpp"
+   "rcl_lifecycle"
+   "rclcpp_lifecycle"

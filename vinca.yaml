@@ -193,7 +193,6 @@ packages_select_by_deps:
       - libcamera
       - nobleo_socketcan_bridge  # Depends on socketcan
       - ros2_socketcan  # Depends on socketcan
-      - rosgraph_monitor
       - usb_cam  # Depends on v4l
 
   # These packages are currently only build on Linux,
@@ -416,25 +415,32 @@ packages_select_by_deps:
       - mujoco_ros2_control_demos
   - if: linux
     then:
-      - rviz_2d_overlay_plugins
       - rviz_satellite
       - sdl2_vendor
       - septentrio_gnss_driver
       - serial_driver
       - sick_safetyscanners2
       - sick_safetyscanners2_interfaces
-      - sick_safetyscanners_base
       - simulation_interfaces
       - slider_publisher
-      - spacenav
       - swri_console  # Until sync of: https://github.com/ros/rosdistro/pull/49750
+
+  # jazzy already builds these on osx (its vinca.yaml selects them under
+  # "not win"/"not linux"); rolling had them needlessly linux-only. Comment
+  # separates this from the block above so vinca-sort-vinca-lists doesn't
+  # pool their then-items together and reshuffle across the boundary.
+  - if: not wasm32 and not win
+    then:
+      - rosgraph_monitor
+      - rviz_2d_overlay_plugins
+      - sick_safetyscanners_base
+      - spacenav
       - system_modes
+      - system_modes_msgs
       - teleop_tools
       - tf_transformations
       - topic_tools
       - trac_ik
-  - if: not wasm32 and not win
-    then:
       - turtle_tf2_cpp
       - turtle_tf2_py
       - turtlebot3_gazebo
@@ -460,6 +466,7 @@ packages_select_by_deps:
       - yasmin_pcl
       - yasmin_plugins_manager
       - yasmin_ros
+      - zed_msgs  # jazzy builds this on osx; was needlessly linux-only here
 
   # webots_ros2 is linux-only (excluding aarch64); do not merge this block's
   # sort domain with the block above (vinca-sort-vinca-lists pools then-items
@@ -467,7 +474,6 @@ packages_select_by_deps:
   - if: linux and not aarch64
     then:
       - webots_ros2
-      - zed_msgs
 
 patch_dir: patch
 rosdistro_snapshot: rosdistro_snapshot.yaml
