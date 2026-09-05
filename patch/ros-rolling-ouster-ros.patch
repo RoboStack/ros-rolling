@@ -138,3 +138,28 @@ index 0de2ad5..266cf93 100644
    HINTS ${pkg_libzip_LIBRARY_DIRS})
  mark_as_advanced(libzip_LIBRARIES)
  
+diff --git a/ouster-sdk/CMakeLists.txt b/ouster-sdk/CMakeLists.txt
+index 4c6e3ac..0937a63 100644
+--- a/ouster-sdk/CMakeLists.txt
++++ b/ouster-sdk/CMakeLists.txt
+@@ -13,6 +13,20 @@ endif()
+ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+ include(DefaultBuildType)
+ 
++# When built as part of the ouster_ros ROS wrapper (add_subdirectory()'d
++# from its CMakeLists.txt, not as a standalone project), some ROS
++# dependency's exported CMake config leaves SPDLOG_FMT_EXTERNAL defined
++# at directory scope, which cascades down into this subtree. That makes
++# spdlog's own headers (spdlog.h -> fmt.h) pull in the external/system
++# fmt, while ouster_client/src/logging.cpp unconditionally includes
++# spdlog's *bundled* fmt copy (<spdlog/fmt/bundled/args.h>, upstream
++# spdlog design, not conditional on SPDLOG_FMT_EXTERNAL) -- both then
++# get processed in the same translation unit and their fmt::v10
++# template declarations collide (MSVC C2990/C2955/... "already
++# declared"/"already has a body"). Force this subtree back to spdlog's
++# bundled fmt consistently, matching what logging.cpp already assumes.
++remove_definitions(-DSPDLOG_FMT_EXTERNAL)
++
+ # configure vcpkg from environment variables, if present
+ include(VcpkgEnv)
+ 
