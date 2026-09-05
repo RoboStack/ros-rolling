@@ -29,14 +29,6 @@ index 385b7899..b1d6f2ab 100644
      Qt5::WebSockets
      )
  
-@@ -216,6 +214,7 @@ target_link_libraries(plotjuggler_base
-     PUBLIC
-         plotjuggler_qwt
-     PRIVATE
-+        ${QT_LINK_LIBRARIES}
-         lua::lua
-         sol2::sol2
-     )
 diff --git a/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt b/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt
 index 588c69ba..ab94a3df 100644
 --- a/plotjuggler_plugins/ParserProtobuf/CMakeLists.txt

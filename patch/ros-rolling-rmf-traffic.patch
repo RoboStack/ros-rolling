@@ -154,3 +154,135 @@ index 115b710..7011975 100644
  #include "fcl/narrowphase/distance.h"
  
  #include "fcl/narrowphase/collision.h"
+diff --git a/include/rmf_traffic/DetectConflict.hpp b/include/rmf_traffic/DetectConflict.hpp
+index e0aa706..64f0d61 100644
+--- a/include/rmf_traffic/DetectConflict.hpp
++++ b/include/rmf_traffic/DetectConflict.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__DETECTCONFLICT_HPP
+ #define RMF_TRAFFIC__DETECTCONFLICT_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/Trajectory.hpp>
+ #include <rmf_traffic/Route.hpp>
+ #include <rmf_traffic/Profile.hpp>
+diff --git a/include/rmf_traffic/Route.hpp b/include/rmf_traffic/Route.hpp
+index c3825ed..840aa84 100644
+--- a/include/rmf_traffic/Route.hpp
++++ b/include/rmf_traffic/Route.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__ROUTE_HPP
+ #define RMF_TRAFFIC__ROUTE_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/Trajectory.hpp>
+ 
+ #include <rmf_utils/impl_ptr.hpp>
+diff --git a/include/rmf_traffic/agv/VehicleTraits.hpp b/include/rmf_traffic/agv/VehicleTraits.hpp
+index 416ee30..325e902 100644
+--- a/include/rmf_traffic/agv/VehicleTraits.hpp
++++ b/include/rmf_traffic/agv/VehicleTraits.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__AGV__VEHICLETRAITS_HPP
+ #define RMF_TRAFFIC__AGV__VEHICLETRAITS_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/Profile.hpp>
+ #include <rmf_traffic/Trajectory.hpp>
+ 
+diff --git a/include/rmf_traffic/schedule/Change.hpp b/include/rmf_traffic/schedule/Change.hpp
+index bca4c5d..2328183 100644
+--- a/include/rmf_traffic/schedule/Change.hpp
++++ b/include/rmf_traffic/schedule/Change.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__SCHEDULE__CHANGE_HPP
+ #define RMF_TRAFFIC__SCHEDULE__CHANGE_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/schedule/Itinerary.hpp>
+ #include <rmf_traffic/schedule/Participant.hpp>
+ #include <rmf_traffic/schedule/Version.hpp>
+diff --git a/include/rmf_traffic/schedule/Itinerary.hpp b/include/rmf_traffic/schedule/Itinerary.hpp
+index eb6a0ab..fbf25e9 100644
+--- a/include/rmf_traffic/schedule/Itinerary.hpp
++++ b/include/rmf_traffic/schedule/Itinerary.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__SCHEDULE__ITINERARY_HPP
+ #define RMF_TRAFFIC__SCHEDULE__ITINERARY_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/Route.hpp>
+ #include <rmf_traffic/schedule/Version.hpp>
+ 
+diff --git a/include/rmf_traffic/schedule/ParticipantDescription.hpp b/include/rmf_traffic/schedule/ParticipantDescription.hpp
+index 74d272c..3ce72cd 100644
+--- a/include/rmf_traffic/schedule/ParticipantDescription.hpp
++++ b/include/rmf_traffic/schedule/ParticipantDescription.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__SCHEDULE__PARTICIPANTDESCRIPTION_HPP
+ #define RMF_TRAFFIC__SCHEDULE__PARTICIPANTDESCRIPTION_HPP
+ 
++#include <cstdint>
+ #include <string>
+ #include <unordered_map>
+ 
+diff --git a/include/rmf_traffic/schedule/Query.hpp b/include/rmf_traffic/schedule/Query.hpp
+index aa6d3ab..bb3a924 100644
+--- a/include/rmf_traffic/schedule/Query.hpp
++++ b/include/rmf_traffic/schedule/Query.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__SCHEDULE__QUERY_HPP
+ #define RMF_TRAFFIC__SCHEDULE__QUERY_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/detail/bidirectional_iterator.hpp>
+ 
+ #include <rmf_traffic/schedule/Version.hpp>
+diff --git a/include/rmf_traffic/schedule/Writer.hpp b/include/rmf_traffic/schedule/Writer.hpp
+index f536114..473b2db 100644
+--- a/include/rmf_traffic/schedule/Writer.hpp
++++ b/include/rmf_traffic/schedule/Writer.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TRAFFIC__SCHEDULE__WRITER_HPP
+ #define RMF_TRAFFIC__SCHEDULE__WRITER_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/schedule/Itinerary.hpp>
+ #include <rmf_traffic/schedule/ParticipantDescription.hpp>
+ 
+diff --git a/src/rmf_traffic/Route.cpp b/src/rmf_traffic/Route.cpp
+index debd648..de68354 100644
+--- a/src/rmf_traffic/Route.cpp
++++ b/src/rmf_traffic/Route.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include "internal_Route.hpp"
+ 
+ #include <rmf_utils/Modular.hpp>
+diff --git a/src/rmf_traffic/internal_Route.hpp b/src/rmf_traffic/internal_Route.hpp
+index 8bb220b..112ed34 100644
+--- a/src/rmf_traffic/internal_Route.hpp
++++ b/src/rmf_traffic/internal_Route.hpp
+@@ -18,6 +18,7 @@
+ #ifndef SRC__RMF_TRAFFIC__INTERNAL_ROUTE_HPP
+ #define SRC__RMF_TRAFFIC__INTERNAL_ROUTE_HPP
+ 
++#include <cstdint>
+ #include <rmf_traffic/Route.hpp>
+ 
+ namespace rmf_traffic {
+diff --git a/src/rmf_traffic/schedule/Timeline.hpp b/src/rmf_traffic/schedule/Timeline.hpp
+index b190242..94f9719 100644
+--- a/src/rmf_traffic/schedule/Timeline.hpp
++++ b/src/rmf_traffic/schedule/Timeline.hpp
+@@ -18,6 +18,7 @@
+ #ifndef SRC__RMF_TRAFFIC__SCHEDULE__TIMELINE_HPP
+ #define SRC__RMF_TRAFFIC__SCHEDULE__TIMELINE_HPP
+ 
++#include <cstdint>
+ #include "../DetectConflictInternal.hpp"
+ 
+ #include <rmf_traffic/schedule/Query.hpp>
