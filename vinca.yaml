@@ -41,11 +41,17 @@ packages_skip_by_deps:
       - tlsf_cpp
 
   # mujoco_vendor has no prebuilt MuJoCo binary for macOS, so mujoco_3d_lidar (which
-  # calls real MuJoCo API functions, unlike mujoco_ros2_control) can't build there;
-  # mujoco_ros2_control_plugins pulls it in transitively.
+  # calls real MuJoCo API functions, unlike mujoco_ros2_control) can't build there.
   - if: osx
     then:
       - mujoco_3d_lidar
+
+  # mujoco_ros2_control_plugins unconditionally requires
+  # find_package(OpenGL REQUIRED COMPONENTS EGL) -- EGL doesn't exist on
+  # Windows (or macOS, covered by the mujoco_vendor gap above) at all,
+  # this is a genuine platform incompatibility, not a portability bug.
+  - if: osx or win
+    then:
       - mujoco_ros2_control_plugins
 
 packages_remove_from_deps:
@@ -406,11 +412,11 @@ packages_select_by_deps:
       - rtcm_msgs
       - rviz2
 
-  # mujoco_vendor has no prebuilt MuJoCo binary for macOS (see the
-  # packages_skip_by_deps mujoco_3d_lidar/mujoco_ros2_control_plugins entry
-  # above); mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins,
-  # so it can't build there either.
-  - if: not wasm32 and not osx
+  # mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins, which
+  # is skipped on osx (no prebuilt MuJoCo binary) and win (unconditional
+  # EGL requirement -- see the packages_skip_by_deps entries above), so
+  # it can't build on either platform either.
+  - if: not wasm32 and not osx and not win
     then:
       - mujoco_ros2_control
       - mujoco_ros2_control_demos
