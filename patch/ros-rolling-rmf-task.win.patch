@@ -1,0 +1,39 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d4d1647..42ab1ee 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,6 +13,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   add_compile_options(-Wall -Wextra -Wpedantic)
+ endif()
+ 
++if(MSVC)
++  # M_PI et al. are non-standard extensions MSVC only defines when this
++  # is set (used via rmf_traffic's installed Interpolate.hpp).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ if(NOT CMAKE_BUILD_TYPE)
+   # Use the Release build type by default if the user has not specified one
+   set(CMAKE_BUILD_TYPE Release)
+diff --git a/src/rmf_task/BackupFileManager.cpp b/src/rmf_task/BackupFileManager.cpp
+index 7afa25d..15bd7ad 100644
+--- a/src/rmf_task/BackupFileManager.cpp
++++ b/src/rmf_task/BackupFileManager.cpp
+@@ -127,9 +127,14 @@ public:
+   std::optional<uint64_t> last_seq;
+   const std::string backup_file_name = "backup";
+   const std::string pre_backup_file_name = ".backup";
+-  const std::string pre_backup_file_path = robot_directory /
+-    pre_backup_file_name;
+-  const std::string backup_file_path = robot_directory / backup_file_name;
++  // std::filesystem::path has no implicit conversion to std::string (only
++  // the explicit .string() member) -- GCC/libstdc++ tolerates constructing
++  // a string directly from a path here, but MSVC's STL correctly rejects
++  // it (C2665). Call .string() explicitly; portable everywhere.
++  const std::string pre_backup_file_path = (robot_directory /
++    pre_backup_file_name).string();
++  const std::string backup_file_path =
++    (robot_directory / backup_file_name).string();
+ 
+   void write_if_new(const Task::Active::Backup& backup)
+   {
