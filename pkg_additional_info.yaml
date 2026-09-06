@@ -334,7 +334,15 @@ rmf_traffic_ros2:
   # (it's only used in one internal .cpp, never in public headers, so
   # consumers never needed to know about it) and bump again so this
   # build actually gets exercised.
-  build_number: 27
+  #
+  # build_27 (the PROJ PRIVATE fix) cleared the PROJ error but hit the
+  # identical class of bug for rmf_building_map_msgs/rmf_reservation_msgs
+  # -- the aggregate targets used on Windows for the LNK1170 fix are
+  # PUBLIC but were never in ament_export_dependencies(), so any
+  # consumer's own find_package(rmf_traffic_ros2) needs them to already
+  # exist. Added the missing ament_export_dependencies() entries
+  # (WIN32-only) and bump again.
+  build_number: 28
 rmf_utils:
   # The remote win-64 build (build_number 25) never actually got its
   # rmf_utils-config.cmake consumed by anything until rmf-traffic reached

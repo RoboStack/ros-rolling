@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..8d05df03 100644
+index a05ec3e2..409ae76f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -140,6 +140,27 @@ index a05ec3e2..8d05df03 100644
  target_include_directories(rmf_traffic_ros2
    PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -219,6 +295,20 @@ ament_export_dependencies(
+   ZLIB
+ )
+ 
++if(WIN32)
++  # rmf_building_map_msgs::rmf_building_map_msgs and
++  # rmf_reservation_msgs::rmf_reservation_msgs (the aggregate targets
++  # used on Windows instead of the raw _LIBRARIES variables, see the
++  # LNK1170 fix above) are part of this package's PUBLIC link
++  # interface, but were never in ament_export_dependencies() -- on
++  # non-Windows this was harmless (raw path lists don't need
++  # find_dependency), but on Windows any downstream consumer's own
++  # find_package(rmf_traffic_ros2) needs these targets to already
++  # exist, or CMake's generate step fails with "target ... was not
++  # found" (first hit by rmf_task_ros2).
++  ament_export_dependencies(rmf_building_map_msgs rmf_reservation_msgs)
++endif()
++
+ # TODO(MXG): Change these executables into shared libraries that can act as
+ # ROS2 node components
+ 
 diff --git a/src/rmf_traffic_ros2/schedule/Node.cpp b/src/rmf_traffic_ros2/schedule/Node.cpp
 index 7b2902d4..ef950ef0 100644
 --- a/src/rmf_traffic_ros2/schedule/Node.cpp
