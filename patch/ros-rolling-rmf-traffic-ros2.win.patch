@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e..fbce72a 100644
+index a05ec3e2..6cba009c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -30,7 +30,19 @@ index a05ec3e..fbce72a 100644
  find_package(rmf_reservation_msgs REQUIRED)
  
  
-@@ -190,10 +202,16 @@ target_link_libraries(rmf_traffic_ros2
+@@ -177,6 +189,11 @@ endif()
+ file(GLOB_RECURSE core_lib_srcs "src/rmf_traffic_ros2/*.cpp")
+ add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
+ 
++if(MSVC)
++  # schedule/Node.cpp exceeds the default object file section limit.
++  target_compile_options(rmf_traffic_ros2 PRIVATE /bigobj)
++endif()
++
+ target_link_libraries(rmf_traffic_ros2
+   PUBLIC
+     rmf_traffic::rmf_traffic
+@@ -190,10 +207,16 @@ target_link_libraries(rmf_traffic_ros2
      yaml-cpp
      ZLIB::ZLIB
      PkgConfig::PROJ
