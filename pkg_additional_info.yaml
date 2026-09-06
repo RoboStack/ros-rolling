@@ -297,7 +297,12 @@ rmf_utils:
   # published win-64 artifact rather than a real source issue. Bump the
   # build number so skip_existing doesn't reuse it, forcing a fresh
   # win-64 build against the current toolchain instead.
-  build_number: 26
+  #
+  # build_number 26 (this same bump, no code change) still hit
+  # skip_existing against a build_26 published from a run BEFORE the
+  # WINDOWS_EXPORT_ALL_SYMBOLS patch was added -- the patch was never
+  # actually exercised. Bump again so the patched build actually runs.
+  build_number: 27
 ros2cli:
   build_number: 26
 rosidl_cli:
