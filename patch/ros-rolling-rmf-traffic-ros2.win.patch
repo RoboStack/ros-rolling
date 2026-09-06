@@ -240,3 +240,29 @@ index 62f9307..1baa196 100644
  {
    return _pimpl->set_retained_history_count(count);
  }
+diff --git a/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp b/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp
+index 8d666fed..807aa974 100644
+--- a/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp
++++ b/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp
+@@ -42,7 +42,7 @@ using namespace std::chrono_literals;
+ class MonitorNode : public rclcpp::Node
+ {
+ public:
+-  static struct NoAutomaticSetup{} no_automatic_setup;
++  inline static struct NoAutomaticSetup{} no_automatic_setup;
+ 
+   MonitorNode(
+     std::function<void(std::shared_ptr<rclcpp::Node>)> callback,
+diff --git a/src/rmf_traffic_ros2/schedule/internal_Node.hpp b/src/rmf_traffic_ros2/schedule/internal_Node.hpp
+index c5c7a7ac..f8351722 100644
+--- a/src/rmf_traffic_ros2/schedule/internal_Node.hpp
++++ b/src/rmf_traffic_ros2/schedule/internal_Node.hpp
+@@ -83,7 +83,7 @@ public:
+   using ScheduleId = rmf_traffic_msgs::msg::ScheduleIdentity;
+   ScheduleId node_id;
+ 
+-  static struct NoAutomaticSetup{} no_automatic_setup;
++  inline static struct NoAutomaticSetup{} no_automatic_setup;
+ 
+   ScheduleNode(
+     ScheduleId id,
