@@ -1,0 +1,17 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ad05ac1..45af2de 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,6 +13,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   add_compile_options(-Wall -Wextra -Wpedantic)
+ endif()
+ 
++if(MSVC)
++  # M_PI et al. are non-standard extensions MSVC only defines when this
++  # is set (Spline.cpp uses M_PI unconditionally).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ if(NOT CMAKE_BUILD_TYPE)
+   # Use the Release build type by default if the user has not specified one
+   set(CMAKE_BUILD_TYPE Release)
