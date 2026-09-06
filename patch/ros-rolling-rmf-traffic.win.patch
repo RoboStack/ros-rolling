@@ -72,38 +72,77 @@ index 983f0c2..d9925b2 100644
  //==============================================================================
  class Planner::Configuration::Implementation
 diff --git a/src/rmf_traffic/agv/planning/CacheManager.hpp b/src/rmf_traffic/agv/planning/CacheManager.hpp
-index 2bdce0e..2e45db2 100644
+index 2bdce0e..879269d 100644
 --- a/src/rmf_traffic/agv/planning/CacheManager.hpp
 +++ b/src/rmf_traffic/agv/planning/CacheManager.hpp
-@@ -188,7 +188,17 @@ private:
+@@ -188,7 +188,26 @@ private:
  
    CacheManager(
      std::shared_ptr<const Generator> generator,
 -    std::function<Storage()> storage_initializer = []() { return Storage(); });
-+    // MSVC fails to resolve the unqualified "Storage" (a dependent
-+    // member alias of this class template) inside a lambda used as a
-+    // default argument here (C3861 + cascading std::_Is_invocable_r_/
-+    // conjunction failures). Explicitly naming the current
-+    // specialization (CacheManager<CacheArg>) doesn't help either --
-+    // MSVC then fails to find CacheArg itself in this context. Use the
-+    // injected-class-name (bare CacheManager, referring to the current
-+    // instantiation without repeating the template argument) instead;
-+    // GCC/Clang already resolve the original unqualified form fine.
-+    std::function<Storage()> storage_initializer =
-+    []() { return typename CacheManager::Storage(); });
++    // MSVC cannot compile a lambda used as a default argument value
++    // here when the lambda references this class template's dependent
++    // Storage member alias: unqualified "Storage" fails to resolve
++    // (C3861), fully qualifying as CacheManager<CacheArg>::Storage
++    // fails because CacheArg itself isn't found in that context
++    // (C2065), and the injected-class-name form CacheManager::Storage
++    // is rejected outright ("requires template argument list", C2955).
++    // Default to nullptr (no name lookup needed at all) and resolve
++    // the real default inside default_storage_initializer()'s body
++    // instead, where normal class/template scoping applies with none
++    // of these restrictions.
++    std::function<Storage()> storage_initializer = nullptr);
++
++  static std::function<Storage()> default_storage_initializer(
++    std::function<Storage()> storage_initializer)
++  {
++    if (storage_initializer)
++      return storage_initializer;
++    return []() { return Storage(); };
++  }
  
    template<typename G> friend class Cache;
    std::shared_ptr<Upstream_type> _upstream;
-@@ -214,7 +224,11 @@ public:
+@@ -214,7 +233,18 @@ public:
  
    CacheManagerMap(
      std::shared_ptr<const GeneratorFactory> factory,
 -    std::function<Storage()> storage_initializer = []() { return Storage(); });
-+    // Same MSVC dependent-name-in-default-argument-lambda issue as
-+    // CacheManager's constructor above -- use the injected-class-name
-+    // instead of explicitly naming the current specialization.
-+    std::function<Storage()> storage_initializer =
-+    []() { return typename CacheManagerMap::Storage(); });
++    // Same MSVC default-argument-lambda restriction as CacheManager's
++    // constructor above -- default to nullptr and resolve the real
++    // default inside default_storage_initializer()'s body instead.
++    std::function<Storage()> storage_initializer = nullptr);
++
++  static std::function<Storage()> default_storage_initializer(
++    std::function<Storage()> storage_initializer)
++  {
++    if (storage_initializer)
++      return storage_initializer;
++    return []() { return Storage(); };
++  }
  
    CacheManagerPtr get(std::size_t goal_index) const;
  
+@@ -329,8 +359,10 @@ CacheManager<CacheArg>::CacheManager(
+   std::shared_ptr<const Generator> generator,
+   std::function<Storage()> storage_initializer)
+ : _upstream(
+-    std::make_shared<Upstream_type>(storage_initializer, std::move(generator))),
+-  _storage_initializer(std::move(storage_initializer))
++    std::make_shared<Upstream_type>(
++      default_storage_initializer(storage_initializer), std::move(generator))),
++  _storage_initializer(
++    default_storage_initializer(std::move(storage_initializer)))
+ {
+   // Do nothing
+ }
+@@ -356,7 +388,8 @@ CacheManagerMap<CacheArg>::CacheManagerMap(
+   std::shared_ptr<const GeneratorFactory> factory,
+   std::function<Storage()> storage_initializer)
+ : _generator_factory(std::move(factory)),
+-  _storage_initializer(std::move(storage_initializer))
++  _storage_initializer(
++    default_storage_initializer(std::move(storage_initializer)))
+ {
+   // Do nothing
+ }
