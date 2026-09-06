@@ -98,3 +98,47 @@ index 7b2902d..a80cdfb 100644
      .timestamp(time);
  }
  
+diff --git a/include/rmf_traffic_ros2/schedule/Negotiation.hpp b/include/rmf_traffic_ros2/schedule/Negotiation.hpp
+index 318939e..1e6a61f 100644
+--- a/include/rmf_traffic_ros2/schedule/Negotiation.hpp
++++ b/include/rmf_traffic_ros2/schedule/Negotiation.hpp
+@@ -109,7 +109,7 @@ public:
+   ///
+   /// \param[in] count
+   ///   The number of negotiations to retain
+-  void set_retained_history_count(uint count);
++  void set_retained_history_count(unsigned int count);
+ 
+   /// Register a negotiator with this Negotiation manager.
+   ///
+diff --git a/src/rmf_traffic_ros2/schedule/Negotiation.cpp b/src/rmf_traffic_ros2/schedule/Negotiation.cpp
+index 62f9307..1baa196 100644
+--- a/src/rmf_traffic_ros2/schedule/Negotiation.cpp
++++ b/src/rmf_traffic_ros2/schedule/Negotiation.cpp
+@@ -303,7 +303,7 @@ public:
+     std::function<void (uint64_t conflict_version, bool success)>;
+   StatusConclusionCallback conclusion_callback;
+ 
+-  uint retained_history_count = 0;
++  unsigned int retained_history_count = 0;
+   std::map<Version, rmf_traffic::schedule::Negotiation> history;
+ 
+   Implementation(
+@@ -1031,7 +1031,7 @@ public:
+       for_participant, negotiators, failure_callbacks);
+   }
+ 
+-  void set_retained_history_count(uint count)
++  void set_retained_history_count(unsigned int count)
+   {
+     retained_history_count = count;
+   }
+@@ -1130,7 +1130,7 @@ Negotiation::TableViewPtr Negotiation::table_view(
+ }
+ 
+ //==============================================================================
+-void Negotiation::set_retained_history_count(uint count)
++void Negotiation::set_retained_history_count(unsigned int count)
+ {
+   return _pimpl->set_retained_history_count(count);
+ }
