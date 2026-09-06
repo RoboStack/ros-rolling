@@ -1,8 +1,25 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 9dc2b82c..e1c0e7f4 100644
+index 9dc2b82c..1d248be7 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -37,12 +37,32 @@ target_link_libraries(rmf_task_ros2
+@@ -30,6 +30,16 @@ find_package(nlohmann_json_schema_validator REQUIRED)
+ file(GLOB_RECURSE core_lib_srcs "src/rmf_task_ros2/*.cpp")
+ add_library(rmf_task_ros2 SHARED ${core_lib_srcs})
+ 
++if(MSVC)
++  # No explicit dllexport annotations anywhere in this target, so
++  # without this MSVC produces the .dll but no companion .lib, and
++  # rmf_task_dispatcher/rmf_bidder_node fail with LNK1181. Only 5
++  # source files here (vs. rmf_traffic_ros2's 26), so the LNK1189
++  # 65535-object import-lib limit isn't a concern.
++  set_target_properties(rmf_task_ros2 PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_task_ros2
+   PUBLIC
+     ${std_msgs_TARGETS}
+@@ -37,12 +47,32 @@ target_link_libraries(rmf_task_ros2
      rmf_traffic::rmf_traffic
      rmf_traffic_ros2::rmf_traffic_ros2
      rmf_websocket::rmf_websocket
