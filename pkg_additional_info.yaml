@@ -324,7 +324,17 @@ rmf_traffic_ros2:
   # PROJ::proj ... was not found". skip_existing would otherwise keep
   # reusing that unpatched build_25. Bump so the fix actually gets
   # exercised.
-  build_number: 26
+  #
+  # build_26 (the ament_export_dependencies(PROJ) fix) still hit the
+  # same consumer-side error -- rmf_task_ros2's own pkg_check_modules(
+  # PROJ ...) call sets PROJ_FOUND=TRUE as a side effect before
+  # find_package(rmf_traffic_ros2) runs, so the auto-generated
+  # find_dependency(PROJ) guard silently no-ops and PROJ::proj never
+  # gets created. Switched PROJ to a PRIVATE link dependency instead
+  # (it's only used in one internal .cpp, never in public headers, so
+  # consumers never needed to know about it) and bump again so this
+  # build actually gets exercised.
+  build_number: 27
 rmf_utils:
   # The remote win-64 build (build_number 25) never actually got its
   # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
