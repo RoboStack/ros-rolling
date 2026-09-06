@@ -16,3 +16,22 @@ index b00fb4c..c2c608e 100644
  if(NOT CMAKE_BUILD_TYPE)
    # Use the Release build type by default if the user has not specified one
    set(CMAKE_BUILD_TYPE Release)
+@@ -36,6 +43,16 @@ add_library(rmf_battery SHARED
+   ${core_lib_srcs}
+ )
+ 
++if(WIN32)
++  # rmf_battery has no dllexport annotations at all. As a shared library
++  # on Windows with nothing explicitly exported, link.exe does not
++  # produce an import .lib, so every consumer fails with LNK1181
++  # "cannot open input file 'rmf_battery.lib'" even though
++  # rmf_battery.dll itself builds fine. Auto-export everything, same
++  # fix used for rmf_utils/rmf_traffic earlier in this package family.
++  set_target_properties(rmf_battery PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_battery
+   PUBLIC
+     rmf_utils::rmf_utils
+     rmf_traffic::rmf_traffic
+ )
