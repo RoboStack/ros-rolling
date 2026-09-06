@@ -1,0 +1,86 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a05ec3e..aee8c0c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -27,7 +27,12 @@ find_package(rclcpp REQUIRED)
+ find_package(yaml-cpp REQUIRED)
+ find_package(nlohmann_json REQUIRED)
+ find_package(ZLIB REQUIRED)
+-find_package(LibUUID REQUIRED)
++if(NOT WIN32)
++  # libuuid is a Linux/macOS-only library (Windows has its own native
++  # UUID API, RPC's UuidCreate/UuidToStringA, used directly in
++  # schedule/Node.cpp instead).
++  find_package(LibUUID REQUIRED)
++endif()
+ find_package(rmf_reservation_msgs REQUIRED)
+ 
+ 
+@@ -190,10 +195,16 @@ target_link_libraries(rmf_traffic_ros2
+     yaml-cpp
+     ZLIB::ZLIB
+     PkgConfig::PROJ
+-  PRIVATE
+-    LibUUID::LibUUID
+ )
+ 
++if(NOT WIN32)
++  target_link_libraries(rmf_traffic_ros2 PRIVATE LibUUID::LibUUID)
++else()
++  # Windows' native UUID API (used directly in schedule/Node.cpp
++  # instead of libuuid) lives in rpcrt4.
++  target_link_libraries(rmf_traffic_ros2 PRIVATE rpcrt4)
++endif()
++
+ target_include_directories(rmf_traffic_ros2
+   PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+diff --git a/src/rmf_traffic_ros2/schedule/Node.cpp b/src/rmf_traffic_ros2/schedule/Node.cpp
+index 7b2902d..a80cdfb 100644
+--- a/src/rmf_traffic_ros2/schedule/Node.cpp
++++ b/src/rmf_traffic_ros2/schedule/Node.cpp
+@@ -37,7 +37,13 @@
+ #include <rmf_utils/optional.hpp>
+ 
+ #include <unordered_map>
++#ifdef _WIN32
++// libuuid (uuid/uuid.h) is Linux/macOS-only; use Windows' native RPC
++// UUID API instead (linked against rpcrt4 in CMakeLists.txt).
++#include <rpc.h>
++#else
+ #include <uuid/uuid.h>
++#endif
+ 
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+@@ -46,17 +52,27 @@ namespace {
+ //==============================================================================
+ ScheduleNode::ScheduleId generate_node_id()
+ {
++#ifdef _WIN32
++  UUID raw_uuid;
++  UuidCreate(&raw_uuid);
++  RPC_CSTR uuid_cstr = nullptr;
++  UuidToStringA(&raw_uuid, &uuid_cstr);
++  const std::string uuid(reinterpret_cast<char*>(uuid_cstr));
++  RpcStringFreeA(&uuid_cstr);
++#else
+   uuid_t raw_uuid;
+   uuid_generate(raw_uuid);
+   // According to these docs, the size of the uuid string will be
+   // 36 bytes + '\n' so we make a buffer of 37.
+-  char uuid[37];
+-  uuid_unparse(raw_uuid, uuid);
++  char uuid_buf[37];
++  uuid_unparse(raw_uuid, uuid_buf);
++  const std::string uuid(uuid_buf);
++#endif
+   const rclcpp::Time time(
+     std::chrono::system_clock::now().time_since_epoch().count());
+ 
+   return rmf_traffic_msgs::build<ScheduleNode::ScheduleId>()
+-    .node_uuid(std::string(uuid))
++    .node_uuid(uuid)
+     .timestamp(time);
+ }
+ 
