@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..4a7046ca 100644
+index a05ec3e2..8d9f4ff4 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -52,7 +52,7 @@ index a05ec3e2..4a7046ca 100644
  
  if (rmf_traffic_FOUND)
    message(STATUS "found rmf_traffic")
-@@ -177,23 +198,79 @@ endif()
+@@ -177,23 +198,78 @@ endif()
  file(GLOB_RECURSE core_lib_srcs "src/rmf_traffic_ros2/*.cpp")
  add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
  
@@ -60,12 +60,11 @@ index a05ec3e2..4a7046ca 100644
 +  # schedule/Node.cpp exceeds the default object file section limit.
 +  target_compile_options(rmf_traffic_ros2 PRIVATE /bigobj)
 +
-+  # No explicit dllexport annotations anywhere in this target, so
-+  # without this MSVC produces the .dll but no companion .lib, and
-+  # every downstream executable (rmf_traffic_schedule,
-+  # rmf_traffic_blockade, etc.) fails with LNK1181.
-+  set_target_properties(rmf_traffic_ros2 PROPERTIES
-+    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++  # WINDOWS_EXPORT_ALL_SYMBOLS overflows MSVC's import-lib 65535-object
++  # limit (LNK1189) on this heavily Eigen/nlohmann-templated library.
++  # Use explicit RMF_TRAFFIC_ROS2_EXPORT annotations (detail/export.hpp)
++  # on just the symbols this package's own executables need instead.
++  target_compile_definitions(rmf_traffic_ros2 PRIVATE RMF_TRAFFIC_ROS2_BUILDING_DLL)
 +endif()
 +
  target_link_libraries(rmf_traffic_ros2
@@ -273,3 +272,169 @@ index c5c7a7ac..f8351722 100644
  
    ScheduleNode(
      ScheduleId id,
+diff --git a/include/rmf_traffic_ros2/schedule/Node.hpp b/include/rmf_traffic_ros2/schedule/Node.hpp
+index 0ae4ccbc..8bf6d98e 100644
+--- a/include/rmf_traffic_ros2/schedule/Node.hpp
++++ b/include/rmf_traffic_ros2/schedule/Node.hpp
+@@ -20,10 +20,13 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+ /// Make a ScheduleNode instance
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_node(
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/MonitorNode.hpp b/include/rmf_traffic_ros2/schedule/MonitorNode.hpp
+index 18da3ca7..83174457 100644
+--- a/include/rmf_traffic_ros2/schedule/MonitorNode.hpp
++++ b/include/rmf_traffic_ros2/schedule/MonitorNode.hpp
+@@ -23,6 +23,8 @@
+ #include <chrono>
+ #include <functional>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ using namespace std::chrono_literals;
+ 
+ namespace rmf_traffic_ros2 {
+@@ -30,6 +32,7 @@ namespace schedule {
+ 
+ /// Make a monitor node to monitor a heartbeat and restart a node when
+ /// the heartbeat is lost
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_monitor_node(
+   std::function<void(std::shared_ptr<rclcpp::Node>)> callback,
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions(),
+diff --git a/include/rmf_traffic_ros2/blockade/Node.hpp b/include/rmf_traffic_ros2/blockade/Node.hpp
+index dd6379ab..0075c6d8 100644
+--- a/include/rmf_traffic_ros2/blockade/Node.hpp
++++ b/include/rmf_traffic_ros2/blockade/Node.hpp
+@@ -20,14 +20,18 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace blockade {
+ 
+ /// Make a blockade node instance
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_node(
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+ 
+ /// Make a blockade node instance, specifying a node name
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_node(
+   const std::string& node_name,
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+diff --git a/include/rmf_traffic_ros2/schedule/Writer.hpp b/include/rmf_traffic_ros2/schedule/Writer.hpp
+index cf0cf625..13e17779 100644
+--- a/include/rmf_traffic_ros2/schedule/Writer.hpp
++++ b/include/rmf_traffic_ros2/schedule/Writer.hpp
+@@ -23,13 +23,15 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+ //==============================================================================
+ /// The Writer class provides an API that allows a Node to create schedule
+ /// Participants.
+-class Writer : public std::enable_shared_from_this<Writer>
++class RMF_TRAFFIC_ROS2_EXPORT Writer : public std::enable_shared_from_this<Writer>
+ {
+ public:
+ 
+diff --git a/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp b/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp
+index 028d6dc0..dc7cdc22 100644
+--- a/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp
++++ b/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp
+@@ -25,6 +25,8 @@
+ 
+ #include <string>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+@@ -41,6 +43,7 @@ rmf_traffic_msgs::msg::ConvexShapeContext shape_context(YAML::Node node);
+ rmf_traffic::Profile profile(YAML::Node node);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ ParticipantDescription participant_description(YAML::Node node);
+ 
+ //==============================================================================
+diff --git a/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp b/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp
+index 6536cc22..4f50b37d 100644
+--- a/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp
++++ b/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp
+@@ -23,6 +23,8 @@
+ #include <rmf_traffic_msgs/msg/participant_description.hpp>
+ #include <rmf_traffic_msgs/msg/participants.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
+@@ -30,6 +32,7 @@ rmf_traffic::schedule::ParticipantDescription convert(
+   const rmf_traffic_msgs::msg::ParticipantDescription& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ParticipantDescription convert(
+   const rmf_traffic::schedule::ParticipantDescription& from);
+ 
+diff --git a/include/rmf_traffic_ros2/detail/export.hpp b/include/rmf_traffic_ros2/detail/export.hpp
+new file mode 100644
+index 00000000..a8117028
+--- /dev/null
++++ b/include/rmf_traffic_ros2/detail/export.hpp
+@@ -0,0 +1,35 @@
++/*
++ * Copyright (C) 2026 Open Source Robotics Foundation
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++*/
++
++#ifndef RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
++#define RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
++
++// Blanket WINDOWS_EXPORT_ALL_SYMBOLS overflows MSVC's import-lib
++// 65535-object limit for this heavily Eigen/nlohmann-templated library
++// (LNK1189), so the small set of symbols actually needed by this
++// package's own executables are exported explicitly instead.
++#if defined(_WIN32)
++  #if defined(RMF_TRAFFIC_ROS2_BUILDING_DLL)
++    #define RMF_TRAFFIC_ROS2_EXPORT __declspec(dllexport)
++  #else
++    #define RMF_TRAFFIC_ROS2_EXPORT __declspec(dllimport)
++  #endif
++#else
++  #define RMF_TRAFFIC_ROS2_EXPORT
++#endif
++
++#endif // RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
