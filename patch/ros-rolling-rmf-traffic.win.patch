@@ -15,6 +15,24 @@ index ad05ac1..45af2de 100644
  if(NOT CMAKE_BUILD_TYPE)
    # Use the Release build type by default if the user has not specified one
    set(CMAKE_BUILD_TYPE Release)
+@@ -50,6 +56,17 @@ add_library(rmf_traffic SHARED
+   ${core_lib_srcs}
+ )
+ 
++if(WIN32)
++  # rmf_traffic has no dllexport annotations at all. As a shared library
++  # on Windows with nothing explicitly exported, link.exe does not
++  # produce an import .lib, so every consumer fails with LNK1181
++  # "cannot open input file 'rmf_traffic.lib'" even though
++  # rmf_traffic.dll itself builds fine. Auto-export everything, same
++  # fix used for every other Windows shared-library target this
++  # session (including rmf_utils earlier in this same package family).
++  set_target_properties(rmf_traffic PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ find_package(ament_cmake_catch2 QUIET)
+ find_package(ament_cmake_uncrustify QUIET)
+ if(BUILD_TESTING AND ament_cmake_catch2_FOUND AND ament_cmake_uncrustify_FOUND)
 diff --git a/src/rmf_traffic/Trajectory.cpp b/src/rmf_traffic/Trajectory.cpp
 index 3f29c7d..be98311 100644
 --- a/src/rmf_traffic/Trajectory.cpp
