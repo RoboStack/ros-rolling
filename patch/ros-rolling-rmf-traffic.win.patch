@@ -15,3 +15,21 @@ index ad05ac1..45af2de 100644
  if(NOT CMAKE_BUILD_TYPE)
    # Use the Release build type by default if the user has not specified one
    set(CMAKE_BUILD_TYPE Release)
+diff --git a/src/rmf_traffic/Trajectory.cpp b/src/rmf_traffic/Trajectory.cpp
+index 3f29c7d..be98311 100644
+--- a/src/rmf_traffic/Trajectory.cpp
++++ b/src/rmf_traffic/Trajectory.cpp
+@@ -798,7 +798,12 @@ bool Trajectory::base_iterator<SegT>::operator>=(
+ 
+ //==============================================================================
+ template<typename SegT>
+-Trajectory::base_iterator<SegT>::operator const_iterator() const
++// MSVC fails to resolve the unqualified "const_iterator" here (a member
++// alias of the enclosing Trajectory class, not of base_iterator itself)
++// in this out-of-line nested-class-template conversion operator (C2833).
++// GCC/Clang already resolve it via the enclosing scope; qualifying it
++// explicitly is equivalent and portable everywhere.
++Trajectory::base_iterator<SegT>::operator Trajectory::const_iterator() const
+ {
+   return _pimpl->make_iterator<const SegT>(_pimpl->raw_iterator);
+ }
