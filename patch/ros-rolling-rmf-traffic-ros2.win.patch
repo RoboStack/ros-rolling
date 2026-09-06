@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..6cba009c 100644
+index a05ec3e2..73aef4dc 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -42,7 +42,11 @@ index a05ec3e2..6cba009c 100644
  target_link_libraries(rmf_traffic_ros2
    PUBLIC
      rmf_traffic::rmf_traffic
-@@ -190,10 +207,16 @@ target_link_libraries(rmf_traffic_ros2
+@@ -186,14 +203,29 @@ target_link_libraries(rmf_traffic_ros2
+     ${rmf_site_map_msgs_LIBRARIES}
+     ${rmf_building_map_msgs_LIBRARIES}
+     ${rmf_reservation_msgs_LIBRARIES}
+-    ${rclcpp_LIBRARIES}
      yaml-cpp
      ZLIB::ZLIB
      PkgConfig::PROJ
@@ -50,6 +54,16 @@ index a05ec3e2..6cba009c 100644
 -    LibUUID::LibUUID
  )
  
++if(WIN32)
++  # ${rclcpp_LIBRARIES} expands to dozens of full paths and pushes the
++  # link.exe response file past its ~131071-character line limit
++  # (LNK1170). The rclcpp::rclcpp imported target lets CMake dedupe the
++  # transitive link graph instead of relinking every path verbatim.
++  target_link_libraries(rmf_traffic_ros2 PUBLIC rclcpp::rclcpp)
++else()
++  target_link_libraries(rmf_traffic_ros2 PUBLIC ${rclcpp_LIBRARIES})
++endif()
++
 +if(NOT WIN32)
 +  target_link_libraries(rmf_traffic_ros2 PRIVATE LibUUID::LibUUID)
 +else()
