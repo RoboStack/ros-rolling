@@ -288,6 +288,17 @@ pcl_conversions:
   # doesn't match that stale remote build, forcing a fresh local build against
   # the current pins instead.
   build_number: 26
+rmf_traffic:
+  # A win-64 build_number 25 got published successfully (compiles fine,
+  # produces rmf_traffic.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_
+  # SYMBOLS patch was added -- rmf_traffic has no dllexport annotations,
+  # so that build's .dll has no matching import .lib, breaking every
+  # downstream consumer (LNK1181). skip_existing then kept reusing that
+  # unpatched build_25 on every subsequent run, so the export fix has
+  # never actually been exercised. Bump so skip_existing doesn't reuse
+  # it, forcing a fresh win-64 build with the fix included. Same
+  # skip_existing pitfall already hit for rmf_utils below.
+  build_number: 26
 rmf_utils:
   # The remote win-64 build (build_number 25) never actually got its
   # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
