@@ -288,6 +288,13 @@ pcl_conversions:
   # doesn't match that stale remote build, forcing a fresh local build against
   # the current pins instead.
   build_number: 26
+rmf_battery:
+  # Same skip_existing pitfall as rmf_utils/rmf_traffic below: a win-64
+  # build_number 25 got published successfully (compiles fine, produces
+  # rmf_battery.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_SYMBOLS
+  # patch was added. Bump preemptively so the next run doesn't reuse
+  # that unpatched build and skip exercising the fix.
+  build_number: 26
 rmf_traffic:
   # A win-64 build_number 25 got published successfully (compiles fine,
   # produces rmf_traffic.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_
