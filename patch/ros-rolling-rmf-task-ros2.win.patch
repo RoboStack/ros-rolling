@@ -1,0 +1,39 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9dc2b82c..e1c0e7f4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -37,12 +37,32 @@ target_link_libraries(rmf_task_ros2
+     rmf_traffic::rmf_traffic
+     rmf_traffic_ros2::rmf_traffic_ros2
+     rmf_websocket::rmf_websocket
+-    ${rmf_task_msgs_LIBRARIES}
+-    ${rclcpp_LIBRARIES}
+     nlohmann_json::nlohmann_json
+     nlohmann_json_schema_validator
+ )
+ 
++if(WIN32)
++  # The raw ${..._LIBRARIES} variables below each recursively re-append
++  # their own dependencies' _LIBRARIES as plain strings with no
++  # deduplication, stacking up a lot of repeated full paths. On Windows
++  # CI the concatenated link.exe response-file line exceeded its
++  # ~131071-character limit (LNK1170) -- same issue and same fix as
++  # rmf_traffic_ros2 hit earlier. The aggregate/imported targets let
++  # CMake's target-based link graph dedupe the transitive closure
++  # instead of relinking every path verbatim.
++  target_link_libraries(rmf_task_ros2
++    PUBLIC
++      rmf_task_msgs::rmf_task_msgs
++      rclcpp::rclcpp
++  )
++else()
++  target_link_libraries(rmf_task_ros2
++    PUBLIC
++      ${rmf_task_msgs_LIBRARIES}
++      ${rclcpp_LIBRARIES}
++  )
++endif()
++
+ target_include_directories(rmf_task_ros2
+   PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
