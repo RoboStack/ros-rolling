@@ -480,3 +480,40 @@ index daf4e1dd..8bde4caf 100644
  #include <rmf_traffic_ros2/StandardNames.hpp>
  #include <rmf_traffic_ros2/schedule/Query.hpp>
  
+diff --git a/include/rmf_traffic_ros2/Time.hpp b/include/rmf_traffic_ros2/Time.hpp
+index 34675318..963bc6d6 100644
+--- a/include/rmf_traffic_ros2/Time.hpp
++++ b/include/rmf_traffic_ros2/Time.hpp
+@@ -23,24 +23,32 @@
+ #include <rmf_traffic/Time.hpp>
+ #include <rclcpp/time.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ builtin_interfaces::msg::Time convert(rmf_traffic::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Time convert(builtin_interfaces::msg::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rclcpp::Time to_ros2(rmf_traffic::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Time convert(rclcpp::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rclcpp::Duration convert(rmf_traffic::Duration duration);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Duration convert(rclcpp::Duration duration);
+ 
+ } // namespace rmf_traffic_ros2

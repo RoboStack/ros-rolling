@@ -342,7 +342,15 @@ rmf_traffic_ros2:
   # consumer's own find_package(rmf_traffic_ros2) needs them to already
   # exist. Added the missing ament_export_dependencies() entries
   # (WIN32-only) and bump again.
-  build_number: 28
+  #
+  # build_28 (the export-dependencies fix) cleared configure but hit a
+  # predictable gap in the selective-export scheme (LNK1189 fix): only
+  # symbols needed by THIS package's own executables were annotated
+  # with RMF_TRAFFIC_ROS2_EXPORT. rmf_task_ros2 needs several
+  # Time.hpp convert()/to_ros2() overloads that were never exported.
+  # Exported the whole (small) header rather than chasing individual
+  # overloads one at a time. Bump again.
+  build_number: 29
 rmf_utils:
   # The remote win-64 build (build_number 25) never actually got its
   # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
