@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..98d5fa60 100644
+index a05ec3e2..4a7046ca 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -52,13 +52,20 @@ index a05ec3e2..98d5fa60 100644
  
  if (rmf_traffic_FOUND)
    message(STATUS "found rmf_traffic")
-@@ -177,23 +198,72 @@ endif()
+@@ -177,23 +198,79 @@ endif()
  file(GLOB_RECURSE core_lib_srcs "src/rmf_traffic_ros2/*.cpp")
  add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
  
 +if(MSVC)
 +  # schedule/Node.cpp exceeds the default object file section limit.
 +  target_compile_options(rmf_traffic_ros2 PRIVATE /bigobj)
++
++  # No explicit dllexport annotations anywhere in this target, so
++  # without this MSVC produces the .dll but no companion .lib, and
++  # every downstream executable (rmf_traffic_schedule,
++  # rmf_traffic_blockade, etc.) fails with LNK1181.
++  set_target_properties(rmf_traffic_ros2 PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
 +endif()
 +
  target_link_libraries(rmf_traffic_ros2
