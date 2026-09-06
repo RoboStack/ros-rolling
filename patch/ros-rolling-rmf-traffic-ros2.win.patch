@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..73aef4dc 100644
+index a05ec3e2..688b1809 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -30,7 +30,7 @@ index a05ec3e2..73aef4dc 100644
  find_package(rmf_reservation_msgs REQUIRED)
  
  
-@@ -177,6 +189,11 @@ endif()
+@@ -177,23 +189,58 @@ endif()
  file(GLOB_RECURSE core_lib_srcs "src/rmf_traffic_ros2/*.cpp")
  add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
  
@@ -42,10 +42,12 @@ index a05ec3e2..73aef4dc 100644
  target_link_libraries(rmf_traffic_ros2
    PUBLIC
      rmf_traffic::rmf_traffic
-@@ -186,14 +203,29 @@ target_link_libraries(rmf_traffic_ros2
-     ${rmf_site_map_msgs_LIBRARIES}
-     ${rmf_building_map_msgs_LIBRARIES}
-     ${rmf_reservation_msgs_LIBRARIES}
+     Eigen3::Eigen
+     nlohmann_json::nlohmann_json
+-    ${rmf_traffic_msgs_LIBRARIES}
+-    ${rmf_site_map_msgs_LIBRARIES}
+-    ${rmf_building_map_msgs_LIBRARIES}
+-    ${rmf_reservation_msgs_LIBRARIES}
 -    ${rclcpp_LIBRARIES}
      yaml-cpp
      ZLIB::ZLIB
@@ -55,13 +57,32 @@ index a05ec3e2..73aef4dc 100644
  )
  
 +if(WIN32)
-+  # ${rclcpp_LIBRARIES} expands to dozens of full paths and pushes the
-+  # link.exe response file past its ~131071-character line limit
-+  # (LNK1170). The rclcpp::rclcpp imported target lets CMake dedupe the
-+  # transitive link graph instead of relinking every path verbatim.
-+  target_link_libraries(rmf_traffic_ros2 PUBLIC rclcpp::rclcpp)
++  # The raw ${..._LIBRARIES} variables below each recursively re-append
++  # their own dependencies' _LIBRARIES as plain strings with no
++  # deduplication, so linking four message packages plus rclcpp this
++  # way stacks up a lot of repeated full paths. On Windows CI the
++  # concatenated link.exe response-file line exceeded its
++  # ~131071-character limit (LNK1170). The <pkg>::<pkg> aggregate
++  # imported targets (exported by rosidl/rclcpp specifically to
++  # replace the legacy _LIBRARIES variables) let CMake's target-based
++  # link graph dedupe the transitive closure instead.
++  target_link_libraries(rmf_traffic_ros2
++    PUBLIC
++      rmf_traffic_msgs::rmf_traffic_msgs
++      rmf_site_map_msgs::rmf_site_map_msgs
++      rmf_building_map_msgs::rmf_building_map_msgs
++      rmf_reservation_msgs::rmf_reservation_msgs
++      rclcpp::rclcpp
++  )
 +else()
-+  target_link_libraries(rmf_traffic_ros2 PUBLIC ${rclcpp_LIBRARIES})
++  target_link_libraries(rmf_traffic_ros2
++    PUBLIC
++      ${rmf_traffic_msgs_LIBRARIES}
++      ${rmf_site_map_msgs_LIBRARIES}
++      ${rmf_building_map_msgs_LIBRARIES}
++      ${rmf_reservation_msgs_LIBRARIES}
++      ${rclcpp_LIBRARIES}
++  )
 +endif()
 +
 +if(NOT WIN32)
