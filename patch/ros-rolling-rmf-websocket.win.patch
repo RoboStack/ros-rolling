@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 38a92790..152aaffb 100644
+index 38a92790..9db1d821 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,6 +7,15 @@ project(rmf_websocket)
@@ -18,3 +18,18 @@ index 38a92790..152aaffb 100644
  if(NOT CMAKE_CXX_STANDARD)
    set(CMAKE_CXX_STANDARD 17)
  endif()
+@@ -35,6 +44,14 @@ add_library(rmf_websocket SHARED
+   src/rmf_websocket/BroadcastServer.cpp
+ )
+ 
++if(MSVC)
++  # No explicit dllexport annotations anywhere in this small target, so
++  # without this MSVC produces the .dll but no companion .lib, and
++  # example_client fails with LNK1181.
++  set_target_properties(rmf_websocket PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_websocket
+   PUBLIC
+     ${rclcpp_LIBRARIES}
