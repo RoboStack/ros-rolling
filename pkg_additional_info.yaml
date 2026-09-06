@@ -304,6 +304,12 @@ rmf_task:
   # rather than waiting to discover the stale-cache skip on the next
   # run.
   build_number: 26
+rmf_task_sequence:
+  # Same skip_existing pitfall as rmf_task/rmf_traffic below: a win-64
+  # build_25 got published (compiles fine, produces the .dll) from a
+  # run BEFORE the WINDOWS_EXPORT_ALL_SYMBOLS patch was added. Bump so
+  # skip_existing doesn't reuse it.
+  build_number: 26
 rmf_traffic:
   # A win-64 build_number 25 got published successfully (compiles fine,
   # produces rmf_traffic.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_
