@@ -50,16 +50,25 @@ index a05ec3e..fbce72a 100644
    PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 diff --git a/src/rmf_traffic_ros2/schedule/Node.cpp b/src/rmf_traffic_ros2/schedule/Node.cpp
-index 7b2902d..a80cdfb 100644
+index 7b2902d4..9648fce3 100644
 --- a/src/rmf_traffic_ros2/schedule/Node.cpp
 +++ b/src/rmf_traffic_ros2/schedule/Node.cpp
-@@ -37,7 +37,13 @@
+@@ -37,7 +37,22 @@
  #include <rmf_utils/optional.hpp>
  
  #include <unordered_map>
 +#ifdef _WIN32
 +// libuuid (uuid/uuid.h) is Linux/macOS-only; use Windows' native RPC
 +// UUID API instead (linked against rpcrt4 in CMakeLists.txt).
++// NOMINMAX/WIN32_LEAN_AND_MEAN keep windows.h (pulled in by rpc.h) from
++// defining min/max/ERROR macros that collide with std::numeric_limits::max
++// and RequestChanges::Response::ERROR used later in this file.
++#ifndef NOMINMAX
++#define NOMINMAX
++#endif
++#ifndef WIN32_LEAN_AND_MEAN
++#define WIN32_LEAN_AND_MEAN
++#endif
 +#include <rpc.h>
 +#else
  #include <uuid/uuid.h>
@@ -67,7 +76,7 @@ index 7b2902d..a80cdfb 100644
  
  namespace rmf_traffic_ros2 {
  namespace schedule {
-@@ -46,17 +52,27 @@ namespace {
+@@ -46,17 +61,27 @@ namespace {
  //==============================================================================
  ScheduleNode::ScheduleId generate_node_id()
  {
