@@ -37,3 +37,33 @@ index 7afa25d..15bd7ad 100644
  
    void write_if_new(const Task::Active::Backup& backup)
    {
+diff --git a/test/unit/test_Log.cpp b/test/unit/test_Log.cpp
+index f15e519..0c3c69d 100644
+--- a/test/unit/test_Log.cpp
++++ b/test/unit/test_Log.cpp
+@@ -95,9 +95,9 @@ SCENARIO("Multi-threaded read/write with synced view")
+       std::random_device r;
+       std::default_random_engine eng(r());
+       std::uniform_real_distribution<double> entry_dist(0, 1);
+-      std::uniform_int_distribution<uint> tier_dist(
+-        static_cast<uint>(rmf_task::Log::Tier::Info),
+-        static_cast<uint>(rmf_task::Log::Tier::Error));
++      std::uniform_int_distribution<unsigned int> tier_dist(
++        static_cast<unsigned int>(rmf_task::Log::Tier::Info),
++        static_cast<unsigned int>(rmf_task::Log::Tier::Error));
+ 
+       std::size_t counter = 0;
+       while (!test_finished->load())
+@@ -196,9 +196,9 @@ SCENARIO("Multi-threaded read/write without syncing")
+       std::random_device r;
+       std::default_random_engine eng(r());
+       std::uniform_real_distribution<double> entry_dist(0, 1);
+-      std::uniform_int_distribution<uint> tier_dist(
+-        static_cast<uint>(rmf_task::Log::Tier::Info),
+-        static_cast<uint>(rmf_task::Log::Tier::Error));
++      std::uniform_int_distribution<unsigned int> tier_dist(
++        static_cast<unsigned int>(rmf_task::Log::Tier::Info),
++        static_cast<unsigned int>(rmf_task::Log::Tier::Error));
+ 
+       std::size_t counter = 0;
+       while (!test_finished->load())
