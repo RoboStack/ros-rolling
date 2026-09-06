@@ -146,3 +146,32 @@ index 2bdce0e..879269d 100644
  {
    // Do nothing
  }
+diff --git a/src/rmf_traffic/agv/planning/DifferentialDriveMap.hpp b/src/rmf_traffic/agv/planning/DifferentialDriveMap.hpp
+index 27e3df8..bca545d 100644
+--- a/src/rmf_traffic/agv/planning/DifferentialDriveMap.hpp
++++ b/src/rmf_traffic/agv/planning/DifferentialDriveMap.hpp
+@@ -213,6 +213,14 @@ struct DifferentialDriveMapTypes
+ 
+   struct KeyHash
+   {
++    // MSVC's <unordered_map>/<unordered_set> implementation instantiates
++    // code paths requiring the hasher to be default-constructible even
++    // though real usage always passes N_lanes explicitly (GCC/Clang's
++    // libstdc++/libc++ don't need this). The members are left
++    // uninitialized here since this constructor is never actually
++    // invoked in practice.
++    KeyHash() = default;
++
+     KeyHash(std::size_t N_lanes)
+     {
+       const std::size_t lane_shift = std::ceil(std::log2(N_lanes));
+@@ -245,6 +253,9 @@ struct DifferentialDriveMapTypes
+ 
+   struct EntryHash
+   {
++    // Same MSVC default-constructibility requirement as KeyHash above.
++    EntryHash() = default;
++
+     EntryHash(std::size_t N_lanes)
+     {
+       _orientation_shift = std::ceil(std::log2(N_lanes));
