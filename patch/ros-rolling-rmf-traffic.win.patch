@@ -71,3 +71,34 @@ index 983f0c2..d9925b2 100644
  
  //==============================================================================
  class Planner::Configuration::Implementation
+diff --git a/src/rmf_traffic/agv/planning/CacheManager.hpp b/src/rmf_traffic/agv/planning/CacheManager.hpp
+index 2bdce0e..4c6b13c 100644
+--- a/src/rmf_traffic/agv/planning/CacheManager.hpp
++++ b/src/rmf_traffic/agv/planning/CacheManager.hpp
+@@ -188,7 +188,13 @@ private:
+ 
+   CacheManager(
+     std::shared_ptr<const Generator> generator,
+-    std::function<Storage()> storage_initializer = []() { return Storage(); });
++    // MSVC fails to resolve the unqualified "Storage" (a dependent
++    // member alias of this class template) inside a lambda used as a
++    // default argument here (C3861 + cascading std::_Is_invocable_r_/
++    // conjunction failures). GCC/Clang resolve it fine; qualifying it
++    // explicitly is equivalent and portable everywhere.
++    std::function<Storage()> storage_initializer =
++    []() { return typename CacheManager<CacheArg>::Storage(); });
+ 
+   template<typename G> friend class Cache;
+   std::shared_ptr<Upstream_type> _upstream;
+@@ -214,7 +220,10 @@ public:
+ 
+   CacheManagerMap(
+     std::shared_ptr<const GeneratorFactory> factory,
+-    std::function<Storage()> storage_initializer = []() { return Storage(); });
++    // Same MSVC dependent-name-in-default-argument-lambda issue as
++    // CacheManager's constructor above -- qualify explicitly.
++    std::function<Storage()> storage_initializer =
++    []() { return typename CacheManagerMap<GeneratorFactoryArg>::Storage(); });
+ 
+   CacheManagerPtr get(std::size_t goal_index) const;
+ 
