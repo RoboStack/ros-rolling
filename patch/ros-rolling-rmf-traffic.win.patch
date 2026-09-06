@@ -33,3 +33,41 @@ index 3f29c7d..be98311 100644
  {
    return _pimpl->make_iterator<const SegT>(_pimpl->raw_iterator);
  }
+diff --git a/src/rmf_traffic/agv/SimpleNegotiator.cpp b/src/rmf_traffic/agv/SimpleNegotiator.cpp
+index 7657152..7aee6d8 100644
+--- a/src/rmf_traffic/agv/SimpleNegotiator.cpp
++++ b/src/rmf_traffic/agv/SimpleNegotiator.cpp
+@@ -26,9 +26,11 @@ namespace rmf_traffic {
+ namespace agv {
+ 
+ //==============================================================================
+-// This line tells the linker to take care of defining the value of this field
+-// inside of this translation unit.
+-const double SimpleNegotiator::Options::DefaultMaxCostLeeway;
++// C++17's static constexpr members are implicitly inline, so this
++// out-of-class definition (needed pre-C++17 for ODR-use) is redundant
++// now that this project targets C++17 -- and MSVC rejects it outright
++// (C2734: "'const' object must be initialized if not 'extern'"), even
++// though GCC/Clang tolerate the redundant redeclaration. Just remove it.
+ 
+ //==============================================================================
+ class SimpleNegotiator::Options::Implementation
+diff --git a/src/rmf_traffic/agv/Planner.cpp b/src/rmf_traffic/agv/Planner.cpp
+index 983f0c2..d9925b2 100644
+--- a/src/rmf_traffic/agv/Planner.cpp
++++ b/src/rmf_traffic/agv/Planner.cpp
+@@ -25,9 +25,11 @@ namespace rmf_traffic {
+ namespace agv {
+ 
+ //==============================================================================
+-// This line tells the linker to take care of defining the value of this field
+-// inside of this translation unit.
+-const Duration Planner::Options::DefaultMinHoldingTime;
++// C++17's static constexpr members are implicitly inline, so this
++// out-of-class definition (needed pre-C++17 for ODR-use) is redundant
++// now that this project targets C++17 -- and MSVC rejects it outright
++// (C2734: "'const' object must be initialized if not 'extern'"), even
++// though GCC/Clang tolerate the redundant redeclaration. Just remove it.
+ 
+ //==============================================================================
+ class Planner::Configuration::Implementation
