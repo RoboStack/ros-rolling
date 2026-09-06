@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 0588eeac..ae06fc23 100644
+index 0588eeac..6776abaf 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -10,6 +10,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -16,3 +16,68 @@ index 0588eeac..ae06fc23 100644
  find_package(ament_cmake REQUIRED)
  find_package(backward_ros REQUIRED)
  find_package(Eigen3 REQUIRED)
+@@ -84,6 +91,11 @@ add_library(rmf_fleet_adapter SHARED
+   ${rmf_fleet_adapter_srcs}
+ )
+ 
++if(MSVC)
++  # agv/Node.cpp exceeds the default object file section limit.
++  target_compile_options(rmf_fleet_adapter PRIVATE /bigobj)
++endif()
++
+ target_link_libraries(rmf_fleet_adapter
+   PUBLIC
+     rclcpp::rclcpp
+@@ -280,13 +292,29 @@ add_executable(experimental_lift_watchdog
+   src/experimental_lift_watchdog/main.cpp
+ )
+ 
+-target_link_libraries(experimental_lift_watchdog
+-  PRIVATE
+-    ${rclcpp_LIBRARIES}
+-    ${rmf_fleet_msgs_LIBRARIES}
+-    ${std_msgs_LIBRARIES}
+-    Threads::Threads
+-)
++if(WIN32)
++  # The raw ${..._LIBRARIES} variables below each recursively re-append
++  # their own dependencies' _LIBRARIES as plain strings with no
++  # deduplication, stacking up a lot of repeated full paths. On Windows
++  # CI the concatenated link.exe response-file line exceeded its
++  # ~131071-character limit (LNK1170) -- same issue and same fix as
++  # rmf_traffic_ros2/rmf_task_ros2 hit earlier.
++  target_link_libraries(experimental_lift_watchdog
++    PRIVATE
++      rclcpp::rclcpp
++      rmf_fleet_msgs::rmf_fleet_msgs
++      ${std_msgs_TARGETS}
++      Threads::Threads
++  )
++else()
++  target_link_libraries(experimental_lift_watchdog
++    PRIVATE
++      ${rclcpp_LIBRARIES}
++      ${rmf_fleet_msgs_LIBRARIES}
++      ${std_msgs_LIBRARIES}
++      Threads::Threads
++  )
++endif()
+ 
+ target_include_directories(experimental_lift_watchdog
+   PRIVATE
+@@ -321,6 +349,15 @@ add_library(robot_state_aggregator_main SHARED
+   src/robot_state_aggregator/RobotStateAggregator.cpp
+ )
+ 
++if(MSVC)
++  # COMPOSITION_BUILDING_DLL below is vestigial -- nothing in this
++  # package's sources actually branches on it for dllexport/dllimport,
++  # so this SHARED target has no explicit export annotations at all,
++  # and MSVC produces the .dll but no import .lib.
++  set_target_properties(robot_state_aggregator_main PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_include_directories(robot_state_aggregator_main
+   PRIVATE
+     include
