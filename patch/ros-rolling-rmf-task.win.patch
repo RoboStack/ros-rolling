@@ -15,6 +15,23 @@ index d4d1647..42ab1ee 100644
  if(NOT CMAKE_BUILD_TYPE)
    # Use the Release build type by default if the user has not specified one
    set(CMAKE_BUILD_TYPE Release)
+@@ -39,6 +45,16 @@ add_library(rmf_task SHARED
+   ${lib_srcs}
+ )
+ 
++if(WIN32)
++  # rmf_task has no dllexport annotations at all. As a shared library on
++  # Windows with nothing explicitly exported, link.exe does not produce
++  # an import .lib, so every consumer fails with LNK1181 "cannot open
++  # input file 'rmf_task.lib'" even though rmf_task.dll itself builds
++  # fine. Auto-export everything, same fix as rmf_utils/rmf_traffic/
++  # rmf_battery earlier in this package family.
++  set_target_properties(rmf_task PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_task
+   PUBLIC
+     rmf_battery::rmf_battery
 diff --git a/src/rmf_task/BackupFileManager.cpp b/src/rmf_task/BackupFileManager.cpp
 index 7afa25d..15bd7ad 100644
 --- a/src/rmf_task/BackupFileManager.cpp

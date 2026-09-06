@@ -295,6 +295,15 @@ rmf_battery:
   # patch was added. Bump preemptively so the next run doesn't reuse
   # that unpatched build and skip exercising the fix.
   build_number: 26
+rmf_task:
+  # Same skip_existing pitfall already hit repeatedly this session
+  # (rmf_utils/rmf_traffic/rmf_battery): a win-64 build_25 of rmf_task
+  # was published successfully (compiles fine, produces the .dll) from
+  # the run that tested the uint fix, BEFORE the
+  # WINDOWS_EXPORT_ALL_SYMBOLS patch was added. Bump preemptively
+  # rather than waiting to discover the stale-cache skip on the next
+  # run.
+  build_number: 26
 rmf_traffic:
   # A win-64 build_number 25 got published successfully (compiles fine,
   # produces rmf_traffic.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_
