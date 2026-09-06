@@ -356,7 +356,16 @@ rmf_traffic_ros2:
   # Time.hpp convert()/to_ros2() overloads that were never exported.
   # Exported the whole (small) header rather than chasing individual
   # overloads one at a time. Bump again.
-  build_number: 29
+  #
+  # build_29 (Time.hpp export) let rmf_task_ros2 and rmf_websocket
+  # build fine, but rmf_fleet_adapter -- by far the biggest consumer,
+  # using most of the real public API -- surfaced a dozen more missing
+  # symbols at once (Negotiation, MirrorManager/MirrorManagerFuture,
+  # blockade::Writer, a Graph convert() overload). Rather than keep
+  # chasing individual symbols one downstream package at a time,
+  # exported RMF_TRAFFIC_ROS2_EXPORT across every remaining public
+  # header under include/rmf_traffic_ros2/ in one pass. Bump again.
+  build_number: 30
 rmf_utils:
   # The remote win-64 build (build_number 25) never actually got its
   # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
