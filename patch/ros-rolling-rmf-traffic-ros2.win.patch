@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..8d9f4ff4 100644
+index a05ec3e2..74d9a4bd 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -140,6 +140,23 @@ index a05ec3e2..8d9f4ff4 100644
  target_include_directories(rmf_traffic_ros2
    PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -219,6 +295,16 @@ ament_export_dependencies(
+   ZLIB
+ )
+ 
++if(WIN32)
++  # rmf_traffic_ros2 links PROJ::proj (from find_package(PROJ CONFIG))
++  # PUBLICly on Windows, so any downstream consumer of
++  # rmf_traffic_ros2::rmf_traffic_ros2 needs that target to exist too --
++  # without this, CMake's generated Config.cmake never calls
++  # find_dependency(PROJ) and consumers fail with "target ... was not
++  # found" (e.g. rmf_task_ros2).
++  ament_export_dependencies(PROJ)
++endif()
++
+ # TODO(MXG): Change these executables into shared libraries that can act as
+ # ROS2 node components
+ 
 diff --git a/src/rmf_traffic_ros2/schedule/Node.cpp b/src/rmf_traffic_ros2/schedule/Node.cpp
 index 7b2902d4..ef950ef0 100644
 --- a/src/rmf_traffic_ros2/schedule/Node.cpp

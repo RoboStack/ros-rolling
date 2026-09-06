@@ -315,6 +315,16 @@ rmf_traffic:
   # it, forcing a fresh win-64 build with the fix included. Same
   # skip_existing pitfall already hit for rmf_utils below.
   build_number: 26
+rmf_traffic_ros2:
+  # A win-64 build_number 25 got published successfully (compiles fine,
+  # produces rmf_traffic_ros2.dll and packages cleanly) from a run
+  # BEFORE the ament_export_dependencies(PROJ) fix was added -- that
+  # build's exported Config.cmake never calls find_dependency(PROJ), so
+  # downstream consumers (e.g. rmf_task_ros2) fail with "target
+  # PROJ::proj ... was not found". skip_existing would otherwise keep
+  # reusing that unpatched build_25. Bump so the fix actually gets
+  # exercised.
+  build_number: 26
 rmf_utils:
   # The remote win-64 build (build_number 25) never actually got its
   # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
