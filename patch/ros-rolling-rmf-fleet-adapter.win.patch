@@ -81,3 +81,22 @@ index 0588eeac..6776abaf 100644
  target_include_directories(robot_state_aggregator_main
    PRIVATE
      include
+diff --git a/rmf_rxcpp/RxCpp-4.1.0/Rx/v2/src/rxcpp/rx-util.hpp b/rmf_rxcpp/RxCpp-4.1.0/Rx/v2/src/rxcpp/rx-util.hpp
+index d76fa76a..a7e36281 100644
+--- a/rmf_rxcpp/RxCpp-4.1.0/Rx/v2/src/rxcpp/rx-util.hpp
++++ b/rmf_rxcpp/RxCpp-4.1.0/Rx/v2/src/rxcpp/rx-util.hpp
+@@ -713,8 +713,12 @@ namespace detail {
+ 
+ template<class... T>
+ inline auto surely(const std::tuple<T...>& tpl)
+-    -> decltype(apply(tpl, detail::surely())) {
+-    return      apply(tpl, detail::surely());
++    -> decltype(rxcpp::util::apply(tpl, detail::surely())) {
++    // Fully qualified: an unqualified apply(tpl, ...) call here is
++    // subject to ADL bringing in std::apply (tpl is a std::tuple), and
++    // MSVC resolves the resulting ambiguity differently than GCC/Clang,
++    // instantiating std::tuple_size on the wrong type (C2027/C2131).
++    return      rxcpp::util::apply(tpl, detail::surely());
+ }
+ 
+ namespace detail {
