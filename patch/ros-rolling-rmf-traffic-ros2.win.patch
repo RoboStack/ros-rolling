@@ -141,10 +141,19 @@ index a05ec3e2..8d9f4ff4 100644
    PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 diff --git a/src/rmf_traffic_ros2/schedule/Node.cpp b/src/rmf_traffic_ros2/schedule/Node.cpp
-index 7b2902d4..34119bb9 100644
+index 7b2902d4..ef950ef0 100644
 --- a/src/rmf_traffic_ros2/schedule/Node.cpp
 +++ b/src/rmf_traffic_ros2/schedule/Node.cpp
-@@ -37,7 +37,26 @@
+@@ -17,6 +17,8 @@
+ 
+ #include "internal_Node.hpp"
+ 
++#include <rmf_traffic_ros2/schedule/Node.hpp>
++
+ #include <cstring>
+ 
+ #include <rmf_traffic_ros2/Route.hpp>
+@@ -37,7 +39,26 @@
  #include <rmf_utils/optional.hpp>
  
  #include <unordered_map>
@@ -171,7 +180,7 @@ index 7b2902d4..34119bb9 100644
  
  namespace rmf_traffic_ros2 {
  namespace schedule {
-@@ -46,17 +65,27 @@ namespace {
+@@ -46,17 +67,27 @@ namespace {
  //==============================================================================
  ScheduleNode::ScheduleId generate_node_id()
  {
@@ -438,3 +447,15 @@ index 00000000..a8117028
 +#endif
 +
 +#endif // RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
+diff --git a/src/rmf_traffic_ros2/schedule/MonitorNode.cpp b/src/rmf_traffic_ros2/schedule/MonitorNode.cpp
+index daf4e1dd..8bde4caf 100644
+--- a/src/rmf_traffic_ros2/schedule/MonitorNode.cpp
++++ b/src/rmf_traffic_ros2/schedule/MonitorNode.cpp
+@@ -19,6 +19,7 @@
+ 
+ #include "internal_Node.hpp"
+ 
++#include <rmf_traffic_ros2/schedule/MonitorNode.hpp>
+ #include <rmf_traffic_ros2/StandardNames.hpp>
+ #include <rmf_traffic_ros2/schedule/Query.hpp>
+ 
