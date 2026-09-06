@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a05ec3e2..17c4d15b 100644
+index a05ec3e2..98d5fa60 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -16,7 +16,7 @@ index a05ec3e2..17c4d15b 100644
  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
  
  include(GNUInstallDirs)
-@@ -27,7 +34,12 @@ find_package(rclcpp REQUIRED)
+@@ -27,15 +34,29 @@ find_package(rclcpp REQUIRED)
  find_package(yaml-cpp REQUIRED)
  find_package(nlohmann_json REQUIRED)
  find_package(ZLIB REQUIRED)
@@ -30,7 +30,29 @@ index a05ec3e2..17c4d15b 100644
  find_package(rmf_reservation_msgs REQUIRED)
  
  
-@@ -177,23 +189,67 @@ endif()
+-# NOTE(MXG): libproj-dev does not currently distribute its cmake config-files
+-# in Debian, so we can't use find_package and need to rely on pkg-config.
+-# find_package(PROJ REQUIRED)
+-find_package(PkgConfig REQUIRED)
+-pkg_check_modules(PROJ REQUIRED IMPORTED_TARGET proj)
++if(WIN32)
++  # conda-forge's Windows proj package exports a proper CMake config
++  # with a PROJ::proj imported target using the correct absolute
++  # import-lib path; the pkg-config route below resolves to a bare
++  # "proj_9" name that MSVC's linker can't find (LNK1181).
++  find_package(PROJ CONFIG REQUIRED)
++else()
++  # NOTE(MXG): libproj-dev does not currently distribute its cmake
++  # config-files in Debian, so we can't use find_package and need to
++  # rely on pkg-config.
++  # find_package(PROJ REQUIRED)
++  find_package(PkgConfig REQUIRED)
++  pkg_check_modules(PROJ REQUIRED IMPORTED_TARGET proj)
++endif()
+ 
+ if (rmf_traffic_FOUND)
+   message(STATUS "found rmf_traffic")
+@@ -177,23 +198,72 @@ endif()
  file(GLOB_RECURSE core_lib_srcs "src/rmf_traffic_ros2/*.cpp")
  add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
  
@@ -51,11 +73,17 @@ index a05ec3e2..17c4d15b 100644
 -    ${rclcpp_LIBRARIES}
 -    yaml-cpp
      ZLIB::ZLIB
-     PkgConfig::PROJ
+-    PkgConfig::PROJ
 -  PRIVATE
 -    LibUUID::LibUUID
  )
  
++if(WIN32)
++  target_link_libraries(rmf_traffic_ros2 PUBLIC PROJ::proj)
++else()
++  target_link_libraries(rmf_traffic_ros2 PUBLIC PkgConfig::PROJ)
++endif()
++
 +if(WIN32)
 +  # The bare "yaml-cpp" name only resolves for Unix linkers, which apply
 +  # the implicit lib<name>.<so|dylib> convention; MSVC looks for a
