@@ -161,7 +161,17 @@ jobs:
       shell: bash -l {0}
       run: |
         set +e
-        pixi run rattler-build build --recipe-dir recipes --target-platform ${{ matrix.platform }} -m ./conda_build_config.yaml -c https://prefix.dev/conda-forge -c https://prefix.dev/robostack-rolling --skip-existing --channel-priority disabled 2>&1 | tee rattler-build.log
+        EXTRA_BUILD_ARGS=""
+        if [ "${{ matrix.platform }}" == "win-64" ]; then
+          # Drop the timestamp suffix from the per-package build work dir
+          # (rattler-build_<name>_<timestamp> -> rattler-build_<name>) to claw
+          # back headroom under Windows' MAX_PATH for long package names, e.g.
+          # rosbag2_performance_benchmarking_msgs's generated rosidl Python
+          # typesupport targets (see error C1083 "Cannot open compiler
+          # generated file: ''").
+          EXTRA_BUILD_ARGS="--no-build-id"
+        fi
+        pixi run rattler-build build --recipe-dir recipes --target-platform ${{ matrix.platform }} -m ./conda_build_config.yaml -c https://prefix.dev/conda-forge -c https://prefix.dev/robostack-rolling --skip-existing --channel-priority disabled $EXTRA_BUILD_ARGS 2>&1 | tee rattler-build.log
         build_status=${PIPESTATUS[0]}
         echo "exit-code=${build_status}" >> "$GITHUB_OUTPUT"
         exit "$build_status"
