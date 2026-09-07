@@ -560,3 +560,50 @@ index 8ae80e1e..60cdb24f 100644
  {
  public:
  
+diff --git a/src/rmf_fleet_adapter/load_param.hpp b/src/rmf_fleet_adapter/load_param.hpp
+index 12663d1f..2dc8b738 100644
+--- a/src/rmf_fleet_adapter/load_param.hpp
++++ b/src/rmf_fleet_adapter/load_param.hpp
+@@ -29,6 +29,8 @@
+ #include <string>
+ #include <optional>
+ 
++#include <rmf_fleet_adapter/detail/export.hpp>
++
+ namespace rmf_fleet_adapter {
+ 
+ //==============================================================================
+@@ -51,15 +53,18 @@ T get_parameter_or_default(
+ }
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ std::string get_fleet_name_parameter(rclcpp::Node& node);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ std::chrono::nanoseconds get_parameter_or_default_time(
+   rclcpp::Node& node,
+   const std::string& param_name,
+   const double default_value);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ rmf_traffic::agv::VehicleTraits get_traits_or_default(
+   rclcpp::Node& node,
+   const double default_v_nom, const double default_w_nom,
+@@ -67,12 +72,14 @@ rmf_traffic::agv::VehicleTraits get_traits_or_default(
+   const double default_r_f, const double default_r_v);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ std::optional<rmf_battery::agv::BatterySystem> get_battery_system(
+   rclcpp::Node& node,
+   const double default_voltage,
+   const double default_capacity,
+   const double default_charging_current);
+ 
++RMF_FLEET_ADAPTER_EXPORT
+ std::optional<rmf_battery::agv::MechanicalSystem> get_mechanical_system(
+   rclcpp::Node& node,
+   const double default_mass,
