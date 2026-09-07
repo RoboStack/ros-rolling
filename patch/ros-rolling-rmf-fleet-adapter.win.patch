@@ -405,54 +405,103 @@ index 6db7d8b0..4af6b692 100644
  public:
  
 diff --git a/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp b/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
-index 35f9e32e..c5a442b3 100644
+index 35f9e32e..61349e17 100644
 --- a/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
 +++ b/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
-@@ -34,6 +34,8 @@
- #include <memory>
- #include <functional>
+@@ -149,7 +149,7 @@ public:
  
-+#include <rmf_fleet_adapter/detail/export.hpp>
-+
- namespace rmf_fleet_adapter {
- namespace agv {
+   /// Unique identifier for an activity that the robot is performing. Used by
+   /// the EasyFullControl API.
+-  class ActivityIdentifier
++  class RMF_FLEET_ADAPTER_EXPORT ActivityIdentifier
+   {
+   public:
  
-@@ -41,7 +43,7 @@ namespace agv {
- /// You will be given an instance of this class every time you add a new robot
- /// to your fleet. Use that instance to send updates to RoMi-H about your
- /// robot's state.
--class RobotUpdateHandle
-+class RMF_FLEET_ADAPTER_EXPORT RobotUpdateHandle
- {
- public:
+@@ -171,7 +171,7 @@ public:
+   ///
+   /// When the object is destroyed, the stubbornness will automatically be
+   /// released.
+-  class Stubbornness
++  class RMF_FLEET_ADAPTER_EXPORT Stubbornness
+   {
+   public:
+     /// Stop being stubborn
+@@ -185,7 +185,7 @@ public:
  
+   /// The ActionExecution class should be used to manage the execution of and
+   /// provide updates on ongoing actions.
+-  class ActionExecution
++  class RMF_FLEET_ADAPTER_EXPORT ActionExecution
+   {
+   public:
+     /// Update the amount of time remaining for this action.
+@@ -308,7 +308,7 @@ public:
+ 
+   /// An object to maintain an interruption of the current task. When this
+   /// object is destroyed, the task will resume.
+-  class Interruption
++  class RMF_FLEET_ADAPTER_EXPORT Interruption
+   {
+   public:
+     /// Call this function to resume the task while providing labels for
+@@ -384,7 +384,7 @@ public:
+   /// An object to maintain an issue that is happening with the robot. When this
+   /// object is destroyed without calling resolve(), the issue will be
+   /// "dropped", which issues a warning to the log.
+-  class IssueTicket
++  class RMF_FLEET_ADAPTER_EXPORT IssueTicket
+   {
+   public:
+ 
+@@ -443,7 +443,7 @@ public:
+ 
+   /// A description of whether the robot should accept dispatched and/or direct
+   /// tasks.
+-  class Commission
++  class RMF_FLEET_ADAPTER_EXPORT Commission
+   {
+   public:
+     /// Construct a Commission description with all default values.
+@@ -500,7 +500,7 @@ public:
+   void reassign_dispatched_tasks();
+ 
+   /// Information about where the lift will be asked to go for a robot.
+-  class LiftDestination
++  class RMF_FLEET_ADAPTER_EXPORT LiftDestination
+   {
+   public:
+     /// Name of the lift that is being used.
+@@ -523,7 +523,7 @@ public:
+ 
+   /// This API is experimental and will not be supported in the future. Users
+   /// are to avoid relying on these feature for any integration.
+-  class Unstable
++  class RMF_FLEET_ADAPTER_EXPORT Unstable
+   {
+   public:
+     /// True if this robot is allowed to accept new tasks. False if the robot
 diff --git a/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp b/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
-index 75d6945f..3827e083 100644
+index 75d6945f..1bde55de 100644
 --- a/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
 +++ b/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
-@@ -39,11 +39,13 @@
+@@ -83,7 +83,7 @@ public:
  
- #include <rclcpp/node.hpp>
+   /// Confirmation is a class used by the task acceptance callbacks to decide if
+   /// a task description should be accepted.
+-  class Confirmation
++  class RMF_FLEET_ADAPTER_EXPORT Confirmation
+   {
+   public:
  
-+#include <rmf_fleet_adapter/detail/export.hpp>
-+
- namespace rmf_fleet_adapter {
- namespace agv {
+@@ -233,7 +233,7 @@ public:
+     std::string emergency_level_name);
  
- //==============================================================================
--class FleetUpdateHandle : public std::enable_shared_from_this<FleetUpdateHandle>
-+class RMF_FLEET_ADAPTER_EXPORT FleetUpdateHandle : public std::enable_shared_from_this<FleetUpdateHandle>
- {
- public:
-   /// Get the name of the fleet that his handle is managing.
-@@ -452,6 +454,7 @@ private:
- using FleetUpdateHandlePtr = std::shared_ptr<FleetUpdateHandle>;
- using ConstFleetUpdateHandlePtr = std::shared_ptr<const FleetUpdateHandle>;
- 
-+RMF_FLEET_ADAPTER_EXPORT
- FleetUpdateHandle::ConsiderRequest consider_all();
- 
- } // namespace agv
+   /// A class used to describe speed limit imposed on lanes.
+-  class SpeedLimitRequest
++  class RMF_FLEET_ADAPTER_EXPORT SpeedLimitRequest
+   {
+   public:
+     /// Constructor
 diff --git a/include/rmf_fleet_adapter/agv/EasyFullControl.hpp b/include/rmf_fleet_adapter/agv/EasyFullControl.hpp
 index 77adf885..30f12e94 100644
 --- a/include/rmf_fleet_adapter/agv/EasyFullControl.hpp
@@ -607,3 +656,129 @@ index 12663d1f..2dc8b738 100644
  std::optional<rmf_battery::agv::MechanicalSystem> get_mechanical_system(
    rclcpp::Node& node,
    const double default_mass,
+diff --git a/src/rmf_fleet_adapter/ScheduleManager.hpp b/src/rmf_fleet_adapter/ScheduleManager.hpp
+index 006a9df1..3b249ce7 100644
+--- a/src/rmf_fleet_adapter/ScheduleManager.hpp
++++ b/src/rmf_fleet_adapter/ScheduleManager.hpp
+@@ -30,10 +30,12 @@
+ 
+ #include <unordered_set>
+ 
++#include <rmf_fleet_adapter/detail/export.hpp>
++
+ namespace rmf_fleet_adapter {
+ 
+ //==============================================================================
+-class ScheduleManager
++class RMF_FLEET_ADAPTER_EXPORT ScheduleManager
+ {
+ public:
+ 
+@@ -81,6 +83,7 @@ private:
+ };
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ std::future<ScheduleManager> make_schedule_manager(
+   rclcpp::Node& node,
+   rmf_traffic_ros2::schedule::Writer& writer,
+@@ -88,6 +91,7 @@ std::future<ScheduleManager> make_schedule_manager(
+   rmf_traffic::schedule::ParticipantDescription description);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ void async_make_schedule_manager(
+   rclcpp::Node& node,
+   rmf_traffic_ros2::schedule::Writer& writer,
+diff --git a/src/rmf_fleet_adapter/make_trajectory.hpp b/src/rmf_fleet_adapter/make_trajectory.hpp
+index a9f775e3..3bc0cfdb 100644
+--- a/src/rmf_fleet_adapter/make_trajectory.hpp
++++ b/src/rmf_fleet_adapter/make_trajectory.hpp
+@@ -24,30 +24,37 @@
+ 
+ #include <rmf_fleet_msgs/msg/robot_state.hpp>
+ 
++#include <rmf_fleet_adapter/detail/export.hpp>
++
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ rmf_traffic::Trajectory make_trajectory(
+   const rmf_fleet_msgs::msg::RobotState& state,
+   const rmf_traffic::agv::VehicleTraits& traits,
+   bool& is_sitting);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ rmf_traffic::Trajectory make_trajectory(
+   const rmf_traffic::Time start_time,
+   const std::vector<rmf_fleet_msgs::msg::Location>& path,
+   const rmf_traffic::agv::VehicleTraits& traits);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ rmf_traffic::Trajectory make_timed_trajectory(
+   const std::vector<rmf_fleet_msgs::msg::Location>& path,
+   const rmf_traffic::agv::VehicleTraits& traits);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ rmf_traffic::Route make_route(
+   const rmf_fleet_msgs::msg::RobotState& state,
+   const rmf_traffic::agv::VehicleTraits& traits,
+   bool& is_sitting);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ rmf_traffic::Trajectory make_hold(
+   const rmf_fleet_msgs::msg::Location& location,
+   const rmf_traffic::Time time,
+diff --git a/src/rmf_fleet_adapter/estimation.hpp b/src/rmf_fleet_adapter/estimation.hpp
+index 479516ca..54d8b824 100644
+--- a/src/rmf_fleet_adapter/estimation.hpp
++++ b/src/rmf_fleet_adapter/estimation.hpp
+@@ -25,6 +25,8 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_fleet_adapter/detail/export.hpp>
++
+ //==============================================================================
+ struct TravelInfo
+ {
+@@ -48,18 +50,21 @@ struct TravelInfo
+ };
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ void check_path_finish(
+   rclcpp::Node* node,
+   const rmf_fleet_msgs::msg::RobotState& state,
+   TravelInfo& info);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ void estimate_path_traveling(
+   rclcpp::Node* node,
+   const rmf_fleet_msgs::msg::RobotState& state,
+   TravelInfo& info);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ void estimate_midlane_state(
+   const rmf_fleet_msgs::msg::Location& l,
+   rmf_utils::optional<std::size_t> lane_start,
+@@ -67,12 +72,14 @@ void estimate_midlane_state(
+   TravelInfo& info);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ void estimate_state(
+   rclcpp::Node* node,
+   const rmf_fleet_msgs::msg::Location& state,
+   TravelInfo& info);
+ 
+ //==============================================================================
++RMF_FLEET_ADAPTER_EXPORT
+ void estimate_waypoint(
+   rclcpp::Node* node,
+   const rmf_fleet_msgs::msg::Location& state,
