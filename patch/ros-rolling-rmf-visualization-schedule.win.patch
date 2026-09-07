@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e2fe859f..7c527238 100644
+index e2fe859f..6ea64723 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -7,6 +7,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
@@ -22,6 +22,21 @@ index e2fe859f..7c527238 100644
  # Default to C++17
  if(NOT CMAKE_CXX_STANDARD)
    set(CMAKE_CXX_STANDARD 17)
+@@ -53,6 +66,14 @@ endif()
+ file(GLOB_RECURSE core_lib_srcs "src/rmf_visualization_schedule/*.cpp")
+ add_library(rmf_visualization_schedule SHARED ${core_lib_srcs})
+ 
++if(MSVC)
++  # No explicit dllexport annotations anywhere in this small target
++  # (2 source files), so without this MSVC produces the .dll but no
++  # import .lib, and schedule_visualizer fails with LNK1181.
++  set_target_properties(rmf_visualization_schedule PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_visualization_schedule
+   PUBLIC
+     rmf_traffic::rmf_traffic
 diff --git a/src/ScheduleVisualizer.cpp b/src/ScheduleVisualizer.cpp
 index 961c512b..7a7bc2f9 100644
 --- a/src/ScheduleVisualizer.cpp
