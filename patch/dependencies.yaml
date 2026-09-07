@@ -5,7 +5,22 @@ foxglove_bridge:
 ros_ign_interfaces:
   add_host: ["ros-rolling-rcl-interfaces"]
 cartographer_ros:
-  add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*"]
+  # package.xml's <depend>cartographer</depend> resolves to the REAL released
+  # ros2-cartographer ROS package, but add_host below ALSO pulls in the
+  # conda-forge cartographer C++ library directly -- vinca doesn't dedupe
+  # these, so both end up in host/run with conflicting lua pins (conda-forge
+  # cartographer wants lua 5.4.8, ros2-cartographer wants lua 5.5.0). Drop the
+  # ROS-released one; the conda-forge add_host below is what's actually meant
+  # to satisfy this dependency (see the pinocchio/hpp_fcl entry in build
+  # feedback for the same generate_dummy_package_with_run_deps pattern).
+  remove_host: ["ros2-cartographer"]
+  remove_run: ["ros2-cartographer"]
+  # resolvo mutex-misattribution bug: solver picks ros2-pcl-conversions 2.10.0's
+  # OLDEST published build (mutex rolling_19) instead of the current one
+  # (rolling_25) even though a matching-mutex build exists remotely. Same
+  # pattern as the cv-bridge/libg2o entries elsewhere in this repo.
+  add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*", "ros2-pcl-conversions ==2.10.0 *_26"]
+  add_run: ["ros2-pcl-conversions ==2.10.0 *_26"]
 libyaml_vendor:
   add_host: ["yaml-cpp", "yaml"]
   add_run: ["yaml-cpp", "yaml"]
@@ -74,7 +89,13 @@ tvm_vendor:
 libphidget22:
   add_host: ["libusb"]
 libg2o:
-  add_host: ["qt", "${{ 'libglu' if linux }}", "${{ 'freeglut' if not osx }}"]
+  # "qt" was previously added here but package.xml never declares a Qt/QGLViewer
+  # dependency, and CMakeLists.txt's find_package(QGLViewer) is optional (not
+  # REQUIRED) -- it just disables the optional viewer GUI when absent. Pulling
+  # in "qt" (pinned to Qt5 in conda_build_config.yaml) conflicts with vtk-base,
+  # which now only ships Qt6 builds, breaking anything that needs both (e.g.
+  # rtabmap, which also depends on pcl -> vtk-base).
+  add_host: ["${{ 'libglu' if linux }}", "${{ 'freeglut' if not osx }}"]
 fmilibrary_vendor:
   add_host: ["fmilib"]
 mrpt2:
@@ -296,8 +317,47 @@ zstd_point_cloud_transport:
   add_host: ["ros-rolling-zstd-cmake-module", "zstd"]
 mujoco_vendor:
   add_host: ["libmujoco"]
+mujoco_ros2_control_plugins:
+  # package.xml's plain "opengl" rosdep only maps to libopengl-devel/libgl-devel
+  # (robostack.yaml), but CMakeLists.txt does
+  # find_package(OpenGL REQUIRED COMPONENTS EGL), which additionally needs
+  # EGL's own headers/lib. conda-forge doesn't ship libegl-devel for win-64,
+  # so restrict the addition to linux (this package is also selected there
+  # per vinca.yaml's "not wasm32 and not osx" block).
+  add_host:
+    - if: linux
+      then: ["libegl-devel"]
 roboplan_ros_examples:
   # package.xml only declares ament_cmake_python, but CMakeLists.txt does
   # find_package(ament_cmake REQUIRED) and build_type is ament_cmake.
   # Fixed for roboplan_ros 0.7.0, so it can be removed when this releases.
   add_host: ["ros-rolling-ament-cmake"]
+yasmin_pcl:
+  # Same resolvo mutex-misattribution bug as cartographer_ros above.
+  add_host: ["ros2-pcl-conversions ==2.10.0 *_26"]
+  add_run: ["ros2-pcl-conversions ==2.10.0 *_26"]
+rmf_fleet_adapter_python:
+  # pybind11_json is used for nlohmann::json <-> pybind11 conversions in the
+  # bindings but isn't declared in package.xml (a rosdistro release gap);
+  # header-only, so host-only is sufficient.
+  add_host: ["pybind11_json"]
+rmf_visualization_schedule:
+  # Needed >=3.6.4 to build successfully on macOS during an earlier build
+  # pass; package.xml itself declares openssl with no version constraint.
+  remove_host: ["openssl"]
+  remove_run: ["openssl"]
+  # Same websocketpp/Boost.Asio io_service incompatibility as rmf_websocket
+  # above -- this package also uses websocketpp::config::asio directly.
+  # Pinned to 1.29.0 (the newest conda-forge build that still ships
+  # io_service.hpp -- 1.30+ removed it too).
+  add_host: ["openssl >=3.6.4", "asio ==1.29.0"]
+  add_run: ["openssl >=3.6.4", "asio ==1.29.0"]
+rmf_websocket:
+  # websocketpp 0.8.2 requires boost::asio APIs (io_service et al.) that
+  # Boost 1.90 removed; the patch defines ASIO_STANDALONE so websocketpp
+  # uses the standalone asio instead, matching ros-lyrical's fix in
+  # RoboStack/ros-lyrical#41. Pinned to 1.29.0 (the newest conda-forge
+  # build that still ships io_service.hpp -- 1.30+ removed it too, same
+  # underlying upstream deprecation that hit Boost.Asio).
+  add_host: ["asio ==1.29.0"]
+  add_run: ["asio ==1.29.0"]

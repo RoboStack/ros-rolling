@@ -1,0 +1,60 @@
+diff --git a/tools/EpipolarGeometry/main.cpp b/tools/EpipolarGeometry/main.cpp
+--- a/tools/EpipolarGeometry/main.cpp
++++ b/tools/EpipolarGeometry/main.cpp
+@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #include <opencv2/core/core.hpp>
+-#include <opencv2/core/types_c.h>
+ #include <opencv2/highgui.hpp>
+ #include <opencv2/imgproc.hpp>
+ #include <iostream>
+diff --git a/tools/CameraRGBD/main.cpp b/tools/CameraRGBD/main.cpp
+--- a/tools/CameraRGBD/main.cpp
++++ b/tools/CameraRGBD/main.cpp
+@@ -37,9 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "rtabmap/utilite/UConversion.h"
+ #include <opencv2/highgui.hpp>
+ #include <opencv2/imgproc.hpp>
+-#if CV_MAJOR_VERSION >= 3
+-#include <opencv2/videoio/videoio_c.h>
+-#endif
++#include <opencv2/videoio.hpp>
+ #include <pcl/visualization/cloud_viewer.h>
+ #include <stdio.h>
+ #include <signal.h>
+@@ -398,7 +396,7 @@ int main(int argc, char * argv[])
+ 				UASSERT(fourcc.size() == 4);
+ 				videoWriter.open(
+ 						stereoSavePath,
+-						CV_FOURCC(fourcc.at(0), fourcc.at(1), fourcc.at(2), fourcc.at(3)),
++						cv::VideoWriter::fourcc(fourcc.at(0), fourcc.at(1), fourcc.at(2), fourcc.at(3)),
+ 						rate,
+ 						targetSize,
+ 						data.imageRaw().channels() == 3);
+@@ -479,7 +477,7 @@ int main(int argc, char * argv[])
+ 			{
+ 				if(right.channels() == 3)
+ 				{
+-					cv::cvtColor(right, right, CV_BGR2GRAY);
++					cv::cvtColor(right, right, cv::COLOR_BGR2GRAY);
+ 				}
+ 				pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = rtabmap::util3d::cloudFromStereoImages(
+ 						rgb, right,
+@@ -506,14 +504,14 @@ int main(int argc, char * argv[])
+ 				if(right.type() != left.type())
+ 				{
+ 					cv::Mat tmp;
+-					cv::cvtColor(right, tmp, left.channels()==3?CV_GRAY2BGR:CV_BGR2GRAY);
++					cv::cvtColor(right, tmp, left.channels()==3?cv::COLOR_GRAY2BGR:cv::COLOR_BGR2GRAY);
+ 					right = tmp;
+ 				}
+ 				UASSERT(left.type() == right.type());
+ 
+ 				cv::Mat roiA(targetImage, cv::Rect( 0, 0, left.size().width, left.size().height ));
+ 				left.copyTo(roiA);
+-				cv::Mat roiB( targetImage, cvRect( left.size().width, 0, left.size().width, left.size().height ) );
++				cv::Mat roiB( targetImage, cv::Rect( left.size().width, 0, left.size().width, left.size().height ) );
+ 				right.copyTo(roiB);
+ 
+ 				videoWriter.write(targetImage);

@@ -1,0 +1,32 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9c585b57..834b5832 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,6 +13,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   add_compile_options(-Wall -Wextra -Wpedantic)
+ endif()
+ 
++if(MSVC)
++  # M_PI et al. are non-standard extensions MSVC only defines when this
++  # is set (used via rmf_traffic's installed agv/Interpolate.hpp).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ if(NOT CMAKE_BUILD_TYPE)
+   # Use the Release build type by default if the user has not specified one
+   set(CMAKE_BUILD_TYPE Release)
+@@ -38,6 +44,14 @@ add_library(rmf_task_sequence SHARED
+   ${lib_srcs}
+ )
+ 
++if(MSVC)
++  # No explicit dllexport annotations anywhere in this target, so
++  # without this MSVC produces the .dll but no companion .lib, and
++  # test_rmf_task_sequence/downstream consumers fail with LNK1181.
++  set_target_properties(rmf_task_sequence PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_task_sequence
+   PUBLIC
+     rmf_task::rmf_task

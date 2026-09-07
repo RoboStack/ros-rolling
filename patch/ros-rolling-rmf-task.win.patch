@@ -1,0 +1,86 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d4d1647..42ab1ee 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -13,6 +13,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   add_compile_options(-Wall -Wextra -Wpedantic)
+ endif()
+ 
++if(MSVC)
++  # M_PI et al. are non-standard extensions MSVC only defines when this
++  # is set (used via rmf_traffic's installed Interpolate.hpp).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ if(NOT CMAKE_BUILD_TYPE)
+   # Use the Release build type by default if the user has not specified one
+   set(CMAKE_BUILD_TYPE Release)
+@@ -39,6 +45,16 @@ add_library(rmf_task SHARED
+   ${lib_srcs}
+ )
+ 
++if(WIN32)
++  # rmf_task has no dllexport annotations at all. As a shared library on
++  # Windows with nothing explicitly exported, link.exe does not produce
++  # an import .lib, so every consumer fails with LNK1181 "cannot open
++  # input file 'rmf_task.lib'" even though rmf_task.dll itself builds
++  # fine. Auto-export everything, same fix as rmf_utils/rmf_traffic/
++  # rmf_battery earlier in this package family.
++  set_target_properties(rmf_task PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_task
+   PUBLIC
+     rmf_battery::rmf_battery
+diff --git a/src/rmf_task/BackupFileManager.cpp b/src/rmf_task/BackupFileManager.cpp
+index 7afa25d..15bd7ad 100644
+--- a/src/rmf_task/BackupFileManager.cpp
++++ b/src/rmf_task/BackupFileManager.cpp
+@@ -127,9 +127,14 @@ public:
+   std::optional<uint64_t> last_seq;
+   const std::string backup_file_name = "backup";
+   const std::string pre_backup_file_name = ".backup";
+-  const std::string pre_backup_file_path = robot_directory /
+-    pre_backup_file_name;
+-  const std::string backup_file_path = robot_directory / backup_file_name;
++  // std::filesystem::path has no implicit conversion to std::string (only
++  // the explicit .string() member) -- GCC/libstdc++ tolerates constructing
++  // a string directly from a path here, but MSVC's STL correctly rejects
++  // it (C2665). Call .string() explicitly; portable everywhere.
++  const std::string pre_backup_file_path = (robot_directory /
++    pre_backup_file_name).string();
++  const std::string backup_file_path =
++    (robot_directory / backup_file_name).string();
+ 
+   void write_if_new(const Task::Active::Backup& backup)
+   {
+diff --git a/test/unit/test_Log.cpp b/test/unit/test_Log.cpp
+index f15e519..0c3c69d 100644
+--- a/test/unit/test_Log.cpp
++++ b/test/unit/test_Log.cpp
+@@ -95,9 +95,9 @@ SCENARIO("Multi-threaded read/write with synced view")
+       std::random_device r;
+       std::default_random_engine eng(r());
+       std::uniform_real_distribution<double> entry_dist(0, 1);
+-      std::uniform_int_distribution<uint> tier_dist(
+-        static_cast<uint>(rmf_task::Log::Tier::Info),
+-        static_cast<uint>(rmf_task::Log::Tier::Error));
++      std::uniform_int_distribution<unsigned int> tier_dist(
++        static_cast<unsigned int>(rmf_task::Log::Tier::Info),
++        static_cast<unsigned int>(rmf_task::Log::Tier::Error));
+ 
+       std::size_t counter = 0;
+       while (!test_finished->load())
+@@ -196,9 +196,9 @@ SCENARIO("Multi-threaded read/write without syncing")
+       std::random_device r;
+       std::default_random_engine eng(r());
+       std::uniform_real_distribution<double> entry_dist(0, 1);
+-      std::uniform_int_distribution<uint> tier_dist(
+-        static_cast<uint>(rmf_task::Log::Tier::Info),
+-        static_cast<uint>(rmf_task::Log::Tier::Error));
++      std::uniform_int_distribution<unsigned int> tier_dist(
++        static_cast<unsigned int>(rmf_task::Log::Tier::Info),
++        static_cast<unsigned int>(rmf_task::Log::Tier::Error));
+ 
+       std::size_t counter = 0;
+       while (!test_finished->load())

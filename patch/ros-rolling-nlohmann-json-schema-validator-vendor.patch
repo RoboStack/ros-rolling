@@ -1,0 +1,72 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2115dd4..5021d26 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,7 +7,7 @@ find_package(ament_cmake REQUIRED)
+ macro(build_nlohmann_json_schema_validator)
+ 
+   set(cmake_commands)
+-  set(cmake_configure_args -Wno-dev)
++  set(cmake_configure_args -Wno-dev -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+ 
+   if(WIN32)
+     if(DEFINED CMAKE_GENERATOR)
+@@ -20,8 +20,15 @@ macro(build_nlohmann_json_schema_validator)
+ 
+   if(DEFINED CMAKE_BUILD_TYPE)
+     if(WIN32)
+-      build_command(_build_command CONFIGURATION ${CMAKE_BUILD_TYPE})
+-      list(APPEND cmake_commands "BUILD_COMMAND ${_build_command}")
++      # build_command() returns ONE pre-quoted command-line string (meant
++      # for shell/execute_process use), not a token list. Appending it as
++      # a single BUILD_COMMAND argument makes the VS generator wrap that
++      # whole string in an extra layer of quotes, so cmd.exe then treats
++      # the entire quoted blob (cmake.exe path and all) as one program
++      # name ("... is not recognized as an internal or external command").
++      # Build BUILD_COMMAND from separate tokens using ${CMAKE_COMMAND}
++      # directly instead, matching normal ExternalProject_Add usage.
++      list(APPEND cmake_commands BUILD_COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE})
+     else()
+       list(APPEND cmake_configure_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+     endif()
+@@ -59,20 +66,35 @@ macro(build_nlohmann_json_schema_validator)
+   include(ExternalProject)
+   # HEAD of `main` branch on 2022-10-07
+   set(nlohmann_json_schema_validator_version "5ef4f903af055550e06955973a193e17efded896")
+-  externalproject_add(nlohmann_json_schema_validator-${nlohmann_json_schema_validator_version}
++  # Use a short, fixed ExternalProject name/PREFIX rather than one
++  # embedding the full 40-char commit hash (repeated in both the
++  # "-prefix" and "src/<name>" path components by CMake's default
++  # layout) -- combined with rattler-build's own already-deep Windows
++  # work directory, the resulting git clone target path exceeded
++  # Windows' MAX_PATH ("Filename too long"), and core.longpaths alone
++  # did not resolve it.
++  externalproject_add(nlohmann_json_schema_validator_ext
++    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ext
+     GIT_REPOSITORY https://github.com/pboettch/json-schema-validator.git
+     GIT_TAG ${nlohmann_json_schema_validator_version}
+-    GIT_CONFIG advice.detachedHead=false
++    GIT_CONFIG advice.detachedHead=false core.longpaths=true
+     # Suppress git update due to https://gitlab.kitware.com/cmake/cmake/-/issues/16419
+     UPDATE_COMMAND ""
+     TIMEOUT 6000
+-    PATCH_COMMAND patch -p1 < ${CMAKE_CURRENT_LIST_DIR}/patch_cmakelist
++    PATCH_COMMAND patch -p1 -i ${CMAKE_CURRENT_LIST_DIR}/patch_cmakelist
+     ${cmake_commands}
+     CMAKE_ARGS
+       -DCMAKE_INSTALL_PREFIX=${json_external_project_dir}/install/
+       -DBUILD_SHARED_LIBS:BOOL=ON
+-      -DJSON_VALIDATOR_BUILD_TESTS:BOOL=OFF
+-      -DJSON_VALIDATOR_BUILD_EXAMPLES:BOOL=OFF
++      # This pinned commit's actual option names are BUILD_TESTS/
++      # BUILD_EXAMPLES (no JSON_VALIDATOR_ prefix) -- the old names were
++      # silently ignored ("Manually-specified variables were not used by
++      # the project"), so tests/examples built ON by default. Harmless on
++      # Unix, but the vendored shared library doesn't export symbols for
++      # Windows, so the test executables then fail to link against it
++      # (LNK2019).
++      -DBUILD_TESTS:BOOL=OFF
++      -DBUILD_EXAMPLES:BOOL=OFF
+       ${cmake_configure_args}
+   )
+ 

@@ -227,10 +227,160 @@ visp:
   generate_dummy_package_with_run_deps:
     dep_name: visp
     max_pin: 'x.x'
-    # the version on ros is outdated w.r.t. to the conda-forge one
-    override_version: '3.6.0'
+    # the version on ros is outdated w.r.t. to the conda-forge one; 3.7.0 has no
+    # conflicting run_constraints (unlike 3.6.0, which needs an older libprotobuf).
+    override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
+cv_bridge:
+  # Same stale-remote-build pattern as libg2o below: the remote build was
+  # published against ros2-distro-mutex 0.19.* rolling_*, several versions
+  # behind the current 0.20.0 rolling_27. Bump so skip_existing forces a
+  # fresh local build against the current mutex.
+  build_number: 26
+distro_mutex:
+  # vinca.yaml's mutex_package.build_number was bumped to 26 to re-publish
+  # ros2-distro-mutex with vtk 9.7.0.* (was 9.6.2.*), but should_skip_mutex_package
+  # only compares against this file's per-package override (falling back to the
+  # top-level build_number: 25) -- without this entry it still matched the stale
+  # remote 0.20.0 rolling_25 build and skipped generating a fresh recipe entirely,
+  # so every package needing pcl/vtk resolved against the old vtk 9.6.2 constraint.
+  build_number: 26
+libg2o:
+  # The remote build was published against ros2-distro-mutex 0.19.* rolling_*,
+  # which is long gone now that the mutex is at 0.20.0 rolling_26 -- same
+  # stale-remote-build pattern as pcl_conversions/ros2cli/distro_mutex above.
+  # Bumped to 26 first for that fix, then to 27: a CI cache from that first
+  # bump already holds a build_26 artifact with the old "qt" host dep baked
+  # in (see the dependencies.yaml entry below), and vinca's skip_existing
+  # check only compares build_number, not the full package hash, so it would
+  # otherwise keep matching that stale cached build instead of rebuilding
+  # without qt (same issue independently hit on humble/jazzy's libg2o).
+  build_number: 27
+  # On win-64, csparse_extension builds as a DLL that exports no symbols
+  # (no dllexport macro is defined for it), so MSVC produces the .dll but no
+  # import .lib, and solver_csparse fails to link against it. Same fix as the
+  # many other packages in this repo hitting this class of Windows issue.
+  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+libmavconn:
+  # Same win-64 dllexport pattern as libg2o's csparse_extension above: the
+  # mavconn SHARED library exports no dllexport-annotated symbols, so MSVC
+  # built the .dll but no import .lib, breaking downstream mavros's
+  # find_package(libmavconn). Fixed via a new .win.patch
+  # (CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON), but a prior CI run already cached
+  # a successful win-64 build made before that patch existed -- skip_existing
+  # only compares build_number, not patch content, so it kept reusing that
+  # stale build. Bump to force a fresh one.
+  build_number: 26
+mavlink:
+  # A prior CI run already cached a successful win-64 build made before the
+  # msgmap.hpp endian.h/win32 fix was added to the patch -- skip_existing
+  # only compares build_number, not patch content, so it kept reusing that
+  # stale build instead of picking up the fix. Bumped repeatedly (26-29) as
+  # the same stale-cache pattern hit each successive win-64-only fix:
+  # endian.h, then ssize_t, then windows.h's ERROR macro, then NO_ERROR too
+  # (both collide with enumerator names used across the generated dialects).
+  build_number: 29
+pcl_conversions:
+  # The remote build at the current build_number (25) was published against
+  # vtk-base 9.6.2.*, which conda-forge no longer carries -- this repo's mutex
+  # run_constraints now pin vtk 9.7.0.*. Bump the build number so skip_existing
+  # doesn't match that stale remote build, forcing a fresh local build against
+  # the current pins instead.
+  build_number: 26
+rmf_battery:
+  # Same skip_existing pitfall as rmf_utils/rmf_traffic below: a win-64
+  # build_number 25 got published successfully (compiles fine, produces
+  # rmf_battery.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_SYMBOLS
+  # patch was added. Bump preemptively so the next run doesn't reuse
+  # that unpatched build and skip exercising the fix.
+  build_number: 26
+rmf_task:
+  # Same skip_existing pitfall already hit repeatedly this session
+  # (rmf_utils/rmf_traffic/rmf_battery): a win-64 build_25 of rmf_task
+  # was published successfully (compiles fine, produces the .dll) from
+  # the run that tested the uint fix, BEFORE the
+  # WINDOWS_EXPORT_ALL_SYMBOLS patch was added. Bump preemptively
+  # rather than waiting to discover the stale-cache skip on the next
+  # run.
+  build_number: 26
+rmf_task_sequence:
+  # Same skip_existing pitfall as rmf_task/rmf_traffic below: a win-64
+  # build_25 got published (compiles fine, produces the .dll) from a
+  # run BEFORE the WINDOWS_EXPORT_ALL_SYMBOLS patch was added. Bump so
+  # skip_existing doesn't reuse it.
+  build_number: 26
+rmf_traffic:
+  # A win-64 build_number 25 got published successfully (compiles fine,
+  # produces rmf_traffic.dll) from a run BEFORE the WINDOWS_EXPORT_ALL_
+  # SYMBOLS patch was added -- rmf_traffic has no dllexport annotations,
+  # so that build's .dll has no matching import .lib, breaking every
+  # downstream consumer (LNK1181). skip_existing then kept reusing that
+  # unpatched build_25 on every subsequent run, so the export fix has
+  # never actually been exercised. Bump so skip_existing doesn't reuse
+  # it, forcing a fresh win-64 build with the fix included. Same
+  # skip_existing pitfall already hit for rmf_utils below.
+  build_number: 26
+rmf_traffic_ros2:
+  # A win-64 build_number 25 got published successfully (compiles fine,
+  # produces rmf_traffic_ros2.dll and packages cleanly) from a run
+  # BEFORE the ament_export_dependencies(PROJ) fix was added -- that
+  # build's exported Config.cmake never calls find_dependency(PROJ), so
+  # downstream consumers (e.g. rmf_task_ros2) fail with "target
+  # PROJ::proj ... was not found". skip_existing would otherwise keep
+  # reusing that unpatched build_25. Bump so the fix actually gets
+  # exercised.
+  #
+  # build_26 (the ament_export_dependencies(PROJ) fix) still hit the
+  # same consumer-side error -- rmf_task_ros2's own pkg_check_modules(
+  # PROJ ...) call sets PROJ_FOUND=TRUE as a side effect before
+  # find_package(rmf_traffic_ros2) runs, so the auto-generated
+  # find_dependency(PROJ) guard silently no-ops and PROJ::proj never
+  # gets created. Switched PROJ to a PRIVATE link dependency instead
+  # (it's only used in one internal .cpp, never in public headers, so
+  # consumers never needed to know about it) and bump again so this
+  # build actually gets exercised.
+  #
+  # build_27 (the PROJ PRIVATE fix) cleared the PROJ error but hit the
+  # identical class of bug for rmf_building_map_msgs/rmf_reservation_msgs
+  # -- the aggregate targets used on Windows for the LNK1170 fix are
+  # PUBLIC but were never in ament_export_dependencies(), so any
+  # consumer's own find_package(rmf_traffic_ros2) needs them to already
+  # exist. Added the missing ament_export_dependencies() entries
+  # (WIN32-only) and bump again.
+  #
+  # build_28 (the export-dependencies fix) cleared configure but hit a
+  # predictable gap in the selective-export scheme (LNK1189 fix): only
+  # symbols needed by THIS package's own executables were annotated
+  # with RMF_TRAFFIC_ROS2_EXPORT. rmf_task_ros2 needs several
+  # Time.hpp convert()/to_ros2() overloads that were never exported.
+  # Exported the whole (small) header rather than chasing individual
+  # overloads one at a time. Bump again.
+  #
+  # build_29 (Time.hpp export) let rmf_task_ros2 and rmf_websocket
+  # build fine, but rmf_fleet_adapter -- by far the biggest consumer,
+  # using most of the real public API -- surfaced a dozen more missing
+  # symbols at once (Negotiation, MirrorManager/MirrorManagerFuture,
+  # blockade::Writer, a Graph convert() overload). Rather than keep
+  # chasing individual symbols one downstream package at a time,
+  # exported RMF_TRAFFIC_ROS2_EXPORT across every remaining public
+  # header under include/rmf_traffic_ros2/ in one pass. Bump again.
+  build_number: 30
+rmf_utils:
+  # The remote win-64 build (build_number 25) never actually got its
+  # rmf_utils-config.cmake consumed by anything until rmf-traffic reached
+  # it this session -- find_package(rmf_utils) then failed to find any
+  # config file at all. rmf_utils' own CMakeLists.txt export logic looks
+  # completely standard/portable, so this is likely just a broken/stale
+  # published win-64 artifact rather than a real source issue. Bump the
+  # build number so skip_existing doesn't reuse it, forcing a fresh
+  # win-64 build against the current toolchain instead.
+  #
+  # build_number 26 (this same bump, no code change) still hit
+  # skip_existing against a build_26 published from a run BEFORE the
+  # WINDOWS_EXPORT_ALL_SYMBOLS patch was added -- the patch was never
+  # actually exercised. Bump again so the patched build actually runs.
+  build_number: 27
 ros2cli:
   build_number: 26
 rosidl_cli:

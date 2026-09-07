@@ -1,5 +1,5 @@
 diff --git a/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt b/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt
-index 7c14e7e..8365d74 100644
+index 7c14e7e4..8e097dba 100644
 --- a/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt
 +++ b/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt
 @@ -16,13 +16,13 @@ find_package(geometry_msgs REQUIRED)
@@ -23,11 +23,15 @@ index 7c14e7e..8365d74 100644
  )
  
  include_directories(
-@@ -30,19 +30,19 @@ include_directories(
+@@ -30,19 +30,26 @@ include_directories(
  )
  
  add_library(gt_component SHARED src/mocap4r2_robot_gt/gt_component.cpp)
 -ament_target_dependencies(gt_component ${dependencies})
++# gt_program (below) links against this library directly, so it needs an
++# import .lib on Windows -- same missing-dllexport-symbols issue already
++# fixed for mocap4r2_control/mocap4r2_dummy_driver/mocap4r2_marker_viz.
++set_target_properties(gt_component PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 +target_link_libraries(gt_component ${dependencies})
  rclcpp_components_register_nodes(gt_component "mocap4r2_robot_gt::GTNode")
  
@@ -38,6 +42,9 @@ index 7c14e7e..8365d74 100644
  
  add_library(set_gt_component SHARED src/mocap4r2_robot_gt/set_gt_component.cpp)
 -ament_target_dependencies(set_gt_component ${dependencies})
++# set_gt_cli (below) links against this library directly, so it needs the
++# same import-library fix.
++set_target_properties(set_gt_component PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 +target_link_libraries(set_gt_component ${dependencies})
  rclcpp_components_register_nodes(set_gt_component "mocap4r2_robot_gt::SetGTNode")
  
@@ -47,3 +54,4 @@ index 7c14e7e..8365d74 100644
  target_link_libraries(set_gt_cli set_gt_component)
  
  install(TARGETS
+ 

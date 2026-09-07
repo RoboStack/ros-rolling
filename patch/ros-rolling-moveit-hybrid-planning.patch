@@ -1,0 +1,17 @@
+diff --git a/local_planner/local_planner_component/include/moveit/local_planner/feedback_types.hpp b/local_planner/local_planner_component/include/moveit/local_planner/feedback_types.hpp
+index aa732a4b..5efec687 100644
+--- a/local_planner/local_planner_component/include/moveit/local_planner/feedback_types.hpp
++++ b/local_planner/local_planner_component/include/moveit/local_planner/feedback_types.hpp
+@@ -63,7 +63,11 @@ enum LocalFeedbackEnum
+     case LOCAL_PLANNER_STUCK:
+       return "Local planner is stuck";
+     default:
++#if defined(_MSC_VER)
++      __assume(0);
++#else
+       __builtin_unreachable();
++#endif
+   }
+ }
+ }  // namespace moveit::hybrid_planning
+ 

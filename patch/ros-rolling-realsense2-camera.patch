@@ -1,0 +1,21 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 470f8c3c..01fbff80 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -36,11 +36,14 @@ option(USE_LIFECYCLE_NODE "Enable lifecycle nodes (ON/OFF)" OFF)
+ # Compiler Defense Flags
+ if(UNIX OR APPLE)
+   # Linker flags.
+-  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
++  # NOTE: these are Linux/ELF-specific (-z is a GNU ld option; Apple's ld doesn't
++  # understand it at all and fails outright), so they must not apply on APPLE
++  # even though APPLE also sets UNIX.
++  if(NOT APPLE AND (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel"))
+     # GCC specific flags. ICC is compatible with them.
+     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -z noexecstack -z relro -z now")
+     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -z noexecstack -z relro -z now")
+-  elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
++  elseif(NOT APPLE AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+     # In Clang, -z flags are not compatible, they need to be passed to linker via -Wl.
+     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
+     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")

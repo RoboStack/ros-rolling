@@ -120,3 +120,54 @@ index 94d50eb..b1e05ce 100644
  
      void declare_parameters() {
          node->declare_parameter("sensor_frame", "os_sensor");
+diff --git a/ouster-sdk/cmake/Findlibzip.cmake b/ouster-sdk/cmake/Findlibzip.cmake
+index 0de2ad5..266cf93 100644
+--- a/ouster-sdk/cmake/Findlibzip.cmake
++++ b/ouster-sdk/cmake/Findlibzip.cmake
+@@ -37,9 +37,11 @@ find_path(libzip_INCLUDE_DIRS
+   HINTS ${pkg_libzip_INCLUDE_DIRS})
+ mark_as_advanced(libzip_INCLUDE_DIRS)
+ 
+-# Linux/macos only
++# conda-forge's libzip ships the Windows import lib as "zip.lib" (no
++# "lib" prefix, matching MSVC convention), so it's never found by the
++# Unix-only names below -- add it too.
+ find_library(libzip_LIBRARIES NAMES
+-  libzip libzip.so libzip.dylib
++  libzip libzip.so libzip.dylib zip
+   HINTS ${pkg_libzip_LIBRARY_DIRS})
+ mark_as_advanced(libzip_LIBRARIES)
+ 
+diff --git a/ouster-sdk/ouster_client/CMakeLists.txt b/ouster-sdk/ouster_client/CMakeLists.txt
+index f17eeb4..1cb5d2f 100644
+--- a/ouster-sdk/ouster_client/CMakeLists.txt
++++ b/ouster-sdk/ouster_client/CMakeLists.txt
+@@ -64,7 +64,18 @@ if(WIN32)
+   target_link_libraries(ouster_client PUBLIC ws2_32)
+ endif()
+ 
+-target_include_directories(ouster_client
++# BEFORE: a conda-forge spdlog package (pulled in transitively by some
++# other linked/found dependency) can end up ahead of our own explicit
++# include dirs, so <spdlog/spdlog.h> resolves to that *external* system
++# copy (built assuming external fmt) instead of our vendored one, while
++# logging.cpp's own <spdlog/fmt/bundled/args.h> (upstream spdlog's own
++# design, always included directly) can only ever resolve to our
++# vendored copy (the system package doesn't ship fmt/bundled/*). Mixing
++# those two in one translation unit collides on fmt::v10's template
++# declarations (MSVC C2990/C2955/C2011/...). Force our vendored
++# thirdparty dirs to the front of the search order so every <spdlog/...>
++# include resolves consistently to the vendored copy.
++target_include_directories(ouster_client BEFORE
+   PUBLIC
+       $<INSTALL_INTERFACE:include>
+       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -73,7 +84,7 @@ target_include_directories(ouster_client
+       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/spdlog>
+ )
+ 
+-target_include_directories(ouster_client SYSTEM
++target_include_directories(ouster_client SYSTEM BEFORE
+   PUBLIC
+       $<INSTALL_INTERFACE:include/optional-lite>
+       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/optional-lite>

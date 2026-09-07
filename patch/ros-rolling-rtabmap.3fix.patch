@@ -1,0 +1,60 @@
+diff --git a/guilib/src/DatabaseViewer.cpp b/guilib/src/DatabaseViewer.cpp
+--- a/guilib/src/DatabaseViewer.cpp
++++ b/guilib/src/DatabaseViewer.cpp
+@@ -5880,7 +5880,7 @@ void DatabaseViewer::updateStereo(const SensorData * data)
+ 		cv::Mat leftMono;
+ 		if(data->imageRaw().channels() == 3)
+ 		{
+-			cv::cvtColor(data->imageRaw(), leftMono, CV_BGR2GRAY);
++			cv::cvtColor(data->imageRaw(), leftMono, cv::COLOR_BGR2GRAY);
+ 		}
+ 		else
+ 		{
+@@ -5889,7 +5889,7 @@ void DatabaseViewer::updateStereo(const SensorData * data)
+ 		cv::Mat rightMono;
+ 		if(data->rightRaw().channels() == 3)
+ 		{
+-			cv::cvtColor(data->rightRaw(), rightMono, CV_BGR2GRAY);
++			cv::cvtColor(data->rightRaw(), rightMono, cv::COLOR_BGR2GRAY);
+ 		}
+ 		else
+ 		{
+diff --git a/guilib/src/CalibrationDialog.cpp b/guilib/src/CalibrationDialog.cpp
+--- a/guilib/src/CalibrationDialog.cpp
++++ b/guilib/src/CalibrationDialog.cpp
+@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #if CV_MAJOR_VERSION >= 3
+ #endif
+ #include <opencv2/highgui.hpp>
+-#if CV_MAJOR_VERSION > 2 or (CV_MAJOR_VERSION == 2 and (CV_MINOR_VERSION >4 or (CV_MINOR_VERSION == 4 and CV_SUBMINOR_VERSION >=10)))
++#if (CV_MAJOR_VERSION > 2 and CV_MAJOR_VERSION < 5) or (CV_MAJOR_VERSION == 2 and (CV_MINOR_VERSION >4 or (CV_MINOR_VERSION == 4 and CV_SUBMINOR_VERSION >=10)))
+ #include <rtabmap/core/stereo/stereoRectifyFisheye.h>
+ #endif
+ 
+@@ -1747,19 +1747,22 @@ StereoCameraModel CalibrationDialog::stereoCalibration(const CameraModel & left,
+ 			UINFO("Compute stereo rectification");
+ 
+ 			cv::Mat R1, R2, P1, P2, Q;
++#if CV_MAJOR_VERSION < 5
+ 			stereoRectifyFisheye(
+ 					left.K_raw(), D_left,
+ 					right.K_raw(), D_right,
+ 					imageSize, R, Tvec, R1, R2, P1, P2, Q,
+ 					cv::CALIB_ZERO_DISPARITY, 0, imageSize);
+-
+-			// Very hard to get good results with this one:
+-			/*double balance = 0.0, fov_scale = 1.0;
++#else
++			// Very hard to get good results with this one, but stereoRectifyFisheye()
++			// (above) relies on the removed OpenCV C API and is not available on OpenCV 5+:
++			double balance = 0.0, fov_scale = 1.0;
+ 			cv::fisheye::stereoRectify(
+ 					left.K_raw(), D_left,
+ 					right.K_raw(), D_right,
+ 					imageSize, R, Tvec, R1, R2, P1, P2, Q,
+-					cv::CALIB_ZERO_DISPARITY, imageSize, balance, fov_scale);*/
++					cv::CALIB_ZERO_DISPARITY, imageSize, balance, fov_scale);
++#endif
+ 
+ 			std::cout << "R1 = " << R1 << std::endl;
+ 			std::cout << "R2 = " << R2 << std::endl;
