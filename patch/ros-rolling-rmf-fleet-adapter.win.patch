@@ -405,10 +405,28 @@ index 6db7d8b0..4af6b692 100644
  public:
  
 diff --git a/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp b/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
-index 35f9e32e..61349e17 100644
---- a/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
+index 35f9e32e..7da4b9b8 100644
+--- b/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
 +++ b/include/rmf_fleet_adapter/agv/RobotUpdateHandle.hpp
-@@ -149,7 +149,7 @@ public:
+@@ -34,6 +34,8 @@
+ #include <memory>
+ #include <functional>
+ 
++#include <rmf_fleet_adapter/detail/export.hpp>
++
+ namespace rmf_fleet_adapter {
+ namespace agv {
+ 
+@@ -41,7 +43,7 @@ namespace agv {
+ /// You will be given an instance of this class every time you add a new robot
+ /// to your fleet. Use that instance to send updates to RoMi-H about your
+ /// robot's state.
+-class RobotUpdateHandle
++class RMF_FLEET_ADAPTER_EXPORT RobotUpdateHandle
+ {
+ public:
+ 
+@@ -149,7 +151,7 @@ public:
  
    /// Unique identifier for an activity that the robot is performing. Used by
    /// the EasyFullControl API.
@@ -417,7 +435,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
  
-@@ -171,7 +171,7 @@ public:
+@@ -171,7 +173,7 @@ public:
    ///
    /// When the object is destroyed, the stubbornness will automatically be
    /// released.
@@ -426,7 +444,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
      /// Stop being stubborn
-@@ -185,7 +185,7 @@ public:
+@@ -185,7 +187,7 @@ public:
  
    /// The ActionExecution class should be used to manage the execution of and
    /// provide updates on ongoing actions.
@@ -435,7 +453,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
      /// Update the amount of time remaining for this action.
-@@ -308,7 +308,7 @@ public:
+@@ -308,7 +310,7 @@ public:
  
    /// An object to maintain an interruption of the current task. When this
    /// object is destroyed, the task will resume.
@@ -444,7 +462,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
      /// Call this function to resume the task while providing labels for
-@@ -384,7 +384,7 @@ public:
+@@ -384,7 +386,7 @@ public:
    /// An object to maintain an issue that is happening with the robot. When this
    /// object is destroyed without calling resolve(), the issue will be
    /// "dropped", which issues a warning to the log.
@@ -453,7 +471,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
  
-@@ -443,7 +443,7 @@ public:
+@@ -443,7 +445,7 @@ public:
  
    /// A description of whether the robot should accept dispatched and/or direct
    /// tasks.
@@ -462,7 +480,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
      /// Construct a Commission description with all default values.
-@@ -500,7 +500,7 @@ public:
+@@ -500,7 +502,7 @@ public:
    void reassign_dispatched_tasks();
  
    /// Information about where the lift will be asked to go for a robot.
@@ -471,7 +489,7 @@ index 35f9e32e..61349e17 100644
    {
    public:
      /// Name of the lift that is being used.
-@@ -523,7 +523,7 @@ public:
+@@ -523,7 +525,7 @@ public:
  
    /// This API is experimental and will not be supported in the future. Users
    /// are to avoid relying on these feature for any integration.
@@ -481,10 +499,25 @@ index 35f9e32e..61349e17 100644
    public:
      /// True if this robot is allowed to accept new tasks. False if the robot
 diff --git a/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp b/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
-index 75d6945f..1bde55de 100644
---- a/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
+index 75d6945f..a9859f84 100644
+--- b/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
 +++ b/include/rmf_fleet_adapter/agv/FleetUpdateHandle.hpp
-@@ -83,7 +83,7 @@ public:
+@@ -39,11 +39,13 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_fleet_adapter/detail/export.hpp>
++
+ namespace rmf_fleet_adapter {
+ namespace agv {
+ 
+ //==============================================================================
+-class FleetUpdateHandle : public std::enable_shared_from_this<FleetUpdateHandle>
++class RMF_FLEET_ADAPTER_EXPORT FleetUpdateHandle : public std::enable_shared_from_this<FleetUpdateHandle>
+ {
+ public:
+   /// Get the name of the fleet that his handle is managing.
+@@ -83,7 +85,7 @@ public:
  
    /// Confirmation is a class used by the task acceptance callbacks to decide if
    /// a task description should be accepted.
@@ -493,7 +526,7 @@ index 75d6945f..1bde55de 100644
    {
    public:
  
-@@ -233,7 +233,7 @@ public:
+@@ -233,7 +235,7 @@ public:
      std::string emergency_level_name);
  
    /// A class used to describe speed limit imposed on lanes.
@@ -502,6 +535,14 @@ index 75d6945f..1bde55de 100644
    {
    public:
      /// Constructor
+@@ -452,6 +454,7 @@ private:
+ using FleetUpdateHandlePtr = std::shared_ptr<FleetUpdateHandle>;
+ using ConstFleetUpdateHandlePtr = std::shared_ptr<const FleetUpdateHandle>;
+ 
++RMF_FLEET_ADAPTER_EXPORT
+ FleetUpdateHandle::ConsiderRequest consider_all();
+ 
+ } // namespace agv
 diff --git a/include/rmf_fleet_adapter/agv/EasyFullControl.hpp b/include/rmf_fleet_adapter/agv/EasyFullControl.hpp
 index 77adf885..30f12e94 100644
 --- a/include/rmf_fleet_adapter/agv/EasyFullControl.hpp
