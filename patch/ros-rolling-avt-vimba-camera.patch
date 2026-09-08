@@ -24,7 +24,7 @@ index 0000000..0000000 100644
  {
    // Set the image publisher before streaming
 -  camera_info_pub_ = image_transport::create_camera_publisher(this, "~/image", rmw_qos_profile_system_default);
-+  camera_info_pub_ = image_transport::create_camera_publisher(*this, "~/image", rmw_qos_profile_system_default);
++  camera_info_pub_ = image_transport::create_camera_publisher(*this, "~/image", rclcpp::SystemDefaultsQoS());
  
    // Set the frame callback
    cam_.setCallback(std::bind(&avt_vimba_camera::MonoCameraNode::frameCallback, this, std::placeholders::_1));
