@@ -1,0 +1,37 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0000000..0000000 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -36,6 +36,14 @@
+         sick_safetyscanners2_interfaces
+ )
+ 
++# ament_target_dependencies() was removed from ament_cmake_target_dependencies;
++# link against each dependency's exported <pkg>_TARGETS instead.
++macro(link_ament_dependencies target)
++  foreach(_ament_dep ${ARGN})
++    target_link_libraries(${target} ${${_ament_dep}_TARGETS})
++  endforeach()
++endmacro()
++
+ add_executable(sick_safetyscanners2_node
+         src/sick_safetyscanners2_node.cpp
+         src/SickSafetyscanners.cpp
+@@ -46,7 +54,7 @@
+         sick_safetyscanners_base::sick_safetyscanners_base
+         ${Boost_LIBRARIES})
+ 
+-ament_target_dependencies(sick_safetyscanners2_node ${dependencies})
++link_ament_dependencies(sick_safetyscanners2_node ${dependencies})
+ 
+ target_include_directories(sick_safetyscanners2_node PUBLIC
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -62,7 +70,7 @@
+         sick_safetyscanners_base::sick_safetyscanners_base
+         ${Boost_LIBRARIES})
+ 
+-ament_target_dependencies(sick_safetyscanners2_lifecycle_node ${dependencies})
++link_ament_dependencies(sick_safetyscanners2_lifecycle_node ${dependencies})
+ 
+ target_include_directories(sick_safetyscanners2_lifecycle_node PUBLIC
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
