@@ -260,4 +260,4 @@ ros2cli:
 rosidl_cli:
   build_number: 26
 sick_safetyscanners_base:
-  build_number: 27
+  build_number: 28
