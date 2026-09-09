@@ -1171,3 +1171,10 @@ libzenohc:
   - 1.9.0
 libzenohcxx:
   - 1.9.0
+  # conda-forge published sip 6.16.1 on 2026-09-08, which broke ABI targeting for
+  # packages like qt_gui_cpp_sip that build against PyQt-sip's fixed ABI v12
+  # (hit this on humble/jazzy first; rolling also builds qt_gui_cpp via
+  # pyqt6/sip so it's equally exposed). Pin back to the last known-good line
+  # until upstream fixes it.
+sip:
+  - 6.15
