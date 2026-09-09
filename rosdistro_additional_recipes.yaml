@@ -435,3 +435,24 @@ rviz_visual_tools:  # temp addition
   tag: release/rolling/rviz_visual_tools/4.1.4-4
   url: https://github.com/ros2-gbp/rviz_visual_tools-release
   version: 4.1.4
+
+# zenoh-pico wasm32 RMW experiment (rmw_zenoh_pico + its microxrcedds
+# typesupport chain). Not part of the official rosdistro -- pinned by git
+# rev. zenoh-pico and microcdr are plain CMake C libraries with no
+# package.xml at all, so they're hand-written recipes under extra_recipes/
+# instead of being listed here.
+rosidl_typesupport_microxrcedds_c:
+  rev: d4a50a80e8d15521cdb75bcb9a14d29665f488d7
+  url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+  version: 6.0.0
+  additional_folder: rosidl_typesupport_microxrcedds_c
+rosidl_typesupport_microxrcedds_cpp:
+  rev: d4a50a80e8d15521cdb75bcb9a14d29665f488d7
+  url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+  version: 6.0.0
+  additional_folder: rosidl_typesupport_microxrcedds_cpp
+rmw_zenoh_pico:
+  rev: 54e20a460c9533d279e07a581d0e69e647d60a0e
+  url: https://github.com/esol-community/rmw_zenoh_pico.git
+  version: 0.0.0
+  additional_folder: rmw_zenoh_pico

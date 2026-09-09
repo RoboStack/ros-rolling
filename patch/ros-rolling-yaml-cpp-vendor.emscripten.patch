@@ -1,0 +1,42 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d2bb367..d795e60 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,37 @@ find_package(ament_cmake_vendor_package REQUIRED)
+ install(DIRECTORY cmake
+   DESTINATION share/${PROJECT_NAME})
+ 
++# No yaml-cpp conda package exists for emscripten-wasm32, so (unlike every
++# other platform, where find_package below succeeds against the real
++# conda-forge package and ament_vendor's SATISFIED check short-circuits)
++# build yaml-cpp from source here.
++find_package(yaml-cpp CONFIG QUIET)
++
++ament_vendor(yaml_cpp_vendor
++  SATISFIED ${yaml-cpp_FOUND}
++  VCS_URL https://github.com/jbeder/yaml-cpp.git
++  VCS_VERSION 0.8.0
++  CMAKE_ARGS
++    -DYAML_BUILD_SHARED_LIBS=ON
++    -DYAML_CPP_BUILD_TESTS=OFF
++    -DYAML_CPP_BUILD_TOOLS=OFF
++    -DYAML_CPP_BUILD_CONTRIB=OFF
++    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
++    # yaml-cpp 0.8.0's own cmake_minimum_required predates CMake 3.5, which
++    # CMake >=4.0 refuses outright ("Compatibility with CMake < 3.5 has
++    # been removed"). Only reached here on wasm32, where this vendor build
++    # actually fires.
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
++    # Forward the parent build's CMAKE_PROJECT_INCLUDE (vinca's
++    # __vinca_shared_lib_patch.cmake under emscripten) into this nested
++    # ament_vendor/ExternalProject build -- see the matching comment in
++    # spdlog_vendor's emscripten patch for why this is required for a real
++    # shared .so to come out instead of a static archive that then
++    # duplicate-symbol-fails wasm-ld when linked into more than one final
++    # module. Harmless no-op on platforms where it isn't set.
++    "-DCMAKE_PROJECT_INCLUDE=${CMAKE_PROJECT_INCLUDE}"
++)
++
+ ament_package(
+   CONFIG_EXTRAS "yaml_cpp_vendor-extras.cmake"
+ )

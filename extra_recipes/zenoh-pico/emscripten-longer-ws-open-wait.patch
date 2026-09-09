@@ -1,0 +1,13 @@
+diff --git a/src/system/emscripten/network.c b/src/system/emscripten/network.c
+index 870a06c6..7ba6f7e9 100644
+--- a/src/system/emscripten/network.c
++++ b/src/system/emscripten/network.c
+@@ -104,7 +104,7 @@ z_result_t _z_open_ws(_z_sys_net_socket_t *sock, const _z_sys_net_endpoint_t rep
+ 
+         // WARNING: workaround as connect returns before the websocket is
+         // actually open.
+-        z_sleep_ms(100);
++        z_sleep_ms(2000);
+ 
+         if (ret != _Z_RES_OK) {
+             close(sock->_ws._fd);

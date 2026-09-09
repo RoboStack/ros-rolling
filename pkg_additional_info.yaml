@@ -196,13 +196,21 @@ rviz_ogre_vendor:
 sdformat_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 spdlog_vendor:
-  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+  # No emscripten-wasm32 spdlog conda package exists; build from source there instead.
+  additional_cmake_args:
+    if: not wasm32
+    then: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 sqlite3_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 toppra:
   generate_dummy_package_with_run_deps:
     dep_name: toppra-python
     max_pin: 'x.x'
+tracetools:
+  # lttng-ust doesn't exist for wasm32; tracetools' own OS gate misses emscripten.
+  additional_cmake_args:
+    if: wasm32
+    then: "-DTRACETOOLS_DISABLED=ON"
 ublox_gps:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 uncrustify_vendor:
@@ -259,6 +267,13 @@ ros2cli:
   build_number: 26
 rosidl_cli:
   build_number: 26
+rosidl_typesupport_microxrcedds_c:
+  # Bump forces a new identity so rattler's extraction cache can't serve stale
+  # content; also needed install(EXPORT ...) + rosidl_export_typesupport_targets().
+  build_number: 27
+rosidl_typesupport_microxrcedds_cpp:
+  # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
+  build_number: 28
 sick_safetyscanners2_interfaces:
   build_number: 26
 sick_safetyscanners_base:

@@ -1,0 +1,13 @@
+diff --git a/src/link/unicast/ws.c b/src/link/unicast/ws.c
+index e7109f57..07c9a1e7 100644
+--- a/src/link/unicast/ws.c
++++ b/src/link/unicast/ws.c
+@@ -77,7 +77,7 @@ z_result_t _z_endpoint_ws_valid(_z_endpoint_t *endpoint) {
+     z_result_t ret = _Z_RES_OK;
+ 
+     _z_string_t str = _z_string_alias_str(WS_SCHEMA);
+-    if (_z_string_equals(&endpoint->_locator._protocol, &str)) {
++    if (!_z_string_equals(&endpoint->_locator._protocol, &str)) {
+         ret = _Z_ERR_CONFIG_LOCATOR_INVALID;
+     }
+ 

@@ -1,0 +1,147 @@
+diff --git a/rmw_zenoh_pico/CMakeLists.txt b/rmw_zenoh_pico/CMakeLists.txt
+index 1038b63..e194b17 100644
+--- a/rmw_zenoh_pico/CMakeLists.txt
++++ b/rmw_zenoh_pico/CMakeLists.txt
+@@ -22,13 +22,51 @@ project(rmw_zenoh_pico
+     C
+ )
+ 
+-find_package(ament_cmake_ros REQUIRED)
++find_package(ament_cmake REQUIRED)
++find_package(ament_cmake_ros_core REQUIRED)
++
++# ament_target_dependencies() was removed from rolling's ament_cmake (it
++# doesn't exist in any ros2-ament-cmake* package we build here) -- this
++# repo still targets the older jazzy-era convention. Minimal drop-in
++# replacement: every ament package below still exports the classic
++# ${pkg}_INCLUDE_DIRS / ${pkg}_LIBRARIES / ${pkg}_DEFINITIONS variables via
++# ament_cmake_export_include_directories/export_libraries (confirmed via
++# rcutils's installed cmake extras, 2026-09-09), which is literally what
++# the old macro consumed.
++if(NOT COMMAND ament_target_dependencies)
++  macro(ament_target_dependencies _target)
++    foreach(_dep ${ARGN})
++      if(DEFINED ${_dep}_INCLUDE_DIRS)
++        target_include_directories(${_target} PUBLIC ${${_dep}_INCLUDE_DIRS})
++      endif()
++      if(DEFINED ${_dep}_LIBRARIES)
++        target_link_libraries(${_target} ${${_dep}_LIBRARIES})
++      endif()
++      if(DEFINED ${_dep}_DEFINITIONS)
++        target_compile_definitions(${_target} PUBLIC ${${_dep}_DEFINITIONS})
++      endif()
++    endforeach()
++  endmacro()
++endif()
+ find_package(rosidl_runtime_c REQUIRED)
+ find_package(rcutils REQUIRED)
+ find_package(rmw REQUIRED)
+ find_package(microcdr REQUIRED)
+ find_package(zenohpico REQUIRED)
+ 
++if(EMSCRIPTEN)
++  # zenoh-pico's own headers gate platform-specific code on this define
++  # (its emscripten.cmake platform profile sets
++  # ZP_PLATFORM_COMPILE_DEFINITIONS ZENOH_EMSCRIPTEN for ITS OWN sources),
++  # but that's a PUBLIC target_compile_definitions() on zenoh-pico's own
++  # CMake target -- propagating it to a consumer requires linking against
++  # the actual imported target, which our ament_target_dependencies() shim
++  # above doesn't do (it uses the old ${pkg}_LIBRARIES variable instead).
++  # Set it directly instead. Confirmed necessary via zenoh-pico/system/common/
++  # platform.h's #error "Unknown platform", 2026-09-09.
++  add_definitions(-DZENOH_EMSCRIPTEN)
++endif()
++
+ # Build options
+ option(BUILD_DOCUMENTATION              "Use doxygen to create product documentation" OFF)
+ 
+diff --git a/rmw_zenoh_pico/package.xml b/rmw_zenoh_pico/package.xml
+index f17bd1d..a6462eb 100644
+--- a/rmw_zenoh_pico/package.xml
++++ b/rmw_zenoh_pico/package.xml
+@@ -9,9 +9,11 @@
+   <license>Apache License 2.0</license>
+   <license>BSD</license>  <!-- for xxhash.h -->
+ 
+-  <buildtool_depend>ament_cmake_ros</buildtool_depend>
++  <buildtool_depend>ament_cmake</buildtool_depend>
++  <buildtool_depend>ament_cmake_ros_core</buildtool_depend>
+   <buildtool_depend>rosidl_cmake</buildtool_depend>
+-  <buildtool_export_depend>ament_cmake_ros</buildtool_export_depend>
++  <buildtool_export_depend>ament_cmake</buildtool_export_depend>
++  <buildtool_export_depend>ament_cmake_ros_core</buildtool_export_depend>
+   <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>
+ 
+   <depend>zenohpico</depend>
+diff --git a/rmw_zenoh_pico/src/rmw_init.c b/rmw_zenoh_pico/src/rmw_init.c
+index 2695094..fca09f1 100644
+--- a/rmw_zenoh_pico/src/rmw_init.c
++++ b/rmw_zenoh_pico/src/rmw_init.c
+@@ -154,7 +154,14 @@ static rmw_ret_t rmw_zenoh_pico_init_option(ZenohPicoTransportParams *params)
+     memset(params->connect_addr, 0, sizeof(params->connect_addr));
+     if(strcmp(_rmw_zenoh_pico_connect_port, "-1") != 0){
+       memset(buf, 0, sizeof(buf));
++      // A browser sandbox has no raw TCP sockets, so the wasm32 build of
++      // zenoh-pico is compiled with Z_FEATURE_LINK_WS instead -- it can only
++      // dial a "ws/" locator, never "tcp/". Native platforms are unaffected.
++#if defined(ZENOH_EMSCRIPTEN)
++      snprintf(buf, sizeof(buf), "ws/%s:%s",
++#else
+       snprintf(buf, sizeof(buf), "tcp/%s:%s",
++#endif
+ 	       _rmw_zenoh_pico_connect,
+ 	       _rmw_zenoh_pico_connect_port);
+       if(strlen(buf) >= sizeof(params->connect_addr) -1) {
+@@ -224,7 +231,12 @@ rmw_init_options_init(rmw_init_options_t * init_options, rcutils_allocator_t all
+   init_options->enclave                   = "/";
+   init_options->domain_id		  = 0;
+   init_options->security_options	  = rmw_get_default_security_options();
+-  init_options->localhost_only		  = RMW_LOCALHOST_ONLY_DEFAULT;
++  // localhost_only was removed from rmw_init_options_s in rolling (folded
++  // into the more general discovery_options mechanism instead) -- this
++  // struct field/macro no longer exists at all (confirmed 2026-09-09).
++  // discovery_options is left at whatever rmw_get_zero_initialized_init_options()
++  // already set it to upstream; this prototype RMW doesn't otherwise
++  // configure discovery ranges.
+ 
+   // This can be call before rmw_init()
+   ZenohPicoTransportParams *params = zenoh_pico_generate_param(NULL);
+diff --git a/rmw_zenoh_pico/src/rmw_logging.c b/rmw_zenoh_pico/src/rmw_logging.c
+index 92604b2..32d2f67 100644
+--- a/rmw_zenoh_pico/src/rmw_logging.c
++++ b/rmw_zenoh_pico/src/rmw_logging.c
+@@ -19,7 +19,7 @@
+ static z_owned_mutex_t mutex_logging;
+ 
+ // Timestamp function
+-#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
++#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
+ 
+ void z_log_prefix(const char *prefix, const char *func_name, const char *fmt, ...) {
+   static char tstamp[64];
+diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
+index 0101c23..6dae0db 100644
+--- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
++++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
+@@ -16,7 +16,7 @@
+ 
+ #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
+ 
+-#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
++#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
+ 
+ z_result_t z_condvar_init_with_attr(z_owned_condvar_t *cv, pthread_condattr_t *attr){
+   _Z_CHECK_SYS_ERR(pthread_cond_init(&cv->_val, attr));
+diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
+index 3e3f027..6984719 100644
+--- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
++++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
+@@ -16,7 +16,7 @@
+ 
+ #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
+ 
+-#if defined(ZENOH_LINUX) || defined(ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
++#if defined(ZENOH_LINUX) || defined(ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
+ 
+ #define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
+ #define XXH_IMPLEMENTATION      /* access definitions */

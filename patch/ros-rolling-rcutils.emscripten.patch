@@ -1,0 +1,35 @@
+diff --git a/src/time_unix.c b/src/time_unix.c
+index fdd49bc..bd72338 100644
+--- a/src/time_unix.c
++++ b/src/time_unix.c
+@@ -106,7 +106,16 @@ rcutils_raw_steady_time_now(rcutils_time_point_value_t * now)
+   RCUTILS_CHECK_ARGUMENT_FOR_NULL(now, RCUTILS_RET_INVALID_ARGUMENT);
+   struct timespec timespec_now;
+ 
+-#if defined(CLOCK_MONOTONIC_RAW)
++  // CLOCK_MONOTONIC_RAW is #define'd by emscripten's headers (so the
++  // defined() check below would pick it) but the wasm32/pthread runtime's
++  // actual implementation of it is broken -- it silently writes back a
++  // bogus timespec (in practice: tv_nsec's value ends up read out where
++  // tv_sec is expected, producing a "now" that looks like tv_nsec * 1e9
++  // nanoseconds instead of the real time), even though plain
++  // CLOCK_MONOTONIC on the exact same build works correctly. Skip the RAW
++  // variant entirely under emscripten rather than trusting whichever clock
++  // ID the SDK headers happen to define.
++#if defined(CLOCK_MONOTONIC_RAW) && !defined(__EMSCRIPTEN__)
+   clockid_t monotonic_raw_clock = CLOCK_MONOTONIC_RAW;
+ #else
+   clockid_t monotonic_raw_clock = CLOCK_MONOTONIC;
+diff --git a/src/strerror.c b/src/strerror.c
+index a425010..282a107 100644
+--- a/src/strerror.c
++++ b/src/strerror.c
+@@ -27,7 +27,7 @@ rcutils_strerror(char * buffer, size_t buffer_length)
+ {
+ #if defined(_WIN32)
+   strerror_s(buffer, buffer_length, errno);
+-#elif defined(_GNU_SOURCE) && (!defined(ANDROID) || __ANDROID_API__ >= 23) && !defined(__QNXNTO__)
++#elif defined(_GNU_SOURCE) && (!defined(ANDROID) || __ANDROID_API__ >= 23) && !defined(__QNXNTO__) && !defined(__EMSCRIPTEN__)
+   /* GNU-specific */
+   char * msg = strerror_r(errno, buffer, buffer_length);
+   if (msg != buffer) {

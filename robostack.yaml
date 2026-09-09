@@ -132,7 +132,12 @@ geographiclib:
 geographiclib-tools:
   robostack: [geographiclib-cpp]
 git:
-  robostack: [git]
+  # No wasm32 conda package for git; it's a native VCS tool run during the build.
+  robostack:
+    linux: [git]
+    osx: [git]
+    win64: [git]
+    emscripten: []
 glslang-dev:
   robostack: [glslang]
 glut:
@@ -349,7 +354,11 @@ libglu-dev:
     osx: []
     win64: []
 libgmock-dev:
-  robostack: [gmock]
+  robostack:
+    linux: [gmock]
+    osx: [gmock]
+    win64: [gmock]
+    emscripten: []
 libgoogle-glog-dev:
   robostack: [glog]
 libgpgme-dev:
@@ -391,6 +400,7 @@ liblttng-ust-dev:
     linux: [lttng-ust]
     osx: []
     win64: []
+    emscripten: []
 liblz4:
   robostack: [lz4]
 liblz4-dev:
@@ -690,7 +700,12 @@ libxxf86vm:
 libyaml:
   robostack: [yaml]
 libyaml-dev:
-  robostack: [yaml]
+  # emscripten-forge publishes this under the newer name "libyaml", not "yaml".
+  robostack:
+    linux: [yaml]
+    osx: [yaml]
+    win64: [yaml]
+    emscripten: [libyaml]
 libzip-dev:
   robostack: [libzip]
 libzmq3-dev:
@@ -742,7 +757,13 @@ openssl:
 pcre:
   robostack: [pcre]
 pkg-config:
-  robostack: [pkg-config]
+  robostack:
+    linux: [pkg-config]
+    osx: [pkg-config]
+    win64: [pkg-config]
+    # No wasm32 pkg-config binary; vinca's build template already adds a
+    # native one to the BUILD env for cross-compiling packages.
+    emscripten: []
 portaudio19-dev:
   robostack: [portaudio]
 postgresql:
@@ -1229,7 +1250,12 @@ sophus:
 spacenavd:
   robostack: [libspnav]
 spdlog:
-  robostack: [spdlog, fmt]
+  # No spdlog conda package for wasm32; falls back to spdlog_vendor's own source build.
+  robostack:
+    linux: [spdlog, fmt]
+    osx: [spdlog, fmt]
+    win64: [spdlog, fmt]
+    emscripten: []
 sqlite3:
   robostack: [sqlite 3.*]
 sshpass:
@@ -1286,11 +1312,30 @@ xsimd:
 xtensor:
   robostack: [xtensor ==0.24.7]
 yaml:
-  robostack: [yaml, yaml-cpp]
+  # emscripten-forge uses the name "libyaml" and publishes no yaml-cpp for wasm32
+  # (C++ consumers get it via the from-source yaml_cpp_vendor package instead).
+  robostack:
+    linux: [yaml, yaml-cpp]
+    osx: [yaml, yaml-cpp]
+    win64: [yaml, yaml-cpp]
+    emscripten: [libyaml]
 yaml-cpp:
-  robostack: [yaml-cpp]
+  # No yaml-cpp conda package for wasm32; falls back to yaml_cpp_vendor's own source build.
+  robostack:
+    linux: [yaml-cpp]
+    osx: [yaml-cpp]
+    win64: [yaml-cpp]
+    emscripten: []
+microcdr:
+  # Hand-written extra_recipes/microcdr package (eProsima/micro-CDR has no
+  # conda-forge/robostack package under this name).
+  robostack: [microcdr]
 zbar:
   robostack: [zbar]
+zenohpico:
+  # emscripten-forge-4x also publishes its own newer, API-incompatible
+  # zenoh-pico; pin the version to force resolution to our own build.
+  robostack: ["zenoh-pico ==1.4.0"]
 zlib:
   robostack: [zlib]
 zziplib:

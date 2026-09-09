@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Hand-written (not vinca-generated): not a ROS package, no package.xml.
+
+package:
+  name: microcdr
+  version: "2.0.2"
+
+source:
+  git: https://github.com/eProsima/micro-CDR.git
+  tag: "v2.0.2"
+
+build:
+  script: build.sh
+  # Bumped after switching static -> dynamic linking (no version bump).
+  number: 1
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - ${{ compiler('c') }}
+    - cmake
+    - ninja
+    - if: build_platform != target_platform
+      then:
+        - emscripten_emscripten-wasm32
+  host:
+  run:
+
+about:
+  license: Apache-2.0
+  summary: eProsima Micro CDR -- a small CDR (Common Data Representation) serialization library for constrained devices.
+  homepage: https://github.com/eProsima/micro-CDR
+
+extra:
+  recipe-maintainers:
+    - Tobias-Fischer
