@@ -5,7 +5,7 @@ index fdd49bc..bd72338 100644
 @@ -106,7 +106,16 @@ rcutils_raw_steady_time_now(rcutils_time_point_value_t * now)
    RCUTILS_CHECK_ARGUMENT_FOR_NULL(now, RCUTILS_RET_INVALID_ARGUMENT);
    struct timespec timespec_now;
- 
+
 -#if defined(CLOCK_MONOTONIC_RAW)
 +  // CLOCK_MONOTONIC_RAW is #define'd by emscripten's headers (so the
 +  // defined() check below would pick it) but the wasm32/pthread runtime's
@@ -20,6 +20,39 @@ index fdd49bc..bd72338 100644
    clockid_t monotonic_raw_clock = CLOCK_MONOTONIC_RAW;
  #else
    clockid_t monotonic_raw_clock = CLOCK_MONOTONIC;
+diff --git a/src/shared_library.c b/src/shared_library.c
+index 077478f..f8e38c8 100644
+--- a/src/shared_library.c
++++ b/src/shared_library.c
+@@ -124,7 +124,13 @@ rcutils_load_shared_library(
+     goto fail;
+   }
+   lib->library_path = rcutils_strdup(image_name, lib->allocator);
+-#elif defined(_GNU_SOURCE) && !defined(__QNXNTO__) && !defined(__ANDROID__) && !defined(__OHOS__)
++  // Emscripten defines _GNU_SOURCE but its dlopen()/dlinfo() are a JS-backed
++  // shim, not glibc's -- RTLD_DI_LINKMAP support (reading back a real
++  // struct link_map) doesn't exist there. A successful dlopen() would
++  // otherwise get treated as a failure once dlinfo() returns -1 below; the
++  // #else branch already covers this correctly (it just reuses the path we
++  // opened the library from, no introspection needed).
++#elif defined(_GNU_SOURCE) && !defined(__QNXNTO__) && !defined(__ANDROID__) && !defined(__OHOS__) && !defined(__EMSCRIPTEN__)
+   struct link_map * map = NULL;
+   if (dlinfo(lib->lib_pointer, RTLD_DI_LINKMAP, &map) != 0) {
+     RCUTILS_SET_ERROR_MSG_WITH_FORMAT_STRING("dlinfo error: %s", dlerror());
+@@ -291,7 +297,12 @@ rcutils_get_platform_library_name(
+
+   int written = 0;
+
+-#if defined(__linux__) || defined(__QNXNTO__)
++  // rcl_logging_implementation dlopens its backend (spdlog or noop) by name
++  // at runtime via this function -- with no emscripten case it always falls
++  // through with written == 0 ("failed to format library name"), regardless
++  // of which backend RCL_LOGGING_IMPLEMENTATION selects. wasm32 side modules
++  // use the same "lib<name>.so" naming convention as Linux.
++#if defined(__linux__) || defined(__QNXNTO__) || defined(__EMSCRIPTEN__)
+   if (debug) {
+     if (buffer_size >= (strlen(library_name) + 8)) {
+       written = rcutils_snprintf(
 diff --git a/src/strerror.c b/src/strerror.c
 index a425010..282a107 100644
 --- a/src/strerror.c

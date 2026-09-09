@@ -37,7 +37,7 @@ git = "*"
 # 4.0.9 rejects -s DEMANGLE_SUPPORT=1; a v1-selector evaluation fix for
 # pinning_overrides; real pthreads, since libc++'s condition_variable
 # timed-wait never wakes up on its own without a real OS thread).
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "235bd2fcf88a7e61a084a39cc216e1271b753486" }
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "325d0afb5e4a862c47a65addf113eff62d090486" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
@@ -114,4 +114,22 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
   # so rcl_publisher_init fails with "Type support not from this
   # implementation" for every message type regardless of what's linked at
   # the final executable. Confirmed via live browser demo, 2026-09-09.
+  #
+  # Known gap: rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle
+  # ROS 2's newer auto-generated service "_Event" messages, so any message
+  # package that transitively pulls one in (action_msgs, lifecycle_msgs,
+  # rcl_interfaces, rosgraph_msgs, statistics_msgs, type_description_interfaces,
+  # micro_ros_msgs) fails to build with STATIC_ROSIDL_TYPESUPPORT_CPP set this
+  # way -- confirmed 2026-09-09 getting a live rclpy demo running. The
+  # microxrcedds_c (C-only) backend those same packages need for rmw_zenoh_pico
+  # builds fine; only the C++ variant hits the gap. Building this closure
+  # end-to-end in one `pixi run build-emscripten` pass therefore still needs a
+  # per-package override this repo doesn't have yet (vinca's env vars here are
+  # global to the whole invocation) -- for now those packages are rebuilt by
+  # hand afterwards, once with no override (falls back to introspection for
+  # both C and C++) and, where rmw_zenoh_pico needs the C backend specifically
+  # (rcl_interfaces, type_description_interfaces, service_msgs), a second time
+  # with only VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C set. See
+  # browser_demo/build_rclpy.sh (local-only, not part of this repo) for the
+  # exact rclpy verification this was found through.
   env = { VINCA_EMSCRIPTEN_RMW_IMPLEMENTATION = "rmw_zenoh_pico", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C = "rosidl_typesupport_microxrcedds_c", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP = "rosidl_typesupport_microxrcedds_cpp" }
