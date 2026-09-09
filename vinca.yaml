@@ -187,32 +187,36 @@ packages_select_by_deps:
   # - web-video-server
   - persist-parameter-server
 
-
   - twist_stamper  # Requested in https://github.com/RoboStack/ros-rolling/issues/12
 
   - urdf_tutorial
 
-  # These packages are only built on Linux as they depend on Linux-specific API
-  - if: linux
-    then:
-      - libcamera
-      - nobleo_socketcan_bridge  # Depends on socketcan
-      - ros2_socketcan  # Depends on socketcan
-      - usb_cam  # Depends on v4l
-
-  # These packages are currently only build on Linux,
-  # as trying to build them in the past on macos or Windows resulted in errors
+  # Packages only built on Linux: hardware-specific deps (libcamera/v4l/
+  # socketcan), or previously attempted on macOS/Windows and failed there.
   - if: linux
     then:
       - apriltag_ros  # Depends on camera_ros
       - camera_ros  # Depends on libcamera that is only available on linux
+      - libcamera
       - livox_ros_driver2
       - mavros  # libmavconn currently fails to build on macOS and windows
+      - nobleo_socketcan_bridge  # Depends on socketcan
       - py_binding_tools
+      - ros2_socketcan  # Depends on socketcan
+      - rviz_satellite
+      - sdl2_vendor
+      - septentrio_gnss_driver
+      - serial_driver
+      - sick_safetyscanners2
+      - sick_safetyscanners2_interfaces
+      - simulation_interfaces
+      - slider_publisher
+      - swri_console  # Until sync of: https://github.com/ros/rosdistro/pull/49750
       - swri_serial_util  # Serial communication only implemented for linux
+      - usb_cam  # Depends on v4l
       - v4l2_camera  # Depends on v4l that is only available on linux
 
-  # These packages are currently not build on Windows, but they be with some work
+  # These packages are currently not built on Windows, but they may be with some work
   - if: not win
     then:
       - ament_cmake
@@ -323,6 +327,14 @@ packages_select_by_deps:
   - turtlebot3_gazebo
   - urdf_launch
   - yaml_cpp_vendor
+      - rqt_mocap4r2_control
+      - rqt_moveit
+      - rqt_robot_dashboard
+      - rqt_robot_steering
+      - rqt_tf_tree
+      - rslidar_sdk
+      - rtcm_msgs
+      - rviz2
 
   # Allied Vision only ships prebuilt Vimba SDK binaries (libVimbaC/libVimbaCPP)
   # for Linux (x86_64/arm), not macOS -- no source-level fix is possible.
@@ -396,17 +408,6 @@ packages_select_by_deps:
       - rqt
       - rqt_controller_manager
       - rqt_gui
-  - if: not win
-    then:
-      - rqt_mocap4r2_control
-      - rqt_moveit
-      - rqt_robot_dashboard
-      - rqt_robot_monitor
-      - rqt_robot_steering
-      - rqt_tf_tree
-      - rslidar_sdk
-      - rtcm_msgs
-      - rviz2
 
   # mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins, which
   # is skipped on osx (no prebuilt MuJoCo binary) and win (unconditional
@@ -416,17 +417,6 @@ packages_select_by_deps:
     then:
       - mujoco_ros2_control
       - mujoco_ros2_control_demos
-  - if: linux
-    then:
-      - rviz_satellite
-      - sdl2_vendor
-      - septentrio_gnss_driver
-      - serial_driver
-      - sick_safetyscanners2
-      - sick_safetyscanners2_interfaces
-      - simulation_interfaces
-      - slider_publisher
-      - swri_console  # Until sync of: https://github.com/ros/rosdistro/pull/49750
 
   # jazzy already builds these on osx (its vinca.yaml selects them under
   # "not win"/"not linux"); rolling had them needlessly linux-only. Comment
