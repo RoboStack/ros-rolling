@@ -37,7 +37,7 @@ git = "*"
 # 4.0.9 rejects -s DEMANGLE_SUPPORT=1; a v1-selector evaluation fix for
 # pinning_overrides; real pthreads, since libc++'s condition_variable
 # timed-wait never wakes up on its own without a real OS thread).
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "325d0afb5e4a862c47a65addf113eff62d090486" }
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "157c60b058e5e23050d717348c604e5ef4dfe3bb" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
