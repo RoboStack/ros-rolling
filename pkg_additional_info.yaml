@@ -110,6 +110,8 @@ libcamera:
     override_version: '0.5.2'
 libcurl_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+libg2o:
+  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 liblz4_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 librealsense2:
@@ -238,43 +240,3 @@ visp:
     override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
-cv_bridge:
-  build_number: 26
-distro_mutex:
-  build_number: 26
-libg2o:
-  build_number: 27
-  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
-libmavconn:
-  build_number: 26
-mavlink:
-  build_number: 29
-pcl_conversions:
-  build_number: 26
-rmf_battery:
-  build_number: 26
-rmf_task:
-  build_number: 26
-rmf_task_sequence:
-  build_number: 26
-rmf_traffic:
-  build_number: 26
-rmf_traffic_ros2:
-  build_number: 30
-rmf_utils:
-  build_number: 27
-ros2cli:
-  build_number: 26
-rosidl_cli:
-  build_number: 26
-rosidl_typesupport_microxrcedds_c:
-  # Bump forces a new identity so rattler's extraction cache can't serve stale
-  # content; also needed install(EXPORT ...) + rosidl_export_typesupport_targets().
-  build_number: 27
-rosidl_typesupport_microxrcedds_cpp:
-  # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
-  build_number: 28
-sick_safetyscanners2_interfaces:
-  build_number: 26
-sick_safetyscanners_base:
-  build_number: 28

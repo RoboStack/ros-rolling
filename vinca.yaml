@@ -13,9 +13,7 @@ build_number: 25
 mutex_package:
   name: "ros2-distro-mutex"
   version: "0.20.0"
-  # Bumped independently of build_number so the mutex is re-published with the new
-  # run_constraints while already-built packages (ros2-distro-mutex 0.20.* rolling_*) stay valid.
-  build_number: 26
+  build_number: 25
   upper_bound: "x.x"
   run_constraints:
     - libboost 1.90.*
