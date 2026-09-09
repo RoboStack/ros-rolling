@@ -115,6 +115,13 @@ pinning_overrides:
   # invocation's --target-platform; the legacy comment selector only ever sees
   # target_platform, so it would pin python 3.13 globally for the whole
   # invocation regardless of which sub-resolution was actually being solved.
+  # conda-forge published sip 6.16.1 on 2026-09-08, which broke ABI targeting for
+  # packages like qt_gui_cpp_sip that build against PyQt-sip's fixed ABI v12
+  # (hit this on humble/jazzy first; rolling also builds qt_gui_cpp via
+  # pyqt6/sip so it's equally exposed). Pin back to the last known-good line
+  # until upstream fixes it.
+  sip:
+    - 6.15
   python:
     - if: emscripten
       then:

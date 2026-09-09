@@ -1183,6 +1183,8 @@ libzenohcxx:
   # graphviz pin (from conda-forge-pinning) has no candidates there. Keep the
   # base '14' pin for every other platform (if/then replaces the whole list,
   # so the non-emscripten branch must be spelled out too).
+sip:
+  - 6.15
 cross-python_emscripten-wasm32:
   - 3.13.1  # The emscripten SDK/toolchain package version itself, keyed by vinca's
   # `<pkgname>_<target_platform>` convention for cross-compilation toolchain
