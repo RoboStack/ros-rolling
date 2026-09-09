@@ -5,6 +5,11 @@ foxglove_bridge:
 ros_ign_interfaces:
   add_host: ["ros-rolling-rcl-interfaces"]
 cartographer_ros:
+  # package.xml's <depend>cartographer</depend> auto-resolves to the
+  # ros2-cartographer dummy package, but add_host below also pulls in
+  # conda-forge's cartographer directly (needed for a matching lua pin);
+  # vinca doesn't dedupe the two, so drop the dummy. ceres-solver is
+  # pinned to the cpu build since RoboStack disables CUDA by default.
   remove_host: ["ros2-cartographer"]
   remove_run: ["ros2-cartographer"]
   add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*", "ros2-pcl-conversions"]
