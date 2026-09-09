@@ -724,6 +724,10 @@ maven:
   robostack: [maven]
 meson:
   robostack: [meson]
+microcdr:
+  # Hand-written extra_recipes/microcdr package (eProsima/micro-CDR has no
+  # conda-forge/robostack package under this name).
+  robostack: [microcdr]
 mongodb:
   robostack: [mongodb]
 mosquitto:
@@ -1326,10 +1330,6 @@ yaml-cpp:
     osx: [yaml-cpp]
     win64: [yaml-cpp]
     emscripten: []
-microcdr:
-  # Hand-written extra_recipes/microcdr package (eProsima/micro-CDR has no
-  # conda-forge/robostack package under this name).
-  robostack: [microcdr]
 zbar:
   robostack: [zbar]
 zenohpico:

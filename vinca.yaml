@@ -751,6 +751,7 @@ packages_select_by_deps:
   - if: not win and not osx and not wasm32
     then:
       - avt_vimba_camera
+
   - if: not wasm32
     then:
       - joy_linux
@@ -818,6 +819,7 @@ packages_select_by_deps:
       - rqt
       - rqt_controller_manager
       - rqt_gui
+
   - if: not win and not wasm32
     then:
       - rqt_mocap4r2_control
@@ -838,6 +840,7 @@ packages_select_by_deps:
     then:
       - mujoco_ros2_control
       - mujoco_ros2_control_demos
+
   - if: linux
     then:
       - rviz_satellite
