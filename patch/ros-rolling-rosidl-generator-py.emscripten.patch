@@ -1,0 +1,40 @@
+diff --git a/cmake/rosidl_generator_py_generate_interfaces.cmake b/cmake/rosidl_generator_py_generate_interfaces.cmake
+index 2fe245b..458dbdb 100644
+--- a/cmake/rosidl_generator_py_generate_interfaces.cmake
++++ b/cmake/rosidl_generator_py_generate_interfaces.cmake
+@@ -162,11 +162,30 @@ add_dependencies(
+   ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
+ )
+ 
+-target_link_libraries(
+-  ${_target_name_lib} PRIVATE
+-  Python3::NumPy
+-  Python3::Python
+-)
++if(EMSCRIPTEN)
++  # Python3::Python and Python3::Module both resolve to the same static
++  # libpython3.a here -- emscripten-forge's cross-python package ships no
++  # shared libpython, so CMake's FindPython3 has nothing else to point
++  # Development.Module at. Linking that static archive fails
++  # ("--shared-memory is disallowed by call.o because it was not compiled
++  # with 'atomics' or 'bulk-memory' features", confirmed 2026-09-08
++  # building builtin_interfaces): it was built without pthread
++  # atomics/bulk-memory support, unlike our USE_PTHREADS=1 SIDE_MODULE.
++  # Skip linking it entirely -- the link already passes
++  # --unresolved-symbols=import-dynamic, so CPython API symbols resolve at
++  # runtime against the MAIN_MODULE's own (pthread-enabled) Python
++  # instead. Only the headers are needed at compile time.
++  target_include_directories(${_target_name_lib} PRIVATE
++    ${Python3_INCLUDE_DIRS}
++    ${Python3_NumPy_INCLUDE_DIRS}
++  )
++else()
++  target_link_libraries(
++    ${_target_name_lib} PRIVATE
++    Python3::NumPy
++    Python3::Python
++  )
++endif()
+ target_include_directories(${_target_name_lib}
+   PRIVATE
+   ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_c

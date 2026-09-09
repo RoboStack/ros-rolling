@@ -198,13 +198,21 @@ rviz_ogre_vendor:
 sdformat_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 spdlog_vendor:
-  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+  # No emscripten-wasm32 spdlog conda package exists; build from source there instead.
+  additional_cmake_args:
+    if: not wasm32
+    then: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 sqlite3_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 toppra:
   generate_dummy_package_with_run_deps:
     dep_name: toppra-python
     max_pin: 'x.x'
+tracetools:
+  # lttng-ust doesn't exist for wasm32; tracetools' own OS gate misses emscripten.
+  additional_cmake_args:
+    if: wasm32
+    then: "-DTRACETOOLS_DISABLED=ON"
 ublox_gps:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 uncrustify_vendor:

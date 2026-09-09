@@ -1,0 +1,48 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 906c3d1..fc94182 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -64,20 +64,29 @@ install(
+   RUNTIME DESTINATION bin
+ )
+ 
+-add_executable(run_rmw_isolated
+-  src/run_rmw_isolated.c
+-)
+-target_link_libraries(run_rmw_isolated
+-  ament_cmake_ros_core::ament_ros_defaults
+-  rcutils::rcutils
+-  rmw_test_fixture_implementation
+-)
+-
+-install(
+-  TARGETS run_rmw_isolated
+-  EXPORT ${PROJECT_NAME}
+-  DESTINATION lib/${PROJECT_NAME}
+-)
++# run_rmw_isolated is a debugging/test utility that re-execs an isolated
++# process with dlinfo() + pthread_getname_np()/pthread_setname_np() for
++# introspection -- none of which emscripten's libc implements (confirmed
++# 2026-09-09: "undefined symbol: dlinfo/pthread_getname_np/pthread_setname_np"
++# linking it as a MAIN_MODULE). Not needed at runtime by anything that
++# actually uses rmw_test_fixture_implementation as a library, so just skip
++# building it there.
++if(NOT EMSCRIPTEN)
++  add_executable(run_rmw_isolated
++    src/run_rmw_isolated.c
++  )
++  target_link_libraries(run_rmw_isolated
++    ament_cmake_ros_core::ament_ros_defaults
++    rcutils::rcutils
++    rmw_test_fixture_implementation
++  )
++
++  install(
++    TARGETS run_rmw_isolated
++    EXPORT ${PROJECT_NAME}
++    DESTINATION lib/${PROJECT_NAME}
++  )
++endif()
+ 
+ ament_python_install_package(${PROJECT_NAME})
+ 

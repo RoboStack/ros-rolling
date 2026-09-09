@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Hand-written (not vinca-generated): not a ROS package, no package.xml.
+# Lives under extra_recipes/ to survive `rm -rf recipes` regeneration;
+# copied into ./recipes/ by pixi.toml's build-emscripten task.
+
+package:
+  name: zenoh-pico
+  version: "1.4.0"
+
+source:
+  git: https://github.com/eclipse-zenoh/zenoh-pico.git
+  # Pinned to rmw_zenoh_pico's tested SHA: it reaches into zenoh-pico's
+  # internal _z_ structs, which have broken compat across versions.
+  # Pinned by exact rev, not the "1.4.0" tag (tag resolution is unstable).
+  rev: d08c096944807a00853892ea45696152308350a2
+  patches:
+    - ws-locator-valid-inverted-check.patch
+    - emscripten-real-usleep.patch
+    - emscripten-longer-ws-open-wait.patch
+
+build:
+  script: build.sh
+  # Bump whenever content changes without a version bump, to avoid
+  # rattler-build package-cache collisions under an unchanged identity.
+  number: 4
+
+requirements:
+  build:
+    - ${{ compiler('cxx') }}
+    - ${{ compiler('c') }}
+    - cmake
+    - ninja
+    - if: build_platform != target_platform
+      then:
+        - emscripten_emscripten-wasm32
+  host:
+  run:
+
+about:
+  license: Apache-2.0
+  summary: Eclipse zenoh-pico -- an extremely lightweight, C-only Zenoh client for constrained devices and WASM.
+  homepage: https://github.com/eclipse-zenoh/zenoh-pico
+
+extra:
+  recipe-maintainers:
+    - Tobias-Fischer

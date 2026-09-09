@@ -28,8 +28,16 @@ m2-patch = "*"
 git = "*"
 
 [pypi-dependencies]
-# This is typically the latest commit on main branch
-vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "34316c7f195b359fb9cd4bfd2ae8fd83cb559dff" }
+# emscripten-wasm32 in platforms prevents pixi-build from resolving vinca as
+# a conda source dep (uv is unavailable for that target), so use pypi here.
+# Pinned to Tobias-Fischer/vinca#feature/emscripten-pthreads (PR open at
+# https://github.com/RoboStack/vinca/pull/154) until merged upstream, then
+# this should be re-pointed to the merged RoboStack/vinca commit. See that
+# PR / ros-humble-emscripten's pixi.toml for the full rationale (emscripten
+# 4.0.9 rejects -s DEMANGLE_SUPPORT=1; a v1-selector evaluation fix for
+# pinning_overrides; real pthreads, since libc++'s condition_variable
+# timed-wait never wakes up on its own without a real OS thread).
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "157c60b058e5e23050d717348c604e5ef4dfe3bb" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
@@ -44,6 +52,9 @@ upload = "rattler-build upload prefix -c robostack-rolling --generate-attestatio
 build_continue_on_failure = { cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://repo.prefix.dev/robostack-rolling -c https://repo.prefix.dev/conda-forge --continue-on-failure --skip-existing --channel-priority disabled", depends-on = ["generate-recipes"] }
 sort = "sh -lc 'vinca-sort-vinca-lists $@ vinca.yaml && vinca-sort-yaml-keys $@ pkg_additional_info.yaml robostack.yaml rosdistro_additional_recipes.yaml' --"
 
+generate-recipes-emscripten = { cmd = "vinca -m --platform emscripten-wasm32 && cp -r extra_recipes/. recipes/", depends-on = ["remove-recipes"] }
+check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depends-on = ["generate-recipes-emscripten"] }
+
 [tasks.build]
 cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing --channel-priority disabled"
 depends-on = ["generate-recipes"]
@@ -57,3 +68,68 @@ description = "Remove all generated recipes, before regenerating them."
 cmd = "cp ./patch/{{ PACKAGE }}.*patch ./recipes/{{ PACKAGE }}/patch/; rattler-build build --recipe ./recipes/{{ PACKAGE }}/recipe.yaml -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --channel-priority disabled"
 args = [{ arg = "PACKAGE", default = "ros-rolling-ros-workspace" }]
 description = "Build a single package, from the ./recipes dir. Add the `ros-rolling-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"
+
+[tasks.build-emscripten]
+  cmd = [
+      "rattler-build", "build",
+      "--package-format", "tar-bz2",
+      "--recipe-dir", "./recipes",
+      "-m", "./conda_build_config.yaml",
+      "-c", "https://repo.prefix.dev/conda-forge",
+      # https://repo.mamba.pm/emscripten-forge is stale/legacy -- emscripten-forge/recipes'
+      # own pixi.toml publishes the emscripten SDK + cross-python toolchain to this
+      # channel instead. See ros-humble-emscripten's pixi.toml for details.
+      "-c", "https://repo.prefix.dev/emscripten-forge-4x",
+      # emscripten-forge-4x publishes the emscripten SDK toolchain package, but not
+      # (yet) cross-python_emscripten-wasm32 -- built locally instead from a clone
+      # of emscripten-forge/recipes (its own `build-cross-python-pkg` task), same
+      # as ros-humble-emscripten needed. TODO: drop this once/if emscripten-forge
+      # publishes it upstream, or vendor the build step into this repo properly.
+      "-c", "file:///tmp/emscripten_forge_recipes/output",
+      "-c", "microsoft",
+      "-c", "robostack-staging",
+      "--target-platform", "emscripten-wasm32",
+      "--skip-existing",
+      "--test", "skip",
+      # Without this, strict channel priority prefers conda-forge's newer
+      # noarch-eligible pyyaml (6.0.2/6.0.3, needing a "yaml" package that
+      # doesn't exist on any channel here) over emscripten-forge-4x's own
+      # pyyaml 6.0 build (needing "libyaml", which does exist for
+      # emscripten-wasm32) purely because conda-forge is listed first --
+      # even though conda-forge itself never publishes emscripten-wasm32
+      # builds. Confirmed necessary 2026-09-08 resolving ros2-launch's
+      # pyyaml dependency. Matches build-one's existing convention.
+      "--channel-priority", "disabled"
+      ]
+  depends-on = ["generate-recipes-emscripten"]
+  # Read by vinca's build_ament_cmake.sh.in (see the vinca fork commits
+  # b504063 and 235bd2f): rmw_implementation's get_default_rmw_implementation()
+  # needs a real, buildable RMW name here -- this repo builds rmw_zenoh_pico,
+  # not ros-humble-emscripten's rmw_wasm_cpp. rmw_zenoh_pico (a
+  # micro-ROS-lineage RMW) also hard-requires every message's
+  # rosidl_typesupport_c/cpp dispatch table to register the
+  # rosidl_typesupport_microxrcedds_c/cpp backend specifically -- the
+  # default (rosidl_typesupport_introspection_c/cpp, what rmw_wasm_cpp
+  # expects) leaves that dispatch table without a matching entry at all,
+  # so rcl_publisher_init fails with "Type support not from this
+  # implementation" for every message type regardless of what's linked at
+  # the final executable. Confirmed via live browser demo, 2026-09-09.
+  #
+  # Known gap: rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle
+  # ROS 2's newer auto-generated service "_Event" messages, so any message
+  # package that transitively pulls one in (action_msgs, lifecycle_msgs,
+  # rcl_interfaces, rosgraph_msgs, statistics_msgs, type_description_interfaces,
+  # micro_ros_msgs) fails to build with STATIC_ROSIDL_TYPESUPPORT_CPP set this
+  # way -- confirmed 2026-09-09 getting a live rclpy demo running. The
+  # microxrcedds_c (C-only) backend those same packages need for rmw_zenoh_pico
+  # builds fine; only the C++ variant hits the gap. Building this closure
+  # end-to-end in one `pixi run build-emscripten` pass therefore still needs a
+  # per-package override this repo doesn't have yet (vinca's env vars here are
+  # global to the whole invocation) -- for now those packages are rebuilt by
+  # hand afterwards, once with no override (falls back to introspection for
+  # both C and C++) and, where rmw_zenoh_pico needs the C backend specifically
+  # (rcl_interfaces, type_description_interfaces, service_msgs), a second time
+  # with only VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C set. See
+  # browser_demo/build_rclpy.sh (local-only, not part of this repo) for the
+  # exact rclpy verification this was found through.
+  env = { VINCA_EMSCRIPTEN_RMW_IMPLEMENTATION = "rmw_zenoh_pico", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C = "rosidl_typesupport_microxrcedds_c", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP = "rosidl_typesupport_microxrcedds_cpp" }

@@ -1,0 +1,64 @@
+diff --git a/rosidl_typesupport_microxrcedds_cpp/cmake/rosidl_typesupport_microxrcedds_cpp_generate_interfaces.cmake b/rosidl_typesupport_microxrcedds_cpp/cmake/rosidl_typesupport_microxrcedds_cpp_generate_interfaces.cmake
+index d4d7c46..f934c83 100644
+--- a/rosidl_typesupport_microxrcedds_cpp/cmake/rosidl_typesupport_microxrcedds_cpp_generate_interfaces.cmake
++++ b/rosidl_typesupport_microxrcedds_cpp/cmake/rosidl_typesupport_microxrcedds_cpp_generate_interfaces.cmake
+@@ -12,7 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-find_package(ament_cmake_ros REQUIRED)
++find_package(ament_cmake_ros_core REQUIRED)
+ find_package(microcdr REQUIRED)
+ find_package(rmw REQUIRED)
+ 
+@@ -144,8 +144,8 @@ target_compile_options(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+ # Include headers from other generators
+ target_include_directories(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+   PUBLIC
+-    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp
+-    ${CMAKE_CURRENT_BINARY_DIR}/rosidl_typesupport_microxrcedds_cpp
++    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cpp>"
++    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/rosidl_typesupport_microxrcedds_cpp>"
+   )
+ 
+ target_link_libraries(${rosidl_generate_interfaces_TARGET}${_target_suffix}
+@@ -197,6 +197,8 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+   install(
+     TARGETS
+       ${rosidl_generate_interfaces_TARGET}${_target_suffix}
++    EXPORT
++      ${rosidl_generate_interfaces_TARGET}${_target_suffix}
+     ARCHIVE DESTINATION
+       lib
+     LIBRARY DESTINATION
+@@ -205,9 +207,10 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
+       bin
+   )
+ 
+-  rosidl_export_typesupport_libraries(${_target_suffix}
++  rosidl_export_typesupport_targets(${_target_suffix}
+     ${rosidl_generate_interfaces_TARGET}${_target_suffix}
+     )
++  ament_export_targets(${rosidl_generate_interfaces_TARGET}${_target_suffix})
+ endif()
+ 
+ 
+diff --git a/rosidl_typesupport_microxrcedds_cpp/package.xml b/rosidl_typesupport_microxrcedds_cpp/package.xml
+index 1a69b40..cae62e3 100644
+--- a/rosidl_typesupport_microxrcedds_cpp/package.xml
++++ b/rosidl_typesupport_microxrcedds_cpp/package.xml
+@@ -7,12 +7,12 @@
+   <maintainer email="borjaouterelo@eprosima.com">Borja Outerelo</maintainer>
+   <license>Apache License 2.0</license>
+ 
+-  <buildtool_depend>ament_cmake_ros</buildtool_depend>
++  <buildtool_depend>ament_cmake_ros_core</buildtool_depend>
+   <buildtool_depend>rosidl_typesupport_microxrcedds_c</buildtool_depend>
+   <buildtool_depend>rosidl_cmake</buildtool_depend>
+   <buildtool_depend>rosidl_runtime_cpp</buildtool_depend>
+ 
+-  <buildtool_export_depend>ament_cmake_ros</buildtool_export_depend>
++  <buildtool_export_depend>ament_cmake_ros_core</buildtool_export_depend>
+   <buildtool_export_depend>python3</buildtool_export_depend>
+   <buildtool_export_depend>rosidl_typesupport_microxrcedds_c</buildtool_export_depend>
+   <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>

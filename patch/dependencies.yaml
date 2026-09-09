@@ -15,11 +15,28 @@ cartographer_ros:
   add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*", "ros2-pcl-conversions"]
   add_run: ["ros2-pcl-conversions"]
 libyaml_vendor:
-  add_host: ["yaml-cpp", "yaml"]
-  add_run: ["yaml-cpp", "yaml"]
+  add_host:
+    - if: not wasm32
+      then: ["yaml-cpp", "yaml"]
+  add_run:
+    - if: not wasm32
+      then: ["yaml-cpp", "yaml"]
+  # No wasm32 pkg-config build exists; it's a build-machine tool, not a target dep.
+  remove_host:
+    - if: wasm32
+      then: ["pkg-config"]
+  remove_run:
+    - if: wasm32
+      then: ["pkg-config"]
 yaml_cpp_vendor:
-  add_host: ["yaml-cpp"]
-  add_run: ["yaml-cpp"]
+  # No yaml-cpp conda package exists for wasm32; omitting it makes find_package()
+  # fail as designed so it falls back to its own ExternalProject source build.
+  add_host:
+    - if: not wasm32
+      then: ["yaml-cpp"]
+  add_run:
+    - if: not wasm32
+      then: ["yaml-cpp"]
 zstd_vendor:
   add_host: ["zstd", "${{ 'zstd-static' if not win }}"]
   add_run: ["zstd"]
@@ -273,8 +290,57 @@ camera_calibration:
 livox_ros_driver2:
   add_host: ["livox-sdk2"]
 spdlog_vendor:
-  add_host: ["spdlog"]
-  add_run: ["spdlog"]
+  # No spdlog conda package for wasm32; same fallback approach as yaml_cpp_vendor.
+  add_host:
+    - if: not wasm32
+      then: ["spdlog"]
+  add_run:
+    - if: not wasm32
+      then: ["spdlog"]
+rcl_logging_spdlog:
+  add_host: ["${{ 'fmt' if emscripten }}"]
+
+rmw_implementation:
+  # rmw_implementation discovers RMWs dynamically rather than declaring a real
+  # package.xml dependency, so build order isn't forced; add it explicitly for
+  # wasm32, our only RMW there. add_run (not just add_host) matters because
+  # every rcl consumer re-invokes get_default_rmw_implementation() at configure
+  # time, so a run dep on rmw_implementation transitively pulls it in for free.
+  add_host:
+    - if: emscripten
+      then: ["ros2-rmw-zenoh-pico"]
+  add_run:
+    - if: emscripten
+      then: ["ros2-rmw-zenoh-pico"]
+rmw_test_fixture_implementation:
+  # Same get_default_rmw_implementation() ordering issue as rmw_implementation above.
+  add_host:
+    - if: emscripten
+      then: ["ros2-rmw-zenoh-pico"]
+
+# rmw_zenoh_pico and its rosidl_typesupport_microxrcedds_c/cpp only need the
+# plain CMake macros from ament_cmake_ros_core, but depending on the full
+# ament_cmake_ros creates a cycle via rmw_test_fixture_implementation ->
+# rmw_implementation -> rmw_zenoh_pico. Swap to ament_cmake_ros_core, like
+# upstream RMWs (e.g. rmw_fastrtps_cpp) do; matching source patches update
+# the find_package()/package.xml calls to match.
+rmw_zenoh_pico:
+  # Also needs plain ament_cmake for the ament_target_dependencies() shim macro
+  # the matching source patch adds (removed from rolling's ament_cmake).
+  remove_host: ["ros2-ament-cmake-ros"]
+  add_host: ["ros2-ament-cmake-ros-core", "ros2-ament-cmake"]
+  remove_run: ["ros2-ament-cmake-ros"]
+  add_run: ["ros2-ament-cmake-ros-core", "ros2-ament-cmake"]
+rosidl_typesupport_microxrcedds_c:
+  remove_host: ["ros2-ament-cmake-ros"]
+  add_host: ["ros2-ament-cmake-ros-core"]
+  remove_run: ["ros2-ament-cmake-ros"]
+  add_run: ["ros2-ament-cmake-ros-core"]
+rosidl_typesupport_microxrcedds_cpp:
+  remove_host: ["ros2-ament-cmake-ros"]
+  add_host: ["ros2-ament-cmake-ros-core"]
+  remove_run: ["ros2-ament-cmake-ros"]
+  add_run: ["ros2-ament-cmake-ros-core"]
 console_bridge_vendor:
   add_host: ["console_bridge"]
   add_run: ["console_bridge"]
@@ -323,3 +389,52 @@ rmf_visualization_schedule:
 rmf_websocket:
   add_host: ["asio <1.30"]
   add_run: ["asio <1.30"]
+
+# rosidl_generate_interfaces() only generates a typesupport backend when its
+# provider package is present in the message package's own host env, not
+# based on package.xml. rmw_zenoh_pico requires the microxrcedds typesupport,
+# so add it explicitly to every core message package here.
+action_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+builtin_interfaces:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+lifecycle_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+rcl_interfaces:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+rosgraph_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+service_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+statistics_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+std_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+type_description_interfaces:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+unique_identifier_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+micro_ros_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]

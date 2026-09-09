@@ -402,6 +402,11 @@ mocap4r2_robot_gt_msgs:
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
   version: 0.0.7
   additional_folder: mocap4r2_robot_gt/mocap4r2_robot_gt_msgs
+rmw_zenoh_pico:
+  rev: 54e20a460c9533d279e07a581d0e69e647d60a0e
+  url: https://github.com/esol-community/rmw_zenoh_pico.git
+  version: 0.0.0
+  additional_folder: rmw_zenoh_pico
 roboplan_ros_cpp:
   tag: release/rolling/roboplan_ros_cpp/0.6.1-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
@@ -422,6 +427,16 @@ roboplan_ros_visualization:
   tag: release/rolling/roboplan_ros_visualization/0.6.1-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
   version: 0.6.1
+rosidl_typesupport_microxrcedds_c:
+  rev: d4a50a80e8d15521cdb75bcb9a14d29665f488d7
+  url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+  version: 6.0.0
+  additional_folder: rosidl_typesupport_microxrcedds_c
+rosidl_typesupport_microxrcedds_cpp:
+  rev: d4a50a80e8d15521cdb75bcb9a14d29665f488d7
+  url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+  version: 6.0.0
+  additional_folder: rosidl_typesupport_microxrcedds_cpp
 rqt_mocap4r2_control:
   tag: 0.0.7
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
@@ -435,3 +450,9 @@ rviz_visual_tools:  # temp addition
   tag: release/rolling/rviz_visual_tools/4.1.4-4
   url: https://github.com/ros2-gbp/rviz_visual_tools-release
   version: 4.1.4
+
+# zenoh-pico wasm32 RMW experiment (rmw_zenoh_pico + its microxrcedds
+# typesupport chain). Not part of the official rosdistro -- pinned by git
+# rev. zenoh-pico and microcdr are plain CMake C libraries with no
+# package.xml at all, so they're hand-written recipes under extra_recipes/
+# instead of being listed here.
