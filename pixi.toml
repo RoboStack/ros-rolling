@@ -72,10 +72,9 @@ check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depend
 # channel dir and reindexing satisfies the solver with zero actual native
 # rebuilding. Re-run this after each build pass that produces new
 # emscripten-wasm32 packages -- packages built *during* the same pass
-# aren't visible to the mirror until it's resynced, so the standard
-# workflow is: build pass -> sync-native-bootstrap-mirror -> build pass
-# (repeat until nothing new gets built) -> the scoped _Event-gap rebuilds
-# documented on build-emscripten below.
+# aren't visible to the mirror until it's resynced, so a cold build still
+# needs: build pass -> sync-native-bootstrap-mirror -> build pass, repeated
+# until nothing new gets built.
 sync-native-bootstrap-mirror = { cmd = "mkdir -p output/osx-arm64 && cp output/emscripten-wasm32/*.tar.bz2 output/osx-arm64/ && rattler-index fs output", description = "Mirror built emscripten-wasm32 packages into a fake osx-arm64 channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
 
 [tasks.build]
@@ -123,30 +122,11 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
       # builds. Confirmed necessary 2026-09-08 resolving ros2-launch's
       # pyyaml dependency. Matches build-one's existing convention.
       "--channel-priority", "disabled",
-      # rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle ROS 2's
-      # newer auto-generated service "_Event" messages (real upstream gap,
-      # not fixable by a dependency declaration) -- action_msgs,
-      # lifecycle_msgs, rosgraph_msgs, statistics_msgs, micro_ros_msgs, and
-      # (via rcl's build/test dep on it) test_msgs all define such a
-      # service and fail to build with VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP
-      # forcing that backend globally below. example_interfaces doesn't
-      # define one itself but needs the same microxrcedds host deps as
-      # test_msgs (see patch/dependencies.yaml) to stay consistent with the
-      # rest of the closure. Same rationale as build_continue_on_failure's
-      # own --continue-on-failure for the native build: let these fail here
-      # (they fall back to introspection-only typesupport on a follow-up
-      # rebuild without the CPP override -- see this repo's README) rather
-      # than aborting the whole closure. IMPORTANT: this "no override"
-      # rebuild is only correct for packages rmw_zenoh_pico doesn't itself
-      # need the C backend for -- do NOT route rcl_interfaces,
-      # type_description_interfaces or service_msgs through it (see the
-      # "Known gap" comment on the env= line below): a no-override build of
-      # those three "succeeds" but silently leaves their
-      # rosidl_typesupport_c dispatch table pointing at introspection, not
-      # microxrcedds, which is the exact class of bug this whole env= var
-      # exists to prevent (confirmed 2026-09-10, found via
-      # `strings ... | grep get_message_type_support_handle` on a build
-      # that had gone through this branch by mistake).
+      # General resilience for a ~230-package closure, not specific to any
+      # one known gap -- lets an unrelated single-package failure fall
+      # through without aborting everything else. See
+      # sync-native-bootstrap-mirror's own comment for the one *expected*
+      # class of failure a cold build still needs multiple passes for.
       "--continue-on-failure"
       ]
   depends-on = ["generate-recipes-emscripten", "sync-native-bootstrap-mirror"]
@@ -163,30 +143,17 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
   # implementation" for every message type regardless of what's linked at
   # the final executable. Confirmed via live browser demo, 2026-09-09.
   #
-  # Known gap: rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle
-  # ROS 2's newer auto-generated service "_Event" messages, so any message
-  # package that transitively pulls one in fails to build with
-  # STATIC_ROSIDL_TYPESUPPORT_CPP set this way (confirmed 2026-09-09 getting
-  # a live rclpy demo running; test_msgs confirmed 2026-09-10, pulled in as
-  # a real build/test_depend of rcl so it's non-optional for the closure).
-  # Building this closure end-to-end in one `pixi run build-emscripten` pass
-  # therefore still needs a per-package override this repo doesn't have yet
-  # (vinca's env vars here are global to the whole invocation) -- for now
-  # the affected packages are rebuilt by hand afterwards, split into two
-  # DISJOINT groups (do not run a package through both -- see the
-  # --continue-on-failure comment above for why that matters):
-  #   - action_msgs, lifecycle_msgs, rosgraph_msgs, statistics_msgs,
-  #     micro_ros_msgs, test_msgs, example_interfaces: rebuild with NO
-  #     override at all (falls back to introspection for both C and C++ --
-  #     correct for these, since nothing downstream needs their C backend
-  #     specifically).
-  #   - rcl_interfaces, type_description_interfaces, service_msgs: rmw_zenoh_pico
-  #     needs the C backend from these three specifically, so rebuild them
-  #     DIRECTLY with only VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C set (not a
-  #     separate no-override pass first) -- leaving CPP unset makes it fall
-  #     back to introspection_cpp, which sidesteps the _Event gap same as
-  #     the first group, while still getting the correct C backend these
-  #     three actually need wired into their typesupport dispatch table.
-  # See browser_demo/build_rclpy.sh (local-only, not part of this repo) for
-  # the exact rclpy verification this was found through.
+  # rosidl_typesupport_microxrcedds_cpp's codegen used to not handle ROS 2's
+  # newer auto-generated service/action "_Event" messages -- a real upstream
+  # gap (micro-ROS/rosidl_typesupport_microxrcedds#<TODO>), not fixable by a
+  # dependency declaration, that used to make any package defining a
+  # service or action (action_msgs, rcl_interfaces, test_msgs, ...) fail to
+  # build with STATIC_ROSIDL_TYPESUPPORT_CPP set this way, needing an
+  # elaborate two-group scoped-rebuild workaround after this task. Fixed at
+  # the source instead: patch/ros-rolling-rosidl-typesupport-microxrcedds-cpp.patch
+  # now also generates typesupport for the auto-generated Event message
+  # (matching the C generator, which already did this) -- confirmed
+  # 2026-09-10 building the full closure in a single `pixi run
+  # build-emscripten` pass with both overrides set globally, no scoped
+  # rebuilds needed for any package.
   env = { VINCA_EMSCRIPTEN_RMW_IMPLEMENTATION = "rmw_zenoh_pico", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C = "rosidl_typesupport_microxrcedds_c", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP = "rosidl_typesupport_microxrcedds_cpp" }

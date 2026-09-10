@@ -62,3 +62,53 @@ index 1a69b40..cae62e3 100644
    <buildtool_export_depend>python3</buildtool_export_depend>
    <buildtool_export_depend>rosidl_typesupport_microxrcedds_c</buildtool_export_depend>
    <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>
+diff --git a/rosidl_typesupport_microxrcedds_cpp/resource/srv__rosidl_typesupport_microxrcedds_cpp.hpp.em b/rosidl_typesupport_microxrcedds_cpp/resource/srv__rosidl_typesupport_microxrcedds_cpp.hpp.em
+index 09ee852..381b8d1 100644
+--- a/rosidl_typesupport_microxrcedds_cpp/resource/srv__rosidl_typesupport_microxrcedds_cpp.hpp.em
++++ b/rosidl_typesupport_microxrcedds_cpp/resource/srv__rosidl_typesupport_microxrcedds_cpp.hpp.em
+@@ -17,6 +17,15 @@ TEMPLATE(
+     include_directives=include_directives)
+ }@
+ 
++@{
++TEMPLATE(
++    'msg__rosidl_typesupport_microxrcedds_cpp.hpp.em',
++    package_name=package_name,
++    interface_path=interface_path,
++    message=service.event_message,
++    include_directives=include_directives)
++}@
++
+ @{
+ header_files = [
+     'rmw/types.h',
+diff --git a/rosidl_typesupport_microxrcedds_cpp/resource/srv__type_support_cpp.cpp.em b/rosidl_typesupport_microxrcedds_cpp/resource/srv__type_support_cpp.cpp.em
+index 6b17f3b..b88cff4 100644
+--- a/rosidl_typesupport_microxrcedds_cpp/resource/srv__type_support_cpp.cpp.em
++++ b/rosidl_typesupport_microxrcedds_cpp/resource/srv__type_support_cpp.cpp.em
+@@ -24,6 +24,15 @@ TEMPLATE(
+     include_directives=include_directives)
+ }@
+ 
++@{
++TEMPLATE(
++    'msg__type_support_cpp.cpp.em',
++    package_name=package_name,
++    interface_path=interface_path,
++    message=service.event_message,
++    include_directives=include_directives)
++}@
++
+ @{
+ header_files = [
+     'rmw/error_handling.h',
+@@ -61,6 +70,9 @@ static rosidl_service_type_support_t _@(service.namespaced_type.name)__handle =
+   rosidl_typesupport_microxrcedds_cpp::typesupport_identifier,
+   &_@(service.namespaced_type.name)__callbacks,
+   get_service_typesupport_handle_function,
++  nullptr,
++  nullptr,
++  ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_microxrcedds_cpp, @(', '.join([package_name] + list(interface_path.parents[0].parts))), @(service.namespaced_type.name)_Event)(),
+ };
+ 
+ }  // namespace typesupport_microxrcedds_cpp
