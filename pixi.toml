@@ -37,7 +37,7 @@ git = "*"
 # 4.0.9 rejects -s DEMANGLE_SUPPORT=1; a v1-selector evaluation fix for
 # pinning_overrides; real pthreads, since libc++'s condition_variable
 # timed-wait never wakes up on its own without a real OS thread).
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "b1960a506297db666bfa152910a98c90208cede6" }
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "c974b23ab07dace8e5f67350601609903857c78d" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
@@ -54,6 +54,29 @@ sort = "sh -lc 'vinca-sort-vinca-lists $@ vinca.yaml && vinca-sort-yaml-keys $@ 
 
 generate-recipes-emscripten = { cmd = "vinca -m --platform emscripten-wasm32 && cp -r extra_recipes/. recipes/", depends-on = ["remove-recipes"] }
 check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depends-on = ["generate-recipes-emscripten"] }
+
+# No native (osx-arm64) build of any ros2-*-prefixed package is published
+# anywhere (not on robostack-staging, not on robostack-rolling, not built
+# locally) -- yet several message packages' generated recipe.yaml still
+# declares a build:-time (i.e. resolved against build_platform, not
+# target_platform) dependency on a native copy of
+# ros2-rosidl-default-generators, since CMake's find_package() for it runs
+# via the build-platform toolchain during cross-compilation. That native
+# copy is otherwise permanently unsatisfiable for this closure. The
+# host-prefix (emscripten-wasm32) copy already suffices for CMake's own
+# find_package() resolution (via -DCMAKE_FIND_ROOT_PATH=$PREFIX,
+# already set in build_ament_cmake.sh.in) -- rattler-build's solver just
+# also insists on satisfying the *declared* build: requirement against a
+# real build_platform (osx-arm64 here) channel entry. Mirroring the
+# already-built emscripten-wasm32 packages into a same-named osx-arm64
+# channel dir and reindexing satisfies the solver with zero actual native
+# rebuilding. Re-run this after each build pass that produces new
+# emscripten-wasm32 packages -- packages built *during* the same pass
+# aren't visible to the mirror until it's resynced, so the standard
+# workflow is: build pass -> sync-native-bootstrap-mirror -> build pass
+# (repeat until nothing new gets built) -> the scoped _Event-gap rebuilds
+# documented on build-emscripten below.
+sync-native-bootstrap-mirror = { cmd = "mkdir -p output/osx-arm64 && cp output/emscripten-wasm32/*.tar.bz2 output/osx-arm64/ && rattler-index fs output", description = "Mirror built emscripten-wasm32 packages into a fake osx-arm64 channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
 
 [tasks.build]
 cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing --channel-priority disabled"
@@ -103,17 +126,20 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
       # rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle ROS 2's
       # newer auto-generated service "_Event" messages (real upstream gap,
       # not fixable by a dependency declaration) -- action_msgs,
-      # lifecycle_msgs, rosgraph_msgs, statistics_msgs, and micro_ros_msgs
-      # all define such a service and fail to build with
-      # VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP forcing that backend
-      # globally below. Same rationale as build_continue_on_failure's own
-      # --continue-on-failure for the native build: let those five fail
-      # here (they fall back to introspection-only typesupport on a
-      # follow-up rebuild without the CPP override -- see this repo's
-      # README) rather than aborting the whole closure.
+      # lifecycle_msgs, rosgraph_msgs, statistics_msgs, micro_ros_msgs, and
+      # (via rcl's build/test dep on it) test_msgs all define such a
+      # service and fail to build with VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP
+      # forcing that backend globally below. example_interfaces doesn't
+      # define one itself but needs the same microxrcedds host deps as
+      # test_msgs (see patch/dependencies.yaml) to stay consistent with the
+      # rest of the closure. Same rationale as build_continue_on_failure's
+      # own --continue-on-failure for the native build: let these fail here
+      # (they fall back to introspection-only typesupport on a follow-up
+      # rebuild without the CPP override -- see this repo's README) rather
+      # than aborting the whole closure.
       "--continue-on-failure"
       ]
-  depends-on = ["generate-recipes-emscripten"]
+  depends-on = ["generate-recipes-emscripten", "sync-native-bootstrap-mirror"]
   # Read by vinca's build_ament_cmake.sh.in (see the vinca fork commits
   # b504063 and 235bd2f): rmw_implementation's get_default_rmw_implementation()
   # needs a real, buildable RMW name here -- this repo builds rmw_zenoh_pico,
@@ -131,8 +157,12 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
   # ROS 2's newer auto-generated service "_Event" messages, so any message
   # package that transitively pulls one in (action_msgs, lifecycle_msgs,
   # rcl_interfaces, rosgraph_msgs, statistics_msgs, type_description_interfaces,
-  # micro_ros_msgs) fails to build with STATIC_ROSIDL_TYPESUPPORT_CPP set this
-  # way -- confirmed 2026-09-09 getting a live rclpy demo running. The
+  # micro_ros_msgs, test_msgs) fails to build with STATIC_ROSIDL_TYPESUPPORT_CPP
+  # set this way -- confirmed 2026-09-09 getting a live rclpy demo running,
+  # test_msgs confirmed 2026-09-10 (pulled in as a real build/test_depend of
+  # rcl, so it's non-optional for the closure). example_interfaces has no
+  # "_Event" gap itself but needs the same microxrcedds host deps as
+  # test_msgs for consistency. The
   # microxrcedds_c (C-only) backend those same packages need for rmw_zenoh_pico
   # builds fine; only the C++ variant hits the gap. Building this closure
   # end-to-end in one `pixi run build-emscripten` pass therefore still needs a
