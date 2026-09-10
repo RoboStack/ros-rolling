@@ -12,6 +12,10 @@ recipes_only_patch/
 # actually made it into a commit, so build-emscripten failed with
 # "build.sh: command not found" once it reached either recipe.
 !extra_recipes/**/*.sh
+# Same deal: a genuine, hand-written, committed helper script, not
+# generated output -- caught this one myself before it repeated the
+# extra_recipes mistake above (2026-09-10).
+!/sync_native_bootstrap_mirror.sh
 .DS_Store
 # pixi environments
 .pixi

@@ -55,22 +55,26 @@ sort = "sh -lc 'vinca-sort-vinca-lists $@ vinca.yaml && vinca-sort-yaml-keys $@ 
 generate-recipes-emscripten = { cmd = "vinca -m --platform emscripten-wasm32 && cp -r extra_recipes/. recipes/", depends-on = ["remove-recipes"] }
 check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depends-on = ["generate-recipes-emscripten"] }
 
-# No native (osx-arm64) build of any ros2-*-prefixed package is published
-# anywhere (not on robostack-staging, not on robostack-rolling, not built
-# locally) -- yet several message packages' generated recipe.yaml still
-# declares a build:-time (i.e. resolved against build_platform, not
-# target_platform) dependency on a native copy of
-# ros2-rosidl-default-generators, since CMake's find_package() for it runs
-# via the build-platform toolchain during cross-compilation. That native
-# copy is otherwise permanently unsatisfiable for this closure. The
-# host-prefix (emscripten-wasm32) copy already suffices for CMake's own
-# find_package() resolution (via -DCMAKE_FIND_ROOT_PATH=$PREFIX,
-# already set in build_ament_cmake.sh.in) -- rattler-build's solver just
-# also insists on satisfying the *declared* build: requirement against a
-# real build_platform (osx-arm64 here) channel entry. Mirroring the
-# already-built emscripten-wasm32 packages into a same-named osx-arm64
-# channel dir and reindexing satisfies the solver with zero actual native
-# rebuilding. Re-run this after each build pass that produces new
+# No native build of any ros2-*-prefixed package is published anywhere
+# (not on robostack-staging, not on robostack-rolling, not built locally)
+# -- yet several message packages' generated recipe.yaml still declares a
+# build:-time (i.e. resolved against build_platform, not target_platform)
+# dependency on a native copy of ros2-rosidl-default-generators, since
+# CMake's find_package() for it runs via the build-platform toolchain
+# during cross-compilation. That native copy is otherwise permanently
+# unsatisfiable for this closure. The host-prefix (emscripten-wasm32)
+# copy already suffices for CMake's own find_package() resolution (via
+# -DCMAKE_FIND_ROOT_PATH=$PREFIX, already set in build_ament_cmake.sh.in)
+# -- rattler-build's solver just also insists on satisfying the
+# *declared* build: requirement against a real build_platform channel
+# entry. Mirroring the already-built emscripten-wasm32 packages into a
+# channel dir *named after whatever machine this script is actually
+# running on* (see sync_native_bootstrap_mirror.sh -- osx-arm64 on an
+# Apple Silicon Mac, linux-64 on this repo's own ubuntu-latest CI runner,
+# etc.; a directory name hardcoded to one specific machine's platform
+# silently does nothing useful on any other) and reindexing satisfies the
+# solver with zero actual native rebuilding. Re-run this after each build
+# pass that produces new
 # emscripten-wasm32 packages -- packages built *during* the same pass
 # aren't visible to the mirror until it's resynced, so a cold build still
 # needs: build pass -> sync-native-bootstrap-mirror -> build pass, repeated
@@ -82,7 +86,7 @@ check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depend
 # repodata.json pointing at a stale hash for that file, which surfaces
 # much later and confusingly as "failed to fetch <package>" on some
 # unrelated package that merely depends on it.
-sync-native-bootstrap-mirror = { cmd = "mkdir -p output/emscripten-wasm32 output/osx-arm64 && find output/emscripten-wasm32 -maxdepth 1 -name '*.tar.bz2' -exec cp {} output/osx-arm64/ \\; && rattler-index fs output --force", description = "Mirror built emscripten-wasm32 packages into a fake osx-arm64 channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
+sync-native-bootstrap-mirror = { cmd = "bash sync_native_bootstrap_mirror.sh", description = "Mirror built emscripten-wasm32 packages into a fake same-platform-as-this-machine channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
 
 [tasks.build]
 cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing --channel-priority disabled"
