@@ -5,6 +5,13 @@ recipes_only_patch/
 *.sh
 *.ps1
 *.json
+# The blanket *.sh above is meant for vinca-generated build scripts, but it
+# also silently swallowed extra_recipes/*/build.sh -- hand-written source
+# for the microcdr/zenoh-pico recipes, not generated output. Caught by a
+# real CI run doing a genuinely fresh checkout: neither build.sh ever
+# actually made it into a commit, so build-emscripten failed with
+# "build.sh: command not found" once it reached either recipe.
+!extra_recipes/**/*.sh
 .DS_Store
 # pixi environments
 .pixi
