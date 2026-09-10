@@ -136,7 +136,17 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
       # own --continue-on-failure for the native build: let these fail here
       # (they fall back to introspection-only typesupport on a follow-up
       # rebuild without the CPP override -- see this repo's README) rather
-      # than aborting the whole closure.
+      # than aborting the whole closure. IMPORTANT: this "no override"
+      # rebuild is only correct for packages rmw_zenoh_pico doesn't itself
+      # need the C backend for -- do NOT route rcl_interfaces,
+      # type_description_interfaces or service_msgs through it (see the
+      # "Known gap" comment on the env= line below): a no-override build of
+      # those three "succeeds" but silently leaves their
+      # rosidl_typesupport_c dispatch table pointing at introspection, not
+      # microxrcedds, which is the exact class of bug this whole env= var
+      # exists to prevent (confirmed 2026-09-10, found via
+      # `strings ... | grep get_message_type_support_handle` on a build
+      # that had gone through this branch by mistake).
       "--continue-on-failure"
       ]
   depends-on = ["generate-recipes-emscripten", "sync-native-bootstrap-mirror"]
@@ -155,23 +165,28 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
   #
   # Known gap: rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle
   # ROS 2's newer auto-generated service "_Event" messages, so any message
-  # package that transitively pulls one in (action_msgs, lifecycle_msgs,
-  # rcl_interfaces, rosgraph_msgs, statistics_msgs, type_description_interfaces,
-  # micro_ros_msgs, test_msgs) fails to build with STATIC_ROSIDL_TYPESUPPORT_CPP
-  # set this way -- confirmed 2026-09-09 getting a live rclpy demo running,
-  # test_msgs confirmed 2026-09-10 (pulled in as a real build/test_depend of
-  # rcl, so it's non-optional for the closure). example_interfaces has no
-  # "_Event" gap itself but needs the same microxrcedds host deps as
-  # test_msgs for consistency. The
-  # microxrcedds_c (C-only) backend those same packages need for rmw_zenoh_pico
-  # builds fine; only the C++ variant hits the gap. Building this closure
-  # end-to-end in one `pixi run build-emscripten` pass therefore still needs a
-  # per-package override this repo doesn't have yet (vinca's env vars here are
-  # global to the whole invocation) -- for now those packages are rebuilt by
-  # hand afterwards, once with no override (falls back to introspection for
-  # both C and C++) and, where rmw_zenoh_pico needs the C backend specifically
-  # (rcl_interfaces, type_description_interfaces, service_msgs), a second time
-  # with only VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C set. See
-  # browser_demo/build_rclpy.sh (local-only, not part of this repo) for the
-  # exact rclpy verification this was found through.
+  # package that transitively pulls one in fails to build with
+  # STATIC_ROSIDL_TYPESUPPORT_CPP set this way (confirmed 2026-09-09 getting
+  # a live rclpy demo running; test_msgs confirmed 2026-09-10, pulled in as
+  # a real build/test_depend of rcl so it's non-optional for the closure).
+  # Building this closure end-to-end in one `pixi run build-emscripten` pass
+  # therefore still needs a per-package override this repo doesn't have yet
+  # (vinca's env vars here are global to the whole invocation) -- for now
+  # the affected packages are rebuilt by hand afterwards, split into two
+  # DISJOINT groups (do not run a package through both -- see the
+  # --continue-on-failure comment above for why that matters):
+  #   - action_msgs, lifecycle_msgs, rosgraph_msgs, statistics_msgs,
+  #     micro_ros_msgs, test_msgs, example_interfaces: rebuild with NO
+  #     override at all (falls back to introspection for both C and C++ --
+  #     correct for these, since nothing downstream needs their C backend
+  #     specifically).
+  #   - rcl_interfaces, type_description_interfaces, service_msgs: rmw_zenoh_pico
+  #     needs the C backend from these three specifically, so rebuild them
+  #     DIRECTLY with only VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C set (not a
+  #     separate no-override pass first) -- leaving CPP unset makes it fall
+  #     back to introspection_cpp, which sidesteps the _Event gap same as
+  #     the first group, while still getting the correct C backend these
+  #     three actually need wired into their typesupport dispatch table.
+  # See browser_demo/build_rclpy.sh (local-only, not part of this repo) for
+  # the exact rclpy verification this was found through.
   env = { VINCA_EMSCRIPTEN_RMW_IMPLEMENTATION = "rmw_zenoh_pico", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C = "rosidl_typesupport_microxrcedds_c", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP = "rosidl_typesupport_microxrcedds_cpp" }
