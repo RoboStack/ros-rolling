@@ -313,6 +313,29 @@ rmw_test_fixture_implementation:
     - if: emscripten
       then: ["ros2-rmw-zenoh-pico"]
 
+rosidl_typesupport_c:
+  # Same class of ordering issue as rmw_implementation above:
+  # get_used_typesupports.cmake finds candidate typesupports via a plain
+  # find_package(rosidl_typesupport_microxrcedds_c QUIET), not a real
+  # package.xml/recipe dependency, so rattler-build's own topological sort
+  # has no way to know microxrcedds_c has to exist first when
+  # VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C names it. Without this, a
+  # from-scratch build of the full closure is order-dependent -- it only
+  # succeeds if rattler-build happens to build rosidl_typesupport_microxrcedds_c
+  # before this one.
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c"]
+rosidl_typesupport_cpp:
+  # Same issue, and building this pulls in rosidl_typesupport_c's own
+  # get_used_typesupports check too (see CMakeLists.txt's find_package(
+  # rosidl_typesupport_c)) -- confirmed by the actual failure this fixes:
+  # building rosidl_typesupport_cpp fresh, with neither microxrcedds variant
+  # built yet, fails configuring on the *_c one specifically.
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+
 # rmw_zenoh_pico and its rosidl_typesupport_microxrcedds_c/cpp only need the
 # plain CMake macros from ament_cmake_ros_core, but depending on the full
 # ament_cmake_ros creates a cycle via rmw_test_fixture_implementation ->
