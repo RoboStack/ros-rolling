@@ -77,7 +77,7 @@ environments:
       - conda: https://repo.prefix.dev/conda-forge/noarch/python_abi-3.14-9_cp314.conda
       - conda: https://repo.prefix.dev/conda-forge/noarch/setuptools-81.0.0-pyh332efcf_0.conda
       - conda: https://repo.prefix.dev/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
-      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c974b23ab07dace8e5f67350601609903857c78d#c974b23ab07dace8e5f67350601609903857c78d
+      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c3f1185b7344c219b41266b898f4f91b34feecee#c3f1185b7344c219b41266b898f4f91b34feecee
       - pypi: https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/74/ef303ec980ef962ffe548fa36cb138bb399d1d1315731ba7bb81da85f7e0/rosdistro-1.1.0-py3-none-any.whl
@@ -147,7 +147,7 @@ environments:
       - conda: https://repo.prefix.dev/conda-forge/noarch/python_abi-3.14-9_cp314.conda
       - conda: https://repo.prefix.dev/conda-forge/noarch/setuptools-81.0.0-pyh332efcf_0.conda
       - conda: https://repo.prefix.dev/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
-      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c974b23ab07dace8e5f67350601609903857c78d#c974b23ab07dace8e5f67350601609903857c78d
+      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c3f1185b7344c219b41266b898f4f91b34feecee#c3f1185b7344c219b41266b898f4f91b34feecee
       - pypi: https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/74/ef303ec980ef962ffe548fa36cb138bb399d1d1315731ba7bb81da85f7e0/rosdistro-1.1.0-py3-none-any.whl
@@ -210,7 +210,7 @@ environments:
       - conda: https://repo.prefix.dev/conda-forge/osx-64/rhash-1.4.6-ha1e9b39_2.conda
       - conda: https://repo.prefix.dev/conda-forge/osx-64/tk-8.6.13-ha6c374e_4.conda
       - conda: https://repo.prefix.dev/conda-forge/osx-64/zstd-1.5.7-hbc1a06c_7.conda
-      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c974b23ab07dace8e5f67350601609903857c78d#c974b23ab07dace8e5f67350601609903857c78d
+      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c3f1185b7344c219b41266b898f4f91b34feecee#c3f1185b7344c219b41266b898f4f91b34feecee
       - pypi: https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/74/ef303ec980ef962ffe548fa36cb138bb399d1d1315731ba7bb81da85f7e0/rosdistro-1.1.0-py3-none-any.whl
@@ -273,7 +273,7 @@ environments:
       - conda: https://repo.prefix.dev/conda-forge/osx-arm64/rhash-1.4.6-h84a0fba_2.conda
       - conda: https://repo.prefix.dev/conda-forge/osx-arm64/tk-8.6.13-hbeba79b_4.conda
       - conda: https://repo.prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda
-      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c974b23ab07dace8e5f67350601609903857c78d#c974b23ab07dace8e5f67350601609903857c78d
+      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c3f1185b7344c219b41266b898f4f91b34feecee#c3f1185b7344c219b41266b898f4f91b34feecee
       - pypi: https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/74/ef303ec980ef962ffe548fa36cb138bb399d1d1315731ba7bb81da85f7e0/rosdistro-1.1.0-py3-none-any.whl
@@ -336,7 +336,7 @@ environments:
       - conda: https://repo.prefix.dev/conda-forge/win-64/vc14_runtime-14.51.36247-habf1de7_41.conda
       - conda: https://repo.prefix.dev/conda-forge/win-64/vcomp14-14.51.36247-habf1de7_41.conda
       - conda: https://repo.prefix.dev/conda-forge/win-64/zstd-1.5.7-h534d264_7.conda
-      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c974b23ab07dace8e5f67350601609903857c78d#c974b23ab07dace8e5f67350601609903857c78d
+      - pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c3f1185b7344c219b41266b898f4f91b34feecee#c3f1185b7344c219b41266b898f4f91b34feecee
       - pypi: https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/74/ef303ec980ef962ffe548fa36cb138bb399d1d1315731ba7bb81da85f7e0/rosdistro-1.1.0-py3-none-any.whl
@@ -2870,7 +2870,7 @@ packages:
     - zstd >=1.5.7,<1.6.0a0
   size: 387535
   timestamp: 1786599623274
-- pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c974b23ab07dace8e5f67350601609903857c78d#c974b23ab07dace8e5f67350601609903857c78d
+- pypi: git+https://github.com/Tobias-Fischer/vinca.git?rev=c3f1185b7344c219b41266b898f4f91b34feecee#c3f1185b7344c219b41266b898f4f91b34feecee
   name: vinca
   version: 0.2.0
   requires_dist:

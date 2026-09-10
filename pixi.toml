@@ -36,8 +36,15 @@ git = "*"
 # PR / ros-humble-emscripten's pixi.toml for the full rationale (emscripten
 # 4.0.9 rejects -s DEMANGLE_SUPPORT=1; a v1-selector evaluation fix for
 # pinning_overrides; real pthreads, since libc++'s condition_variable
-# timed-wait never wakes up on its own without a real OS thread).
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "c974b23ab07dace8e5f67350601609903857c78d" }
+# timed-wait never wakes up on its own without a real OS thread). Also
+# includes a cherry-pick of vinca@9e44663 on top: ros2-gbp release tags
+# contain slashes (release/rolling/<pkg>/<version>), and the short
+# raw.githubusercontent.com <owner>/<repo>/<ref>/<path> URL form has to
+# guess where such a ref ends -- a guess that's cached inconsistently
+# across CDN edges and 404s from some vantage points (GitHub Actions
+# runners included) while resolving fine from others. Broke recipe
+# generation outright (ros2cli's pinned tag 404ing) on 2026-09-10.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "c3f1185b7344c219b41266b898f4f91b34feecee" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
