@@ -43,6 +43,50 @@ index 01d3ac1..250f5b1 100644
    std::shared_ptr<rclcpp::Node> _node;
    RingBuffer<nlohmann::json> _queue;
    ProvideJsonUpdates _get_json_updates_cb;
+diff --git a/src/rmf_websocket/BroadcastServer.cpp b/src/rmf_websocket/BroadcastServer.cpp
+index e29bf9e..6f9b58b 100644
+--- a/src/rmf_websocket/BroadcastServer.cpp
++++ b/src/rmf_websocket/BroadcastServer.cpp
+@@ -128,7 +128,7 @@ public:
+           _logger_interface->get_logger(), "Stopping BroadcastServer");
+       }
+ 
+-      _data->echo_server.get_io_service().post(
++      _data->echo_server.get_io_context().post(
+           [data = _data]()
+           {
+             data->echo_server.stop_listening();
+diff --git a/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp b/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp
+index 99a823b..cc37fe8 100644
+--- a/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp
++++ b/src/rmf_websocket/client/ClientWebSocketEndpoint.cpp
+@@ -41,7 +41,7 @@ void ConnectionMetadata::on_fail(WsClient* c, websocketpp::connection_hdl hdl)
+   WsClient::connection_ptr con = c->get_con_from_hdl(hdl);
+   _server = con->get_response_header("Server");
+   _error_reason = con->get_ec().message();
+-  c->get_io_service().post(_reconnection_cb);
++  c->get_io_context().post(_reconnection_cb);
+ }
+ 
+ //=============================================================================
+@@ -54,7 +54,7 @@ void ConnectionMetadata::on_close(WsClient* c, websocketpp::connection_hdl hdl)
+     << websocketpp::close::status::get_string(con->get_remote_close_code())
+     << "), close reason: " << con->get_remote_close_reason();
+   _error_reason = s.str();
+-  c->get_io_service().post(_reconnection_cb);
++  c->get_io_context().post(_reconnection_cb);
+ }
+ 
+ //=============================================================================
+@@ -144,7 +144,7 @@ websocketpp::lib::error_code ClientWebSocketEndpoint::connect()
+         "> Reconnecting in 1s\n"
+         "> Host: %s", _uri.c_str());
+       _endpoint->stop_perpetual();
+-      auto io_service = &_endpoint->get_io_service();
++      auto io_service = &_endpoint->get_io_context();
+       _endpoint = std::make_unique<WsClient>();
+       _endpoint->clear_access_channels(websocketpp::log::alevel::all);
+       _endpoint->clear_error_channels(websocketpp::log::elevel::all);
 diff --git a/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp b/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp
 index 55f7105..6c0cd4b 100644
 --- a/src/rmf_websocket/client/ClientWebSocketEndpoint.hpp
