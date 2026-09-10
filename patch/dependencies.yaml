@@ -464,3 +464,20 @@ example_interfaces:
   add_host:
     - if: emscripten
       then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+# Every emscripten-wasm32 message package needs this explicitly -- there's
+# no generic/wildcard rule, `get_used_typesupports.cmake` checks each
+# package's own host environment for a resolvable microxrcedds package,
+# and the ordering fix on rosidl_typesupport_c/_cpp above only fixes
+# *their* build, not every downstream message package's. If you add
+# another message package to vinca.yaml's wasm32 packages_select_by_deps,
+# it needs an entry here too, or it fails CMake configure with "The ROS
+# IDL typesupport 'rosidl_typesupport_microxrcedds_c' ... is not
+# available".
+geometry_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+sensor_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
