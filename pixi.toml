@@ -29,7 +29,11 @@ git = "*"
 
 [pypi-dependencies]
 # This is typically the latest commit on main branch
-vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "34316c7f195b359fb9cd4bfd2ae8fd83cb559dff" }
+# TEMPORARY: pinned to a fork commit (containing the previous pin's history,
+# plus a fix) for raw.githubusercontent.com tag-URL ambiguity
+# (RoboStack/vinca#156) that was causing persistent, non-transient
+# package.xml 404s in CI. Revert to RoboStack/vinca.git once that PR merges.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "ddac23537fd8d33adffbcb4a47609bf37b4faf75" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
