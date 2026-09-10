@@ -323,8 +323,13 @@ rmf_fleet_adapter_python:
 rmf_visualization_schedule:
   remove_host: ["openssl"]
   remove_run: ["openssl"]
-  add_host: ["openssl >=3.6.4", "asio <1.30"]
-  add_run: ["openssl >=3.6.4", "asio <1.30"]
+  # asio <1.30 wasn't tight enough: standalone Asio 1.28.0 (2023-04-28) removed
+  # the deprecated get_io_service() aliases that websocketpp 0.8.2 (the only
+  # version conda-forge ships) still calls directly ("has no member named
+  # 'get_io_service'"). Hold back below that removal instead.
+  add_host: ["openssl >=3.6.4", "asio <1.28"]
+  add_run: ["openssl >=3.6.4", "asio <1.28"]
 rmf_websocket:
-  add_host: ["asio <1.30"]
-  add_run: ["asio <1.30"]
+  # See rmf_visualization_schedule above for why <1.30 wasn't enough.
+  add_host: ["asio <1.28"]
+  add_run: ["asio <1.28"]
