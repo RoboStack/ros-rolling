@@ -74,8 +74,15 @@ check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depend
 # emscripten-wasm32 packages -- packages built *during* the same pass
 # aren't visible to the mirror until it's resynced, so a cold build still
 # needs: build pass -> sync-native-bootstrap-mirror -> build pass, repeated
-# until nothing new gets built.
-sync-native-bootstrap-mirror = { cmd = "mkdir -p output/emscripten-wasm32 output/osx-arm64 && find output/emscripten-wasm32 -maxdepth 1 -name '*.tar.bz2' -exec cp {} output/osx-arm64/ \\; && rattler-index fs output", description = "Mirror built emscripten-wasm32 packages into a fake osx-arm64 channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
+# until nothing new gets built. rattler-index's --force (full reindex,
+# rather than its default incremental update) costs a fraction of a
+# second even on this whole ~230-package channel, and is worth it: without
+# it, repeatedly overwriting the same filename with different content
+# (e.g. rebuilding a package after fixing a bug in it) can leave
+# repodata.json pointing at a stale hash for that file, which surfaces
+# much later and confusingly as "failed to fetch <package>" on some
+# unrelated package that merely depends on it.
+sync-native-bootstrap-mirror = { cmd = "mkdir -p output/emscripten-wasm32 output/osx-arm64 && find output/emscripten-wasm32 -maxdepth 1 -name '*.tar.bz2' -exec cp {} output/osx-arm64/ \\; && rattler-index fs output --force", description = "Mirror built emscripten-wasm32 packages into a fake osx-arm64 channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
 
 [tasks.build]
 cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing --channel-priority disabled"
