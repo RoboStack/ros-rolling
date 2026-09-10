@@ -456,3 +456,11 @@ micro_ros_msgs:
   add_host:
     - if: emscripten
       then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+test_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+example_interfaces:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]

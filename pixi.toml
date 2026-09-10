@@ -99,7 +99,19 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
       # even though conda-forge itself never publishes emscripten-wasm32
       # builds. Confirmed necessary 2026-09-08 resolving ros2-launch's
       # pyyaml dependency. Matches build-one's existing convention.
-      "--channel-priority", "disabled"
+      "--channel-priority", "disabled",
+      # rosidl_typesupport_microxrcedds_cpp's codegen doesn't handle ROS 2's
+      # newer auto-generated service "_Event" messages (real upstream gap,
+      # not fixable by a dependency declaration) -- action_msgs,
+      # lifecycle_msgs, rosgraph_msgs, statistics_msgs, and micro_ros_msgs
+      # all define such a service and fail to build with
+      # VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP forcing that backend
+      # globally below. Same rationale as build_continue_on_failure's own
+      # --continue-on-failure for the native build: let those five fail
+      # here (they fall back to introspection-only typesupport on a
+      # follow-up rebuild without the CPP override -- see this repo's
+      # README) rather than aborting the whole closure.
+      "--continue-on-failure"
       ]
   depends-on = ["generate-recipes-emscripten"]
   # Read by vinca's build_ament_cmake.sh.in (see the vinca fork commits
