@@ -27,8 +27,7 @@ packages_skip_by_deps:
   - rplidar_ros
   - rviz_visual_tools
 
-  # libpointmatcher not yet released for rolling; rtabmap builds fine without
-  # it (WITH_POINTMATCHER just disables the optional dependent feature).
+  # not yet released for rolling; rtabmap builds fine without it (disables the optional dependent feature)
   - libpointmatcher
 
   - if: not linux
@@ -38,24 +37,19 @@ packages_skip_by_deps:
       - tlsf
       - tlsf_cpp
 
-  # mujoco_vendor has no prebuilt MuJoCo binary for macOS, so mujoco_3d_lidar (which
-  # calls real MuJoCo API functions, unlike mujoco_ros2_control) can't build there.
+  # mujoco_vendor has no prebuilt MuJoCo binary for macOS, so mujoco_3d_lidar (which calls real MuJoCo API functions) can't build there.
   - if: osx
     then:
       - mujoco_3d_lidar
 
-  # mujoco_ros2_control_plugins unconditionally requires
-  # find_package(OpenGL REQUIRED COMPONENTS EGL) -- EGL doesn't exist on
-  # Windows (or macOS, covered by the mujoco_vendor gap above) at all,
-  # this is a genuine platform incompatibility, not a portability bug.
+  # mujoco_ros2_control_plugins needs EGL, which doesn't exist on Windows (or macOS, see the mujoco_vendor gap above) -- a genuine platform gap.
   - if: osx or win
     then:
       - mujoco_ros2_control_plugins
 
 packages_remove_from_deps:
 
-  # Use the conda-forge iceoryx 2.0.6 packages instead of rebuilding the ROS
-  # release copies.
+  # Use the conda-forge iceoryx 2.0.6 packages instead of rebuilding the ROS release copies.
   - iceoryx_binding_c
   - iceoryx_hoofs
   - iceoryx_posh
@@ -191,8 +185,7 @@ packages_select_by_deps:
 
   - urdf_tutorial
 
-  # Packages only built on Linux: hardware-specific deps (libcamera/v4l/
-  # socketcan), or previously attempted on macOS/Windows and failed there.
+  # Packages only built on Linux: hardware-specific deps (libcamera/v4l/socketcan), or previously failed on macOS/Windows.
   - if: linux
     then:
       - apriltag_ros  # Depends on camera_ros
@@ -336,8 +329,7 @@ packages_select_by_deps:
       - rtcm_msgs
       - rviz2
 
-  # Allied Vision only ships prebuilt Vimba SDK binaries (libVimbaC/libVimbaCPP)
-  # for Linux (x86_64/arm), not macOS -- no source-level fix is possible.
+  # Allied Vision only ships prebuilt Vimba SDK binaries for Linux (x86_64/arm), not macOS -- no source-level fix is possible.
   - if: not win and not osx
     then:
       - avt_vimba_camera
@@ -409,19 +401,13 @@ packages_select_by_deps:
       - rqt_controller_manager
       - rqt_gui
 
-  # mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins, which
-  # is skipped on osx (no prebuilt MuJoCo binary) and win (unconditional
-  # EGL requirement -- see the packages_skip_by_deps entries above), so
-  # it can't build on either platform either.
+  # mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins, skipped on osx/win above (no prebuilt binary / EGL requirement), so it can't build there either.
   - if: not wasm32 and not osx and not win
     then:
       - mujoco_ros2_control
       - mujoco_ros2_control_demos
 
-  # jazzy already builds these on osx (its vinca.yaml selects them under
-  # "not win"/"not linux"); rolling had them needlessly linux-only. Comment
-  # separates this from the block above so vinca-sort-vinca-lists doesn't
-  # pool their then-items together and reshuffle across the boundary.
+  # jazzy already builds these on osx; rolling had them needlessly linux-only. Keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
   - if: not wasm32 and not win
     then:
       - ouster_ros  # conda-forge's Windows PCL package doesn't expose pcl_io.lib by the plain name ouster_ros's CMake links against (LNK1181)
@@ -463,9 +449,7 @@ packages_select_by_deps:
       - yasmin_ros
       - zed_msgs  # jazzy builds this on osx; was needlessly linux-only here
 
-  # webots_ros2 is linux-only (excluding aarch64); do not merge this block's
-  # sort domain with the block above (vinca-sort-vinca-lists pools then-items
-  # across adjacent if-blocks unless separated by a comment)
+  # webots_ros2 is linux-only (excluding aarch64); keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
   - if: linux and not aarch64
     then:
       - webots_ros2
