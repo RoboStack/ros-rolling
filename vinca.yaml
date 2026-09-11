@@ -49,11 +49,6 @@ packages_skip_by_deps:
 
 packages_remove_from_deps:
 
-  # Use the conda-forge iceoryx 2.0.6 packages instead of rebuilding the ROS release copies.
-  - iceoryx_binding_c
-  - iceoryx_hoofs
-  - iceoryx_posh
-
   - if: not linux
     then:
       - pendulum_control
@@ -320,95 +315,95 @@ packages_select_by_deps:
   - turtlebot3_gazebo
   - urdf_launch
   - yaml_cpp_vendor
+  - rqt_moveit
+  - rqt_robot_dashboard
+  - rqt_robot_steering
+  - rslidar_sdk
+  - rtcm_msgs
+  - rviz2
+  - if: not win
+    then:
       - rqt_mocap4r2_control
-      - rqt_moveit
-      - rqt_robot_dashboard
-      - rqt_robot_steering
       - rqt_tf_tree
-      - rslidar_sdk
-      - rtcm_msgs
-      - rviz2
 
   # Allied Vision only ships prebuilt Vimba SDK binaries for Linux (x86_64/arm), not macOS -- no source-level fix is possible.
-  - if: not win and not osx
+  - if: linux
     then:
       - avt_vimba_camera
-  - if: not wasm32
-    then:
-      - joy_linux
-      - kinematics_interface
-      - kinematics_interface_kdl
-      - laser-segmentation
-      - libg2o
-      - librealsense2
-      - marker_msgs
-      - mavlink
-      - mavros_extras
-      - microstrain_inertial_description
-      - microstrain_inertial_driver
-      - microstrain_inertial_examples
-      - microstrain_inertial_msgs
-      - microstrain_inertial_rqt
-      - mocap4r2_control
-      - mocap4r2_control_msgs
-      - mocap4r2_dummy_driver
-      - mocap4r2_marker_publisher
-      - mocap4r2_marker_viz
-      - mocap4r2_marker_viz_srvs
-      - mocap4r2_robot_gt
-      - mocap4r2_robot_gt_msgs
-      - motion_capture_tracking
-      - moveit-hybrid-planning  # Windows error: error C3861: '__builtin_unreachable': identifier not found
-      - moveit-py
-      - moveit-ros-occupancy-map-monitor
-      - moveit-ros-perception
-      - moveit-runtime
-      - moveit_resources
-      - moveit_task_constructor_demo
-      - nmea_msgs
-      - odom_to_tf_ros2
-      - pal_statistics
-      - pilz_industrial_motion_planner
-      - pinocchio
-      - plotjuggler
-      - plotjuggler-ros
-      - plotjuggler_msgs
-      - pointcloud-to-laserscan
-      - polygon_utils
-      - py_trees_js
-      - py_trees_ros_tutorials
-      - radar_msgs
-      - random_numbers
-      - rclc_lifecycle
-      - rclc_parameter
-      - rclcpp_cascade_lifecycle
-      - realsense2_camera
-      - realsense2_description
-      - realtime_tools
-      - rmf_demos
-      - rmw_stats_shim
-      - robotiq_controllers
-      - robotiq_description
-      - ros2_control_cmake
-      - ros_core
-      - ros_gz_interfaces
-      - rosbag2_performance_benchmarking
-      - rosbag2_storage_mcap
-      - rosgraph_monitor_msgs
-      - rosidl_generator_dds_idl
-      - rplidar_ros
-      - rqt
-      - rqt_controller_manager
-      - rqt_gui
+  - joy_linux
+  - kinematics_interface
+  - kinematics_interface_kdl
+  - laser-segmentation
+  - libg2o
+  - librealsense2
+  - marker_msgs
+  - mavlink
+  - mavros_extras
+  - microstrain_inertial_description
+  - microstrain_inertial_driver
+  - microstrain_inertial_examples
+  - microstrain_inertial_msgs
+  - microstrain_inertial_rqt
+  - mocap4r2_control
+  - mocap4r2_control_msgs
+  - mocap4r2_dummy_driver
+  - mocap4r2_marker_publisher
+  - mocap4r2_marker_viz
+  - mocap4r2_marker_viz_srvs
+  - mocap4r2_robot_gt
+  - mocap4r2_robot_gt_msgs
+  - motion_capture_tracking
+  - moveit-hybrid-planning  # Windows error: error C3861: '__builtin_unreachable': identifier not found
+  - moveit-py
+  - moveit-ros-occupancy-map-monitor
+  - moveit-ros-perception
+  - moveit-runtime
+  - moveit_resources
+  - moveit_task_constructor_demo
+  - nmea_msgs
+  - odom_to_tf_ros2
+  - pal_statistics
+  - pilz_industrial_motion_planner
+  - pinocchio
+  - plotjuggler
+  - plotjuggler-ros
+  - plotjuggler_msgs
+  - pointcloud-to-laserscan
+  - polygon_utils
+  - py_trees_js
+  - py_trees_ros_tutorials
+  - radar_msgs
+  - random_numbers
+  - rclc_lifecycle
+  - rclc_parameter
+  - rclcpp_cascade_lifecycle
+  - realsense2_camera
+  - realsense2_description
+  - realtime_tools
+  - rmf_demos
+  - rmw_stats_shim
+  - robotiq_controllers
+  - robotiq_description
+  - ros2_control_cmake
+  - ros_core
+  - ros_gz_interfaces
+  - rosbag2_performance_benchmarking
+  - rosbag2_storage_mcap
+  - rosgraph_monitor_msgs
+  - rosidl_generator_dds_idl
+  - rplidar_ros
+  - rqt
+  - rqt_controller_manager
+  - rqt_gui
 
   # mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins, skipped on osx/win above (no prebuilt binary / EGL requirement), so it can't build there either.
-  - if: not wasm32 and not osx and not win
+  - if: linux
     then:
       - mujoco_ros2_control
       - mujoco_ros2_control_demos
 
   # jazzy already builds these on osx; rolling had them needlessly linux-only. Keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
-  - if: not wasm32 and not win
+  - if: not win
     then:
       - ouster_ros  # conda-forge's Windows PCL package doesn't expose pcl_io.lib by the plain name ouster_ros's CMake links against (LNK1181)
       - rclc_examples  # MSVC C2055 on rcl_timer_t in callback signatures; root cause unresolved, already excluded on humble too
