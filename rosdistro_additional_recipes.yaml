@@ -428,13 +428,30 @@ roboplan_ros_visualization:
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
   version: 0.6.1
 rosidl_typesupport_microxrcedds_c:
-  rev: d4a50a80e8d15521cdb75bcb9a14d29665f488d7
-  url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+  # Fork branch (PR micro-ROS/rosidl_typesupport_microxrcedds#83, open) --
+  # fixes ament_cmake_ros_core dependency/CMake export-set wiring (same as
+  # the old local patch, now upstreamed here instead) plus the missing C++
+  # service/action Event-message typesupport (see the _cpp entry below for
+  # why that one matters; this C-side package doesn't need it, its own
+  # generator already handled Event messages correctly).
+  rev: 8e69408bb799853cae12272acaed113e7ca347ec
+  url: https://github.com/Tobias-Fischer/rosidl_typesupport_microxrcedds.git
   version: 6.0.0
   additional_folder: rosidl_typesupport_microxrcedds_c
 rosidl_typesupport_microxrcedds_cpp:
-  rev: d4a50a80e8d15521cdb75bcb9a14d29665f488d7
-  url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+  # Same fork/PR as the C entry above. The Event-message fix here is load-
+  # bearing: rosidl_typesupport_cpp's dispatch code always calls
+  # get_message_type_support_handle<...Event>() for every service/action,
+  # and this backend's C++ generator never emitted that overload -- any
+  # service-bearing package (action_msgs, and everything that depends on
+  # it, which is nearly everything via rosidl_default_generators) failed
+  # to compile with "use of undeclared identifier
+  # ..._get_message_type_support_handle__action_msgs__srv__CancelGoal_Event"
+  # as soon as this backend was forced as the sole C++ typesupport
+  # (VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP, required for rmw_zenoh_pico
+  # compatibility -- see build-emscripten task's own comment).
+  rev: 8e69408bb799853cae12272acaed113e7ca347ec
+  url: https://github.com/Tobias-Fischer/rosidl_typesupport_microxrcedds.git
   version: 6.0.0
   additional_folder: rosidl_typesupport_microxrcedds_cpp
 rqt_mocap4r2_control:

@@ -1,5 +1,66 @@
 ament_package:
   add_host: ['importlib_resources']
+# These four packages carry an extra "if target_platform=='emscripten-wasm32':
+# add ros2-rosidl-default-generators" *build* (native, build_platform) dependency
+# that most other message packages (action_msgs, std_msgs, etc, which build fine)
+# simply don't have -- confirmed by comparing recipes directly. Those other
+# packages' codegen only ever needs native python + cross-python_<target> (the
+# `if: build_platform != target_platform` block every rosidl-generating package
+# has) to run the rosidl generator scripts against the already-cross-compiled,
+# pure-Python host packages (rosidl_generator_c/cpp/py) -- no natively-*compiled*
+# rosidl_default_generators binary is actually needed. That extra dependency is
+# real, though: robostack-rolling only publishes it built against python 3.14
+# now, conflicting with this whole pipeline's python 3.13 pin, with no matching
+# python-3.13 build available at any version/build number. Removing it lets
+# these four packages fall back to the same working mechanism as everything else.
+test_msgs:
+  remove_build: ["ros2-rosidl-default-generators"]
+example_interfaces:
+  remove_build: ["ros2-rosidl-default-generators"]
+libstatistics_collector:
+  remove_build: ["ros2-rosidl-default-generators"]
+# Every emscripten-wasm32 message package needs this explicitly -- there's
+# no generic/wildcard rule, get_used_typesupports.cmake checks each
+# package's own host environment for a resolvable microxrcedds package.
+# If you add another message package to vinca.yaml's wasm32
+# packages_select_by_deps, it needs an entry here too, or it fails CMake
+# configure with "The ROS IDL typesupport 'rosidl_typesupport_microxrcedds_c'
+# ... is not available".
+geometry_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+sensor_msgs:
+  add_host:
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+rosidl_typesupport_cpp:
+  # get_used_typesupports.cmake (rosidl_typesupport_c's own upstream CMake)
+  # validates that whatever STATIC_ROSIDL_TYPESUPPORT_CPP names (set from
+  # VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP=rosidl_typesupport_microxrcedds_cpp
+  # in this repo's build-emscripten task) is actually registered as an
+  # available ament_index extension -- which only happens if that package is
+  # actually installed in this package's own isolated build prefix. It isn't,
+  # by default: rosidl_typesupport_cpp's package.xml has no idea this
+  # emscripten-only override backend exists, so nothing pulls it in
+  # transitively. Confirmed via direct build failure: "CMake Error ...
+  # 'rosidl_typesupport_microxrcedds_cpp' ... is not available
+  # (rosidl_typesupport_introspection_cpp)".
+  #
+  # Also: building this pulls in rosidl_typesupport_c's own
+  # get_used_typesupports check too (see CMakeLists.txt's find_package(
+  # rosidl_typesupport_c)) -- confirmed by a separate failure: building
+  # rosidl_typesupport_cpp fresh, with neither microxrcedds variant built
+  # yet, fails configuring on the *_c one specifically. Hence the second,
+  # emscripten-conditional entry below needing microxrcedds-c too.
+  add_host:
+    - if: wasm32
+      then: ["ros2-rosidl-typesupport-microxrcedds-cpp"]
+    - if: emscripten
+      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
+  add_run:
+    - if: wasm32
+      then: ["ros2-rosidl-typesupport-microxrcedds-cpp"]
 foxglove_bridge:
   add_host: ["ros-rolling-ament-cmake"]
 ros_ign_interfaces:
@@ -326,15 +387,6 @@ rosidl_typesupport_c:
   add_host:
     - if: emscripten
       then: ["ros2-rosidl-typesupport-microxrcedds-c"]
-rosidl_typesupport_cpp:
-  # Same issue, and building this pulls in rosidl_typesupport_c's own
-  # get_used_typesupports check too (see CMakeLists.txt's find_package(
-  # rosidl_typesupport_c)) -- confirmed by the actual failure this fixes:
-  # building rosidl_typesupport_cpp fresh, with neither microxrcedds variant
-  # built yet, fails configuring on the *_c one specifically.
-  add_host:
-    - if: emscripten
-      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
 
 # rmw_zenoh_pico and its rosidl_typesupport_microxrcedds_c/cpp only need the
 # plain CMake macros from ament_cmake_ros_core, but depending on the full
@@ -345,9 +397,24 @@ rosidl_typesupport_cpp:
 rmw_zenoh_pico:
   # Also needs plain ament_cmake for the ament_target_dependencies() shim macro
   # the matching source patch adds (removed from rolling's ament_cmake).
-  remove_host: ["ros2-ament-cmake-ros"]
+  #
+  # package.xml also declares <depend>micro_ros_msgs</depend>, but nothing
+  # in the actual C source references it at all (confirmed: `grep -rn
+  # micro_ros_msgs` across src/include finds only the manifest line) --
+  # vestigial, likely inherited from a micro-ROS package template. Pulling
+  # it in for wasm32 forces a native (build-platform) codegen dependency on
+  # ros2-rosidl-default-generators that robostack-rolling only publishes
+  # for python 3.14 now, conflicting with this whole pipeline's python 3.13
+  # pin -- removing the genuinely-unused dependency avoids that mismatch.
+  remove_host:
+    - "ros2-ament-cmake-ros"
+    - if: wasm32
+      then: ["ros2-micro-ros-msgs"]
   add_host: ["ros2-ament-cmake-ros-core", "ros2-ament-cmake"]
-  remove_run: ["ros2-ament-cmake-ros"]
+  remove_run:
+    - "ros2-ament-cmake-ros"
+    - if: wasm32
+      then: ["ros2-micro-ros-msgs"]
   add_run: ["ros2-ament-cmake-ros-core", "ros2-ament-cmake"]
 rosidl_typesupport_microxrcedds_c:
   remove_host: ["ros2-ament-cmake-ros"]
@@ -453,31 +520,6 @@ unique_identifier_msgs:
     - if: emscripten
       then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
 micro_ros_msgs:
-  add_host:
-    - if: emscripten
-      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
-test_msgs:
-  add_host:
-    - if: emscripten
-      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
-example_interfaces:
-  add_host:
-    - if: emscripten
-      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
-# Every emscripten-wasm32 message package needs this explicitly -- there's
-# no generic/wildcard rule, `get_used_typesupports.cmake` checks each
-# package's own host environment for a resolvable microxrcedds package,
-# and the ordering fix on rosidl_typesupport_c/_cpp above only fixes
-# *their* build, not every downstream message package's. If you add
-# another message package to vinca.yaml's wasm32 packages_select_by_deps,
-# it needs an entry here too, or it fails CMake configure with "The ROS
-# IDL typesupport 'rosidl_typesupport_microxrcedds_c' ... is not
-# available".
-geometry_msgs:
-  add_host:
-    - if: emscripten
-      then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]
-sensor_msgs:
   add_host:
     - if: emscripten
       then: ["ros2-rosidl-typesupport-microxrcedds-c", "ros2-rosidl-typesupport-microxrcedds-cpp"]

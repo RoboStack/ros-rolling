@@ -168,3 +168,100 @@ index 3e3f027..6984719 100644
  
  #define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
  #define XXH_IMPLEMENTATION      /* access definitions */
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
+index 8de2826..9022321 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
+@@ -14,6 +14,16 @@
+  * limitations under the License.
+  */
+ 
++// pthread_condattr_t (used below) is declared by <pthread.h> unconditionally
++// on emscripten -- the type and the real pthread_cond_init/pthread_mutex_init
++// symbols it's used with both exist in emscripten's libc even without
++// -pthread/USE_PTHREADS=1 (confirmed via nm on the non-pthreads libc.a: only
++// *real* OS-level threading is unavailable without it, not these symbols).
++// zenoh-pico's own platform header only includes <pthread.h> when
++// Z_FEATURE_MULTI_THREAD==1, which this file can't rely on for a type it
++// references regardless.
++#include <pthread.h>
++
+ #include <rmw_zenoh_pico/rmw_zenoh_pico_rosMessage.h>
+ #include <rmw_zenoh_pico/rmw_zenoh_pico_wait.h>
+ 
+diff --git a/rmw_zenoh_pico/src/rmw_wait.c b/rmw_zenoh_pico/src/rmw_wait.c
+index 1302caa..0aecf7a 100644
+--- a/rmw_zenoh_pico/src/rmw_wait.c
++++ b/rmw_zenoh_pico/src/rmw_wait.c
+@@ -15,6 +15,14 @@
+ 
+ #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
+ 
++#if Z_FEATURE_MULTI_THREAD == 0
++// Matches WS_LINK_SLEEP, the poll interval zenoh-pico's own emscripten WS
++// transport already uses for its blocking-read-with-timeout loop (see
++// src/system/emscripten/network.c) -- keep this in step with that so
++// rmw_wait doesn't introduce its own, different latency floor.
++#define RMW_ZENOH_PICO_SINGLE_THREAD_POLL_MS 1
++#endif
++
+ void wait_condition_lock(ZenohPicoWaitSetData * wait_set_data)
+ {
+   z_mutex_lock(z_loan_mut(wait_set_data->condition_mutex));
+@@ -141,6 +149,48 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+     subscriptions, guard_conditions, services, clients, events, wait_set_data);
+ 
+   if(!skip_wait){
++#if Z_FEATURE_MULTI_THREAD == 0
++    // No background read thread exists to receive data and signal this
++    // wait-set (that's a real OS thread in the Z_FEATURE_MULTI_THREAD==1
++    // build, started automatically by zenoh-pico's session init) -- so
++    // nothing will ever make wait_set_data->triggered become true unless
++    // *we* pump the session ourselves. zp_read()/zp_send_keep_alive() are
++    // the documented single-threaded-mode replacement for that background
++    // thread (see zenoh-pico's "Single Thread helpers"); z_sleep_ms()
++    // between polls is what actually yields back to the browser event loop
++    // (via Asyncify, see build_ament_cmake.sh.in) so a pending WebSocket
++    // message can be delivered before the next zp_read() call -- a tight
++    // loop with no yield would starve the very network layer it's waiting
++    // on, hanging exactly the way a real blocking wait would have.
++    ZenohPicoSession *rmw_session = (ZenohPicoSession *)wait_set_data->context->impl;
++    const z_loaned_session_t *zsession = z_loan(rmw_session->session);
++
++    bool has_timeout = (wait_timeout != NULL);
++    unsigned long timeout_ms = 0;
++    if (has_timeout) {
++      timeout_ms = (unsigned long)wait_timeout->sec * 1000UL +
++	(unsigned long)(wait_timeout->nsec / 1000000UL);
++    }
++
++    z_time_t start = z_time_now();
++    while (!wait_set_data->triggered) {
++      (void)zp_read(zsession, NULL);
++      (void)zp_send_keep_alive(zsession, NULL);
++
++      if (wait_set_data->triggered) {
++	break;
++      }
++      if (has_timeout && (timeout_ms == 0 || z_time_elapsed_ms(&start) >= timeout_ms)) {
++	// timeout_ms == 0 means "poll once, don't wait at all", matching
++	// the Z_FEATURE_MULTI_THREAD==1 branch's handling of a zero
++	// rmw_time_t below.
++	break;
++      }
++      z_sleep_ms(RMW_ZENOH_PICO_SINGLE_THREAD_POLL_MS);
++    }
++
++    wait_set_data->triggered = false;
++#else
+     z_loaned_mutex_t *lock = z_loan_mut(wait_set_data->condition_mutex);
+     z_loaned_condvar_t *cv = z_loan_mut(wait_set_data->condition_variable);
+ 
+@@ -167,6 +217,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+     wait_set_data->triggered = false;
+ 
+     z_mutex_unlock(lock);
++#endif  // Z_FEATURE_MULTI_THREAD == 0
+   }
+ 
+   bool wait_result = false;

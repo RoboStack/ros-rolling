@@ -66,3 +66,44 @@ index a425010..282a107 100644
    /* GNU-specific */
    char * msg = strerror_r(errno, buffer, buffer_length);
    if (msg != buffer) {
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 60b4b85..5615e03 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,8 +6,21 @@ include(CheckLibraryExists)
+ 
+ find_package(ament_cmake REQUIRED)
+ find_package(ament_cmake_ros_core REQUIRED)
+-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+-find_package(Threads REQUIRED)
++# Emscripten (without -pthread/USE_PTHREADS, deliberately -- see this
++# platform's other patches) has no pthread_create at all, so CMake's
++# FindThreads probe (which checks for -pthread flag support and
++# pthread_create) genuinely, correctly fails here -- it's not a false
++# negative to work around. The one pthread_* symbol this file actually
++# calls (pthread_once, in base64.c, guarding lazy one-time init of a
++# lookup table) IS present in emscripten's libc even without -pthread
++# (confirmed via nm on the non-pthreads libc.a: real pthread_once/
++# __pthread_once symbols, not just weak stubs) -- Threads::Threads was
++# only ever needed to add link flags, not to provide missing symbols, so
++# skipping it here changes nothing except what CMake requires up front.
++if(NOT EMSCRIPTEN)
++  set(THREADS_PREFER_PTHREAD_FLAG TRUE)
++  find_package(Threads REQUIRED)
++endif()
+ 
+ if(UNIX AND NOT APPLE)
+   include(cmake/check_c_compiler_uses_glibc.cmake)
+@@ -93,9 +106,10 @@ target_link_libraries(${PROJECT_NAME}
+   PUBLIC
+     ${CMAKE_DL_LIBS}
+     ament_cmake_ros_core::ament_ros_defaults
+-  PRIVATE
+-    Threads::Threads
+ )
++if(NOT EMSCRIPTEN)
++  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
++endif()
+ 
+ check_library_exists(atomic __atomic_load_8 "" HAVE_LIBATOMICS)
+ 

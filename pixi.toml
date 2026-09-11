@@ -35,16 +35,17 @@ git = "*"
 # this should be re-pointed to the merged RoboStack/vinca commit. See that
 # PR / ros-humble-emscripten's pixi.toml for the full rationale (emscripten
 # 4.0.9 rejects -s DEMANGLE_SUPPORT=1; a v1-selector evaluation fix for
-# pinning_overrides; real pthreads, since libc++'s condition_variable
-# timed-wait never wakes up on its own without a real OS thread). Also
-# includes a cherry-pick of vinca@9e44663 on top: ros2-gbp release tags
-# contain slashes (release/rolling/<pkg>/<version>), and the short
-# raw.githubusercontent.com <owner>/<repo>/<ref>/<path> URL form has to
-# guess where such a ref ends -- a guess that's cached inconsistently
-# across CDN edges and 404s from some vantage points (GitHub Actions
-# runners included) while resolving fine from others. Broke recipe
-# generation outright (ros2cli's pinned tag 404ing) on 2026-09-10.
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "c3f1185b7344c219b41266b898f4f91b34feecee" }
+# pinning_overrides). Also includes a cherry-pick of vinca@9e44663 on top:
+# ros2-gbp release tags contain slashes (release/rolling/<pkg>/<version>),
+# and the short raw.githubusercontent.com <owner>/<repo>/<ref>/<path> URL
+# form has to guess where such a ref ends -- a guess that's cached
+# inconsistently across CDN edges and 404s from some vantage points
+# (GitHub Actions runners included) while resolving fine from others.
+# Broke recipe generation outright (ros2cli's pinned tag 404ing) on
+# 2026-09-10. Real pthreads was tried (needing a real OS thread for
+# libc++'s condition_variable timed-wait to wake up) and reverted --
+# Asyncify instead, see build_ament_cmake.sh.in's own comment for why.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "31fbd83e07cf14292c2aaf8f3e8db8ddd62ec852" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
@@ -80,19 +81,12 @@ check-patches-emscripten = { cmd = "python check_patches_clean_apply.py", depend
 # Apple Silicon Mac, linux-64 on this repo's own ubuntu-latest CI runner,
 # etc.; a directory name hardcoded to one specific machine's platform
 # silently does nothing useful on any other) and reindexing satisfies the
-# solver with zero actual native rebuilding. Re-run this after each build
-# pass that produces new
-# emscripten-wasm32 packages -- packages built *during* the same pass
-# aren't visible to the mirror until it's resynced, so a cold build still
-# needs: build pass -> sync-native-bootstrap-mirror -> build pass, repeated
-# until nothing new gets built. rattler-index's --force (full reindex,
-# rather than its default incremental update) costs a fraction of a
-# second even on this whole ~230-package channel, and is worth it: without
-# it, repeatedly overwriting the same filename with different content
-# (e.g. rebuilding a package after fixing a bug in it) can leave
-# repodata.json pointing at a stale hash for that file, which surfaces
-# much later and confusingly as "failed to fetch <package>" on some
-# unrelated package that merely depends on it.
+# solver with zero actual native rebuilding. Nothing in this recipe set
+# nests more than one level deep on this trick (only
+# rosidl_default_generators/rosidl_core_generators themselves are
+# consumed this way, and they don't consume each other), so
+# build-emscripten below is a fixed two-pass sequence -- build, sync,
+# build again -- not an open "loop until nothing new gets built".
 sync-native-bootstrap-mirror = { cmd = "bash sync_native_bootstrap_mirror.sh", description = "Mirror built emscripten-wasm32 packages into a fake same-platform-as-this-machine channel entry, satisfying the build:-time native rosidl_default_generators dependency some message recipes declare (see comment above) without an actual native build." }
 
 [tasks.build]
@@ -110,6 +104,19 @@ args = [{ arg = "PACKAGE", default = "ros-rolling-ros-workspace" }]
 description = "Build a single package, from the ./recipes dir. Add the `ros-rolling-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"
 
 [tasks.build-emscripten]
+  # Fixed two-pass sequence, not a loop: pass 1 builds everything that
+  # doesn't need the native-mirror workaround (including
+  # rosidl_default_generators/rosidl_core_generators themselves, which
+  # don't need it), the mirror sync then publishes those into the fake
+  # native-platform channel entry, and pass 2 builds everything that was
+  # waiting on that. See sync-native-bootstrap-mirror's comment for why
+  # two passes is provably enough here (nothing nests deeper than one
+  # level) rather than something that needs to be discovered by looping
+  # until a package count stops changing.
+  cmd = "pixi run build-emscripten-pass && pixi run sync-native-bootstrap-mirror && pixi run build-emscripten-pass"
+  depends-on = ["generate-recipes-emscripten"]
+
+[tasks.build-emscripten-pass]
   cmd = [
       "rattler-build", "build",
       "--package-format", "tar-bz2",
@@ -144,10 +151,18 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
       # one known gap -- lets an unrelated single-package failure fall
       # through without aborting everything else. See
       # sync-native-bootstrap-mirror's own comment for the one *expected*
-      # class of failure a cold build still needs multiple passes for.
+      # class of failure pass 1 of build-emscripten's two-pass sequence
+      # leaves for pass 2 to pick up.
       "--continue-on-failure"
       ]
-  depends-on = ["generate-recipes-emscripten", "sync-native-bootstrap-mirror"]
+  # No depends-on here deliberately: this raw pass is invoked twice by
+  # build-emscripten's fixed two-pass sequence, and recipe generation /
+  # mirror-syncing only need to happen once (before pass 1) and once
+  # in between (see build-emscripten), not before every pass -- a
+  # depends-on here would re-run generate-recipes-emscripten (which
+  # wipes and regenerates ./recipes) before pass 2 as well, for no
+  # benefit. Run `pixi run build-emscripten`, not this task directly,
+  # unless you've already generated recipes yourself.
   # Read by vinca's build_ament_cmake.sh.in (see the vinca fork commits
   # b504063 and 235bd2f): rmw_implementation's get_default_rmw_implementation()
   # needs a real, buildable RMW name here -- this repo builds rmw_zenoh_pico,
@@ -163,15 +178,15 @@ description = "Build a single package, from the ./recipes dir. Add the `ros-roll
   #
   # rosidl_typesupport_microxrcedds_cpp's codegen used to not handle ROS 2's
   # newer auto-generated service/action "_Event" messages -- a real upstream
-  # gap (micro-ROS/rosidl_typesupport_microxrcedds#<TODO>), not fixable by a
+  # gap (micro-ROS/rosidl_typesupport_microxrcedds#83), not fixable by a
   # dependency declaration, that used to make any package defining a
   # service or action (action_msgs, rcl_interfaces, test_msgs, ...) fail to
   # build with STATIC_ROSIDL_TYPESUPPORT_CPP set this way, needing an
   # elaborate two-group scoped-rebuild workaround after this task. Fixed at
-  # the source instead: patch/ros-rolling-rosidl-typesupport-microxrcedds-cpp.patch
-  # now also generates typesupport for the auto-generated Event message
-  # (matching the C generator, which already did this) -- confirmed
-  # 2026-09-10 building the full closure in a single `pixi run
-  # build-emscripten` pass with both overrides set globally, no scoped
-  # rebuilds needed for any package.
+  # the source instead, via Tobias-Fischer/rosidl_typesupport_microxrcedds's
+  # fork (see rosdistro_additional_recipes.yaml) which now also generates
+  # typesupport for the auto-generated Event message (matching the C
+  # generator, which already did this) -- confirmed building the full
+  # closure in a single `pixi run build-emscripten` pass with both
+  # overrides set globally, no scoped rebuilds needed for any package.
   env = { VINCA_EMSCRIPTEN_RMW_IMPLEMENTATION = "rmw_zenoh_pico", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_C = "rosidl_typesupport_microxrcedds_c", VINCA_EMSCRIPTEN_STATIC_TYPESUPPORT_CPP = "rosidl_typesupport_microxrcedds_cpp" }

@@ -16,14 +16,26 @@ source:
   rev: d08c096944807a00853892ea45696152308350a2
   patches:
     - ws-locator-valid-inverted-check.patch
-    - emscripten-real-usleep.patch
     - emscripten-longer-ws-open-wait.patch
+    # Z_FEATURE_MULTI_THREAD=0 (below) leaves platform.c's mutex/condvar
+    # bodies undefined -- their types/declarations are always present (see
+    # platform.h's "dummy types for correct macros work"), but nothing
+    # implements z_mutex_lock/z_condvar_wait/etc without this. Needed by
+    # every platform build with no real threads, not emscripten-specific.
+    - multithread0-mutex-condvar-stubs.patch
+    # system/platform/emscripten.h only ever got <stddef.h> (for size_t)
+    # transitively, via <pthread.h> when Z_FEATURE_MULTI_THREAD==1 -- with
+    # that gone, size_t is undefined throughout platform.h ("unknown type
+    # name 'size_t'"). Confirmed: never previously exercised, since
+    # emscripten + Z_FEATURE_MULTI_THREAD==0 was never actually built here
+    # before now.
+    - emscripten-stddef-include.patch
 
 build:
   script: build.sh
   # Bump whenever content changes without a version bump, to avoid
   # rattler-build package-cache collisions under an unchanged identity.
-  number: 4
+  number: 5
 
 requirements:
   build:
