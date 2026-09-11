@@ -37,12 +37,7 @@ packages_skip_by_deps:
       - tlsf
       - tlsf_cpp
 
-  # mujoco_vendor has no prebuilt MuJoCo binary for macOS, so mujoco_3d_lidar (which calls real MuJoCo API functions) can't build there.
-  - if: osx
-    then:
-      - mujoco_3d_lidar
-
-  # mujoco_ros2_control_plugins needs EGL, which doesn't exist on Windows (or macOS, see the mujoco_vendor gap above) -- a genuine platform gap.
+  # mujoco_ros2_control_plugins needs EGL, which doesn't exist on Windows or macOS -- a genuine platform gap (unrelated to MuJoCo itself).
   - if: osx or win
     then:
       - mujoco_ros2_control_plugins
@@ -66,19 +61,35 @@ packages_select_by_deps:
   - ament_cmake_clang_tidy
   - ament_cmake_core
   - ament_cmake_mypy
+  - ament_flake8
+  - ament_lint
+  - ament_lint_common
+  - ament_pep257
+  - ament_pycodestyle
   - apriltag_detector
   - asio_cmake_module
+  - autoware_adapi_v1_msgs
+  - autoware_adapi_version_msgs
+  - autoware_auto_msgs
   - autoware_cmake
   - autoware_common_msgs
   - autoware_component_interface_specs
   - autoware_control_msgs
   - autoware_geography_utils
   - autoware_global_parameter_loader
+  - autoware_internal_debug_msgs
+  - autoware_internal_metric_msgs
   - autoware_internal_msgs
+  - autoware_internal_perception_msgs
+  - autoware_internal_planning_msgs
   - autoware_interpolation
   - autoware_kalman_filter
+  - autoware_lanelet2_extension
+  - autoware_lanelet2_extension_python
+  - autoware_lint_common
   - autoware_localization_msgs
   - autoware_map_msgs
+  - autoware_msgs
   - autoware_node
   - autoware_object_recognition_utils
   - autoware_perception_msgs
@@ -88,6 +99,17 @@ packages_select_by_deps:
   - autoware_signal_processing
   - autoware_system_msgs
   - autoware_utils
+  - autoware_utils_debug
+  - autoware_utils_diagnostics
+  - autoware_utils_geometry
+  - autoware_utils_logging
+  - autoware_utils_math
+  - autoware_utils_pcl
+  - autoware_utils_rclcpp
+  - autoware_utils_system
+  - autoware_utils_tf
+  - autoware_utils_uuid
+  - autoware_utils_visualization
   - autoware_v2x_msgs
   - autoware_vehicle_info_utils
   - autoware_vehicle_msgs
@@ -96,6 +118,7 @@ packages_select_by_deps:
   - better_launch
   - bond_core
   - bondcpp
+  - builtin_interfaces
   - can_msgs
   - data_tamer_cpp  # Requested in https://github.com/RoboStack/ros-humble/issues/325
   - desktop
@@ -110,27 +133,100 @@ packages_select_by_deps:
   - gtsam
   - gz_ros2_control
   - gz_ros2_control_demos
+  - irobot_create_msgs
+  - joy_linux
+  - joy_teleop
+  - key_teleop
+  - kinematics_interface
+  - kinematics_interface_kdl
   - lanelet2
+  - laser-segmentation
+  - libg2o
+  - librealsense2
   - magic_enum
+  - marker_msgs
+  - mavlink
+  - mavros_extras
+  - mavros_msgs
+  - microstrain_inertial_description
+  - microstrain_inertial_driver
+  - microstrain_inertial_examples
+  - microstrain_inertial_msgs
+  - microstrain_inertial_rqt
+  - mocap4r2_control
+  - mocap4r2_control_msgs
+  - mocap4r2_dummy_driver
+  - mocap4r2_marker_publisher
+  - mocap4r2_marker_viz
+  - mocap4r2_marker_viz_srvs
+  - mocap4r2_robot_gt
+  - mocap4r2_robot_gt_msgs
+  - motion_capture_tracking
+  - mouse_teleop
   - moveit
   - moveit-chomp-optimizer-adapter  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
+  - moveit-hybrid-planning  # Windows error: error C3861: '__builtin_unreachable': identifier not found
   - moveit-planners-chomp
+  - moveit-py
   - moveit-ros-control-interface
+  - moveit-ros-occupancy-map-monitor
+  - moveit-ros-perception
   - moveit-ros-trajectory-cache
+  - moveit-runtime
   - moveit-servo
   - moveit-visual-tools
+  - moveit_resources
+  - moveit_task_constructor_demo
+  - mujoco_3d_lidar  # conda-forge's libmujoco now covers linux/osx/win; only depends on mujoco_vendor.
+  - mujoco_ros2_control_msgs
+  - mujoco_vendor
   - nav2_minimal_tb3_sim
   - nav2_minimal_tb4_sim
   - navigation2
   - nmea-navsat-driver
+  - nmea_msgs
+  - ntrip_client
+  - odom_to_tf_ros2
+  - osrf_testing_tools_cpp
+  - pal_statistics
   - perception
+  - persist-parameter-server
+  - pick_ik
+  - picknik_ament_copyright
+  - pilz_industrial_motion_planner
+  - pinocchio
+  - plotjuggler
+  - plotjuggler-ros
+  - plotjuggler_msgs
   - point_cloud_transport_plugins
+  - point_cloud_transport_py
+  - pointcloud-to-laserscan
   - polygon_msgs
+  - polygon_utils
   - proxsuite
   - py-trees
   - py-trees-ros
   - py-trees-ros-interfaces
   - py-trees-ros-viewer
+  - py_trees_js
+  - py_trees_ros_tutorials
+  - radar_msgs
+  - random_numbers
+  - rclc
+  - rclc_lifecycle
+  - rclc_parameter
+  - rclcpp
+  - rclcpp_cascade_lifecycle
+  - rclpy
+  - rclpy_cascade_lifecycle
+  - rcpputils
+  - rcutils
+  - realsense2_camera
+  - realsense2_description
+  - realtime_tools
+  - rmf_demos
+  - rmw
+  - rmw_stats_shim
   - rmw_zenoh_cpp  # requested in https://github.com/RoboStack/ros-humble/issues/252
   - roboplan  # requested in https://github.com/RoboStack/ros-rolling/issues/28
   - roboplan_cartesian_planning
@@ -146,39 +242,68 @@ packages_select_by_deps:
   - roboplan_toppra
   - robot
   - robot-localization
+  - robotiq_controllers
+  - robotiq_description
   - ros2_control
+  - ros2_control_cmake
   - ros2_controllers
   - ros2_fmt_logger
   - ros2_socketcan_msgs
   - ros_base
+  - ros_core
   - ros_environment
   - ros_gz
+  - ros_gz_interfaces
   - ros_workspace
+  - rosbag2_performance_benchmarking
+  - rosbag2_storage_mcap
   - rosbridge_suite
+  - rosgraph_monitor_msgs
   - rosidl_buffer
   - rosidl_buffer_backend
   - rosidl_buffer_backend_registry
   - rosidl_buffer_py
+  - rosidl_generator_dds_idl
+  - rosidl_runtime_c
+  - rosidl_runtime_cpp
+  - rosidl_typesupport_introspection_c
+  - rosidl_typesupport_introspection_cpp
+  - rplidar_ros
+  - rqt
+  - rqt_controller_manager
+  - rqt_gui
+  - rqt_moveit
+  - rqt_robot_dashboard
+  - rqt_robot_monitor
+  - rqt_robot_steering
+  - rqt_runtime_monitor
+  - rslidar_sdk
   - rtabmap
+  - rtcm_msgs
+  - rtest
+  - rviz2
+  - rviz_2d_overlay_msgs
   - rviz_visual_tools
   - sbg_driver
   - simulation
   - slam_toolbox
   - teleop
+  - teleop_tools
   - toppra
+  - tracetools
+  - tracetools_launch
+  - tracetools_trace
   - turtlebot3
+  - turtlebot3_gazebo
   - twist_mux  # requested in https://github.com/RoboStack/ros-humble/issues/249
+  - twist_stamper  # Requested in https://github.com/RoboStack/ros-rolling/issues/12
   - ublox
   - ur
   - ur_client_library
   - ur_simulation_gz
-
-  # - web-video-server
-  - persist-parameter-server
-
-  - twist_stamper  # Requested in https://github.com/RoboStack/ros-rolling/issues/12
-
+  - urdf_launch
   - urdf_tutorial
+  - yaml_cpp_vendor
 
   # Packages only built on Linux: hardware-specific deps (libcamera/v4l/socketcan), or previously failed on macOS/Windows.
   - if: linux
@@ -293,140 +418,6 @@ packages_select_by_deps:
       - yasmin_plugins_manager
       - yasmin_ros
       - zed_msgs  # jazzy builds this on osx; was needlessly linux-only here
-
-  - ament_flake8
-  - ament_lint
-  - ament_lint_common
-  - ament_pep257
-  - ament_pycodestyle
-  - autoware_adapi_v1_msgs
-  - autoware_adapi_version_msgs
-  - autoware_auto_msgs
-  - autoware_internal_debug_msgs
-  - autoware_internal_metric_msgs
-  - autoware_internal_perception_msgs
-  - autoware_internal_planning_msgs
-  - autoware_lanelet2_extension
-  - autoware_lanelet2_extension_python
-  - autoware_lint_common
-  - autoware_msgs
-  - autoware_utils_debug
-  - autoware_utils_diagnostics
-  - autoware_utils_geometry
-  - autoware_utils_logging
-  - autoware_utils_math
-  - autoware_utils_pcl
-  - autoware_utils_rclcpp
-  - autoware_utils_system
-  - autoware_utils_tf
-  - autoware_utils_uuid
-  - autoware_utils_visualization
-  - builtin_interfaces
-  - irobot_create_msgs
-  - joy_teleop
-  - key_teleop
-  - mavros_msgs
-  - mouse_teleop
-  - mujoco_ros2_control_msgs
-  - mujoco_vendor
-  - osrf_testing_tools_cpp
-  - pick_ik
-  - picknik_ament_copyright
-  - point_cloud_transport_py
-  - rclc
-  - rclcpp
-  - rclpy
-  - rclpy_cascade_lifecycle
-  - rcpputils
-  - rcutils
-  - rmw
-  - rosidl_generator_dds_idl
-  - rosidl_runtime_c
-  - rosidl_runtime_cpp
-  - rosidl_typesupport_introspection_c
-  - rosidl_typesupport_introspection_cpp
-  - rqt_robot_monitor
-  - rqt_runtime_monitor
-  - rtest
-  - rviz_2d_overlay_msgs
-  - teleop_tools
-  - ntrip_client
-  - tracetools
-  - tracetools_launch
-  - tracetools_trace
-  - turtlebot3_gazebo
-  - urdf_launch
-  - yaml_cpp_vendor
-  - rqt_moveit
-  - rqt_robot_dashboard
-  - rqt_robot_steering
-  - rslidar_sdk
-  - rtcm_msgs
-  - rviz2
-  - joy_linux
-  - kinematics_interface
-  - kinematics_interface_kdl
-  - laser-segmentation
-  - libg2o
-  - librealsense2
-  - marker_msgs
-  - mavlink
-  - mavros_extras
-  - microstrain_inertial_description
-  - microstrain_inertial_driver
-  - microstrain_inertial_examples
-  - microstrain_inertial_msgs
-  - microstrain_inertial_rqt
-  - mocap4r2_control
-  - mocap4r2_control_msgs
-  - mocap4r2_dummy_driver
-  - mocap4r2_marker_publisher
-  - mocap4r2_marker_viz
-  - mocap4r2_marker_viz_srvs
-  - mocap4r2_robot_gt
-  - mocap4r2_robot_gt_msgs
-  - motion_capture_tracking
-  - moveit-hybrid-planning  # Windows error: error C3861: '__builtin_unreachable': identifier not found
-  - moveit-py
-  - moveit-ros-occupancy-map-monitor
-  - moveit-ros-perception
-  - moveit-runtime
-  - moveit_resources
-  - moveit_task_constructor_demo
-  - nmea_msgs
-  - odom_to_tf_ros2
-  - pal_statistics
-  - pilz_industrial_motion_planner
-  - pinocchio
-  - plotjuggler
-  - plotjuggler-ros
-  - plotjuggler_msgs
-  - pointcloud-to-laserscan
-  - polygon_utils
-  - py_trees_js
-  - py_trees_ros_tutorials
-  - radar_msgs
-  - random_numbers
-  - rclc_lifecycle
-  - rclc_parameter
-  - rclcpp_cascade_lifecycle
-  - realsense2_camera
-  - realsense2_description
-  - realtime_tools
-  - rmf_demos
-  - rmw_stats_shim
-  - robotiq_controllers
-  - robotiq_description
-  - ros2_control_cmake
-  - ros_core
-  - ros_gz_interfaces
-  - rosbag2_performance_benchmarking
-  - rosbag2_storage_mcap
-  - rosgraph_monitor_msgs
-  - rplidar_ros
-  - rqt
-  - rqt_controller_manager
-  - rqt_gui
 
   # webots_ros2 is linux-only (excluding aarch64). Keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
   - if: linux and not aarch64
