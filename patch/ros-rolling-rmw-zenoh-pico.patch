@@ -1,5 +1,5 @@
 diff --git a/rmw_zenoh_pico/CMakeLists.txt b/rmw_zenoh_pico/CMakeLists.txt
-index 1038b63..e194b17 100644
+index 1038b63..3c6690f 100644
 --- a/rmw_zenoh_pico/CMakeLists.txt
 +++ b/rmw_zenoh_pico/CMakeLists.txt
 @@ -22,13 +22,51 @@ project(rmw_zenoh_pico
@@ -55,6 +55,29 @@ index 1038b63..e194b17 100644
  # Build options
  option(BUILD_DOCUMENTATION              "Use doxygen to create product documentation" OFF)
  
+@@ -147,6 +185,22 @@ target_link_libraries(${PROJECT_NAME}
+   microcdr
+ )
+ 
++if(EMSCRIPTEN)
++  # rmw_zenoh_pico_set_unicast() (and friends, declared in
++  # rmw_zenoh_pico_options.h) aren't part of the standard rmw.h ABI surface,
++  # so nothing inside this library or a normal ROS 2 caller references them
++  # -- unlike the standard rmw_* functions (looked up by rmw_implementation
++  # via dlopen+dlsym, so implicitly kept), wasm-ld's side-module build drops
++  # anything with zero references from the dylink export table. A wasm32
++  # app that wants to override the compiled-in zenoh connect address at
++  # runtime (see ros2-emscripten-zenoh-demo) needs these actually exported.
++  target_link_options(${PROJECT_NAME} PRIVATE
++    "-Wl,--export=rmw_zenoh_pico_set_unicast"
++    "-Wl,--export=rmw_zenoh_pico_set_mode"
++    "-Wl,--export=rmw_zenoh_pico_get_mode"
++  )
++endif()
++
+ # Type support lock-up mechanism
+ find_package(rosidl_typesupport_microxrcedds_c)
+ if(rosidl_typesupport_microxrcedds_c_FOUND)
 diff --git a/rmw_zenoh_pico/package.xml b/rmw_zenoh_pico/package.xml
 index f17bd1d..a6462eb 100644
 --- a/rmw_zenoh_pico/package.xml
