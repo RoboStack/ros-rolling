@@ -184,10 +184,13 @@ packages_select_by_deps:
   - if: linux
     then:
       - apriltag_ros  # Depends on camera_ros
+      - avt_vimba_camera
       - camera_ros  # Depends on libcamera that is only available on linux
       - libcamera
       - livox_ros_driver2
       - mavros  # libmavconn currently fails to build on macOS and windows
+      - mujoco_ros2_control
+      - mujoco_ros2_control_demos
       - nobleo_socketcan_bridge  # Depends on socketcan
       - py_binding_tools
       - ros2_socketcan  # Depends on socketcan
@@ -204,7 +207,7 @@ packages_select_by_deps:
       - usb_cam  # Depends on v4l
       - v4l2_camera  # Depends on v4l that is only available on linux
 
-  # These packages are currently not built on Windows, but they may be with some work
+  # These packages are currently not built on Windows, but they may be with some work. Keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
   - if: not win
     then:
       - ament_cmake
@@ -252,6 +255,45 @@ packages_select_by_deps:
       - io_context
       - joint_state_publisher
       - joy
+      - ouster_ros  # conda-forge's Windows PCL package doesn't expose pcl_io.lib by the plain name ouster_ros's CMake links against (LNK1181)
+      - rclc_examples  # MSVC C2055 on rcl_timer_t in callback signatures; root cause unresolved, already excluded on humble too
+      - rosgraph_monitor
+      - rqt_mocap4r2_control
+      - rqt_tf_tree
+      - rviz_2d_overlay_plugins
+      - sick_safetyscanners_base
+      - spacenav
+      - system_modes
+      - system_modes_msgs
+      - tf_transformations
+      - topic_tools
+      - trac_ik
+      - turtle_tf2_cpp
+      - turtle_tf2_py
+      - turtlebot3_simulations
+      - ublox_dgnss
+      - ublox_dgnss_node
+      - ublox_ubx_interfaces
+      - udp_driver
+      - ur_calibration
+      - ur_robot_driver
+      - urg_node
+      - velodyne
+      - vision_msgs
+      - vision_msgs_rviz_plugins
+      - visp
+      - web_video_server
+      - yasmin
+      - yasmin_cli
+      - yasmin_demos
+      - yasmin_editor
+      - yasmin_factory
+      - yasmin_msgs
+      - yasmin_pcl
+      - yasmin_plugins_manager
+      - yasmin_ros
+      - zed_msgs  # jazzy builds this on osx; was needlessly linux-only here
+
   - ament_flake8
   - ament_lint
   - ament_lint_common
@@ -321,15 +363,6 @@ packages_select_by_deps:
   - rslidar_sdk
   - rtcm_msgs
   - rviz2
-  - if: not win
-    then:
-      - rqt_mocap4r2_control
-      - rqt_tf_tree
-
-  # Allied Vision only ships prebuilt Vimba SDK binaries for Linux (x86_64/arm), not macOS -- no source-level fix is possible.
-  - if: linux
-    then:
-      - avt_vimba_camera
   - joy_linux
   - kinematics_interface
   - kinematics_interface_kdl
@@ -390,61 +423,12 @@ packages_select_by_deps:
   - rosbag2_performance_benchmarking
   - rosbag2_storage_mcap
   - rosgraph_monitor_msgs
-  - rosidl_generator_dds_idl
   - rplidar_ros
   - rqt
   - rqt_controller_manager
   - rqt_gui
 
-  # mujoco_ros2_control hard-depends on mujoco_ros2_control_plugins, skipped on osx/win above (no prebuilt binary / EGL requirement), so it can't build there either.
-  - if: linux
-    then:
-      - mujoco_ros2_control
-      - mujoco_ros2_control_demos
-
-  # jazzy already builds these on osx; rolling had them needlessly linux-only. Keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
-  - if: not win
-    then:
-      - ouster_ros  # conda-forge's Windows PCL package doesn't expose pcl_io.lib by the plain name ouster_ros's CMake links against (LNK1181)
-      - rclc_examples  # MSVC C2055 on rcl_timer_t in callback signatures; root cause unresolved, already excluded on humble too
-      - rosgraph_monitor
-      - rviz_2d_overlay_plugins
-      - sick_safetyscanners_base
-      - spacenav
-      - system_modes
-      - system_modes_msgs
-      - teleop_tools
-      - tf_transformations
-      - topic_tools
-      - trac_ik
-      - turtle_tf2_cpp
-      - turtle_tf2_py
-      - turtlebot3_gazebo
-      - turtlebot3_simulations
-      - ublox_dgnss
-      - ublox_dgnss_node
-      - ublox_ubx_interfaces
-      - udp_driver
-      - ur_calibration
-      - ur_robot_driver
-      - urg_node
-      - velodyne
-      - vision_msgs
-      - vision_msgs_rviz_plugins
-      - visp
-      - web_video_server
-      - yasmin
-      - yasmin_cli
-      - yasmin_demos
-      - yasmin_editor
-      - yasmin_factory
-      - yasmin_msgs
-      - yasmin_pcl
-      - yasmin_plugins_manager
-      - yasmin_ros
-      - zed_msgs  # jazzy builds this on osx; was needlessly linux-only here
-
-  # webots_ros2 is linux-only (excluding aarch64); keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
+  # webots_ros2 is linux-only (excluding aarch64). Keep this comment here -- vinca-sort-vinca-lists pools then-items across adjacent if-blocks not separated by a comment.
   - if: linux and not aarch64
     then:
       - webots_ros2
