@@ -169,6 +169,10 @@ jobs:
       run: |
         # Uncomment to force-rebuild a package with a corrupted cache entry.
         # rm -rf ${{ matrix.folder_cache }}/<package>* 2>/dev/null || true
+        # Corrupt ~53KB cached artifact (missing its installed cmake config) --
+        # moveit_setup_framework's find_package(moveit_ros_visualization) failed
+        # against it on win-64.
+        rm -rf ${{ matrix.folder_cache }}/ros2-moveit-ros-visualization* ${{ matrix.folder_cache }}/ros-rolling-moveit-ros-visualization* 2>/dev/null || true
         mkdir -p ${{ matrix.folder_cache }}
         pixi run rattler-index fs ${{ matrix.folder_cache }}/.. --force
 
