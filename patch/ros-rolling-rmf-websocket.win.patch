@@ -1,0 +1,35 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 38a92790..9db1d821 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,15 @@ project(rmf_websocket)
+ # RoboStack/ros-lyrical#41's fix), which still provides io_service.
+ add_compile_definitions(ASIO_STANDALONE)
+ 
++if(MSVC)
++  # MSVC doesn't update __cplusplus to reflect the actual C++ standard
++  # in use unless told to, so websocketpp's __cplusplus >= 201103L
++  # feature-detection in common/cpp11.hpp always fails, falling back
++  # to boost::is_same -- which recent Boost versions no longer provide
++  # (C2039/C2873 in websocketpp/common/type_traits.hpp).
++  add_compile_options(/Zc:__cplusplus)
++endif()
++
+ if(NOT CMAKE_CXX_STANDARD)
+   set(CMAKE_CXX_STANDARD 17)
+ endif()
+@@ -35,6 +44,14 @@ add_library(rmf_websocket SHARED
+   src/rmf_websocket/BroadcastServer.cpp
+ )
+ 
++if(MSVC)
++  # No explicit dllexport annotations anywhere in this small target, so
++  # without this MSVC produces the .dll but no companion .lib, and
++  # example_client fails with LNK1181.
++  set_target_properties(rmf_websocket PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_websocket
+   PUBLIC
+     ${rclcpp_LIBRARIES}

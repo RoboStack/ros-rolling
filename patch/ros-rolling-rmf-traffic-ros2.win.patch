@@ -1,0 +1,1056 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a05ec3e2..409ae76f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -11,6 +11,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+ endif()
+ 
++if(MSVC)
++  # M_PI et al. are non-standard extensions MSVC only defines when this
++  # is set (used via rmf_traffic's installed Moderator.hpp and this
++  # package's own blockade/Node.cpp).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
+ 
+ include(GNUInstallDirs)
+@@ -27,15 +34,29 @@ find_package(rclcpp REQUIRED)
+ find_package(yaml-cpp REQUIRED)
+ find_package(nlohmann_json REQUIRED)
+ find_package(ZLIB REQUIRED)
+-find_package(LibUUID REQUIRED)
++if(NOT WIN32)
++  # libuuid is a Linux/macOS-only library (Windows has its own native
++  # UUID API, RPC's UuidCreate/UuidToStringA, used directly in
++  # schedule/Node.cpp instead).
++  find_package(LibUUID REQUIRED)
++endif()
+ find_package(rmf_reservation_msgs REQUIRED)
+ 
+ 
+-# NOTE(MXG): libproj-dev does not currently distribute its cmake config-files
+-# in Debian, so we can't use find_package and need to rely on pkg-config.
+-# find_package(PROJ REQUIRED)
+-find_package(PkgConfig REQUIRED)
+-pkg_check_modules(PROJ REQUIRED IMPORTED_TARGET proj)
++if(WIN32)
++  # conda-forge's Windows proj package exports a proper CMake config
++  # with a PROJ::proj imported target using the correct absolute
++  # import-lib path; the pkg-config route below resolves to a bare
++  # "proj_9" name that MSVC's linker can't find (LNK1181).
++  find_package(PROJ CONFIG REQUIRED)
++else()
++  # NOTE(MXG): libproj-dev does not currently distribute its cmake
++  # config-files in Debian, so we can't use find_package and need to
++  # rely on pkg-config.
++  # find_package(PROJ REQUIRED)
++  find_package(PkgConfig REQUIRED)
++  pkg_check_modules(PROJ REQUIRED IMPORTED_TARGET proj)
++endif()
+ 
+ if (rmf_traffic_FOUND)
+   message(STATUS "found rmf_traffic")
+@@ -177,23 +198,78 @@ endif()
+ file(GLOB_RECURSE core_lib_srcs "src/rmf_traffic_ros2/*.cpp")
+ add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
+ 
++if(MSVC)
++  # schedule/Node.cpp exceeds the default object file section limit.
++  target_compile_options(rmf_traffic_ros2 PRIVATE /bigobj)
++
++  # WINDOWS_EXPORT_ALL_SYMBOLS overflows MSVC's import-lib 65535-object
++  # limit (LNK1189) on this heavily Eigen/nlohmann-templated library.
++  # Use explicit RMF_TRAFFIC_ROS2_EXPORT annotations (detail/export.hpp)
++  # on just the symbols this package's own executables need instead.
++  target_compile_definitions(rmf_traffic_ros2 PRIVATE RMF_TRAFFIC_ROS2_BUILDING_DLL)
++endif()
++
+ target_link_libraries(rmf_traffic_ros2
+   PUBLIC
+     rmf_traffic::rmf_traffic
+     Eigen3::Eigen
+     nlohmann_json::nlohmann_json
+-    ${rmf_traffic_msgs_LIBRARIES}
+-    ${rmf_site_map_msgs_LIBRARIES}
+-    ${rmf_building_map_msgs_LIBRARIES}
+-    ${rmf_reservation_msgs_LIBRARIES}
+-    ${rclcpp_LIBRARIES}
+-    yaml-cpp
+     ZLIB::ZLIB
+-    PkgConfig::PROJ
+-  PRIVATE
+-    LibUUID::LibUUID
+ )
+ 
++if(WIN32)
++  target_link_libraries(rmf_traffic_ros2 PRIVATE PROJ::proj)
++else()
++  target_link_libraries(rmf_traffic_ros2 PUBLIC PkgConfig::PROJ)
++endif()
++
++if(WIN32)
++  # The bare "yaml-cpp" name only resolves for Unix linkers, which apply
++  # the implicit lib<name>.<so|dylib> convention; MSVC looks for a
++  # literal yaml-cpp.lib and fails with LNK1181. Use the actual
++  # imported target instead.
++  target_link_libraries(rmf_traffic_ros2 PUBLIC yaml-cpp::yaml-cpp)
++else()
++  target_link_libraries(rmf_traffic_ros2 PUBLIC yaml-cpp)
++endif()
++
++if(WIN32)
++  # The raw ${..._LIBRARIES} variables below each recursively re-append
++  # their own dependencies' _LIBRARIES as plain strings with no
++  # deduplication, so linking four message packages plus rclcpp this
++  # way stacks up a lot of repeated full paths. On Windows CI the
++  # concatenated link.exe response-file line exceeded its
++  # ~131071-character limit (LNK1170). The <pkg>::<pkg> aggregate
++  # imported targets (exported by rosidl/rclcpp specifically to
++  # replace the legacy _LIBRARIES variables) let CMake's target-based
++  # link graph dedupe the transitive closure instead.
++  target_link_libraries(rmf_traffic_ros2
++    PUBLIC
++      rmf_traffic_msgs::rmf_traffic_msgs
++      rmf_site_map_msgs::rmf_site_map_msgs
++      rmf_building_map_msgs::rmf_building_map_msgs
++      rmf_reservation_msgs::rmf_reservation_msgs
++      rclcpp::rclcpp
++  )
++else()
++  target_link_libraries(rmf_traffic_ros2
++    PUBLIC
++      ${rmf_traffic_msgs_LIBRARIES}
++      ${rmf_site_map_msgs_LIBRARIES}
++      ${rmf_building_map_msgs_LIBRARIES}
++      ${rmf_reservation_msgs_LIBRARIES}
++      ${rclcpp_LIBRARIES}
++  )
++endif()
++
++if(NOT WIN32)
++  target_link_libraries(rmf_traffic_ros2 PRIVATE LibUUID::LibUUID)
++else()
++  # Windows' native UUID API (used directly in schedule/Node.cpp
++  # instead of libuuid) lives in rpcrt4.
++  target_link_libraries(rmf_traffic_ros2 PRIVATE rpcrt4)
++endif()
++
+ target_include_directories(rmf_traffic_ros2
+   PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -219,6 +295,20 @@ ament_export_dependencies(
+   ZLIB
+ )
+ 
++if(WIN32)
++  # rmf_building_map_msgs::rmf_building_map_msgs and
++  # rmf_reservation_msgs::rmf_reservation_msgs (the aggregate targets
++  # used on Windows instead of the raw _LIBRARIES variables, see the
++  # LNK1170 fix above) are part of this package's PUBLIC link
++  # interface, but were never in ament_export_dependencies() -- on
++  # non-Windows this was harmless (raw path lists don't need
++  # find_dependency), but on Windows any downstream consumer's own
++  # find_package(rmf_traffic_ros2) needs these targets to already
++  # exist, or CMake's generate step fails with "target ... was not
++  # found" (first hit by rmf_task_ros2).
++  ament_export_dependencies(rmf_building_map_msgs rmf_reservation_msgs)
++endif()
++
+ # TODO(MXG): Change these executables into shared libraries that can act as
+ # ROS2 node components
+ 
+diff --git a/include/rmf_traffic_ros2/detail/export.hpp b/include/rmf_traffic_ros2/detail/export.hpp
+new file mode 100644
+index 00000000..a8117028
+--- /dev/null
++++ b/include/rmf_traffic_ros2/detail/export.hpp
+@@ -0,0 +1,35 @@
++/*
++ * Copyright (C) 2026 Open Source Robotics Foundation
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++*/
++
++#ifndef RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
++#define RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
++
++// Blanket WINDOWS_EXPORT_ALL_SYMBOLS overflows MSVC's import-lib
++// 65535-object limit for this heavily Eigen/nlohmann-templated library
++// (LNK1189), so the small set of symbols actually needed by this
++// package's own executables are exported explicitly instead.
++#if defined(_WIN32)
++  #if defined(RMF_TRAFFIC_ROS2_BUILDING_DLL)
++    #define RMF_TRAFFIC_ROS2_EXPORT __declspec(dllexport)
++  #else
++    #define RMF_TRAFFIC_ROS2_EXPORT __declspec(dllimport)
++  #endif
++#else
++  #define RMF_TRAFFIC_ROS2_EXPORT
++#endif
++
++#endif // RMF_TRAFFIC_ROS2__DETAIL__EXPORT_HPP
+diff --git a/src/rmf_traffic_ros2/schedule/Node.cpp b/src/rmf_traffic_ros2/schedule/Node.cpp
+index 7b2902d4..ef950ef0 100644
+--- a/src/rmf_traffic_ros2/schedule/Node.cpp
++++ b/src/rmf_traffic_ros2/schedule/Node.cpp
+@@ -17,6 +17,8 @@
+ 
+ #include "internal_Node.hpp"
+ 
++#include <rmf_traffic_ros2/schedule/Node.hpp>
++
+ #include <cstring>
+ 
+ #include <rmf_traffic_ros2/Route.hpp>
+@@ -37,7 +39,26 @@
+ #include <rmf_utils/optional.hpp>
+ 
+ #include <unordered_map>
++#ifdef _WIN32
++// libuuid (uuid/uuid.h) is Linux/macOS-only; use Windows' native RPC
++// UUID API instead (linked against rpcrt4 in CMakeLists.txt).
++// NOMINMAX/WIN32_LEAN_AND_MEAN/NOGDI keep windows.h (pulled in by rpc.h)
++// from defining min/max (collides with std::numeric_limits::max) and,
++// via wingdi.h, an ERROR macro (collides with
++// RequestChanges::Response::ERROR used later in this file).
++#ifndef NOMINMAX
++#define NOMINMAX
++#endif
++#ifndef WIN32_LEAN_AND_MEAN
++#define WIN32_LEAN_AND_MEAN
++#endif
++#ifndef NOGDI
++#define NOGDI
++#endif
++#include <rpc.h>
++#else
+ #include <uuid/uuid.h>
++#endif
+ 
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+@@ -46,17 +67,27 @@ namespace {
+ //==============================================================================
+ ScheduleNode::ScheduleId generate_node_id()
+ {
++#ifdef _WIN32
++  UUID raw_uuid;
++  UuidCreate(&raw_uuid);
++  RPC_CSTR uuid_cstr = nullptr;
++  UuidToStringA(&raw_uuid, &uuid_cstr);
++  const std::string uuid(reinterpret_cast<char*>(uuid_cstr));
++  RpcStringFreeA(&uuid_cstr);
++#else
+   uuid_t raw_uuid;
+   uuid_generate(raw_uuid);
+   // According to these docs, the size of the uuid string will be
+   // 36 bytes + '\n' so we make a buffer of 37.
+-  char uuid[37];
+-  uuid_unparse(raw_uuid, uuid);
++  char uuid_buf[37];
++  uuid_unparse(raw_uuid, uuid_buf);
++  const std::string uuid(uuid_buf);
++#endif
+   const rclcpp::Time time(
+     std::chrono::system_clock::now().time_since_epoch().count());
+ 
+   return rmf_traffic_msgs::build<ScheduleNode::ScheduleId>()
+-    .node_uuid(std::string(uuid))
++    .node_uuid(uuid)
+     .timestamp(time);
+ }
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/Negotiation.hpp b/include/rmf_traffic_ros2/schedule/Negotiation.hpp
+index 318939ef..018f3bba 100644
+--- a/include/rmf_traffic_ros2/schedule/Negotiation.hpp
++++ b/include/rmf_traffic_ros2/schedule/Negotiation.hpp
+@@ -26,12 +26,14 @@
+ 
+ #include <rmf_utils/impl_ptr.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+ //==============================================================================
+ /// A ROS2 interface for negotiating solutions to schedule conflicts
+-class Negotiation
++class RMF_TRAFFIC_ROS2_EXPORT Negotiation
+ {
+ public:
+ 
+@@ -109,7 +111,7 @@ public:
+   ///
+   /// \param[in] count
+   ///   The number of negotiations to retain
+-  void set_retained_history_count(uint count);
++  void set_retained_history_count(unsigned int count);
+ 
+   /// Register a negotiator with this Negotiation manager.
+   ///
+diff --git a/src/rmf_traffic_ros2/schedule/Negotiation.cpp b/src/rmf_traffic_ros2/schedule/Negotiation.cpp
+index 62f9307..1baa196 100644
+--- a/src/rmf_traffic_ros2/schedule/Negotiation.cpp
++++ b/src/rmf_traffic_ros2/schedule/Negotiation.cpp
+@@ -303,7 +303,7 @@ public:
+     std::function<void (uint64_t conflict_version, bool success)>;
+   StatusConclusionCallback conclusion_callback;
+ 
+-  uint retained_history_count = 0;
++  unsigned int retained_history_count = 0;
+   std::map<Version, rmf_traffic::schedule::Negotiation> history;
+ 
+   Implementation(
+@@ -1031,7 +1031,7 @@ public:
+       for_participant, negotiators, failure_callbacks);
+   }
+ 
+-  void set_retained_history_count(uint count)
++  void set_retained_history_count(unsigned int count)
+   {
+     retained_history_count = count;
+   }
+@@ -1130,7 +1130,7 @@ Negotiation::TableViewPtr Negotiation::table_view(
+ }
+ 
+ //==============================================================================
+-void Negotiation::set_retained_history_count(uint count)
++void Negotiation::set_retained_history_count(unsigned int count)
+ {
+   return _pimpl->set_retained_history_count(count);
+ }
+diff --git a/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp b/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp
+index 8d666fed..807aa974 100644
+--- a/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp
++++ b/src/rmf_traffic_ros2/schedule/internal_MonitorNode.hpp
+@@ -42,7 +42,7 @@ using namespace std::chrono_literals;
+ class MonitorNode : public rclcpp::Node
+ {
+ public:
+-  static struct NoAutomaticSetup{} no_automatic_setup;
++  inline static struct NoAutomaticSetup{} no_automatic_setup;
+ 
+   MonitorNode(
+     std::function<void(std::shared_ptr<rclcpp::Node>)> callback,
+diff --git a/src/rmf_traffic_ros2/schedule/internal_Node.hpp b/src/rmf_traffic_ros2/schedule/internal_Node.hpp
+index c5c7a7ac..f8351722 100644
+--- a/src/rmf_traffic_ros2/schedule/internal_Node.hpp
++++ b/src/rmf_traffic_ros2/schedule/internal_Node.hpp
+@@ -83,7 +83,7 @@ public:
+   using ScheduleId = rmf_traffic_msgs::msg::ScheduleIdentity;
+   ScheduleId node_id;
+ 
+-  static struct NoAutomaticSetup{} no_automatic_setup;
++  inline static struct NoAutomaticSetup{} no_automatic_setup;
+ 
+   ScheduleNode(
+     ScheduleId id,
+diff --git a/include/rmf_traffic_ros2/schedule/Node.hpp b/include/rmf_traffic_ros2/schedule/Node.hpp
+index 0ae4ccbc..8bf6d98e 100644
+--- a/include/rmf_traffic_ros2/schedule/Node.hpp
++++ b/include/rmf_traffic_ros2/schedule/Node.hpp
+@@ -20,10 +20,13 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+ /// Make a ScheduleNode instance
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_node(
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/MonitorNode.hpp b/include/rmf_traffic_ros2/schedule/MonitorNode.hpp
+index 18da3ca7..83174457 100644
+--- a/include/rmf_traffic_ros2/schedule/MonitorNode.hpp
++++ b/include/rmf_traffic_ros2/schedule/MonitorNode.hpp
+@@ -23,6 +23,8 @@
+ #include <chrono>
+ #include <functional>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ using namespace std::chrono_literals;
+ 
+ namespace rmf_traffic_ros2 {
+@@ -30,6 +32,7 @@ namespace schedule {
+ 
+ /// Make a monitor node to monitor a heartbeat and restart a node when
+ /// the heartbeat is lost
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_monitor_node(
+   std::function<void(std::shared_ptr<rclcpp::Node>)> callback,
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions(),
+diff --git a/include/rmf_traffic_ros2/blockade/Node.hpp b/include/rmf_traffic_ros2/blockade/Node.hpp
+index dd6379ab..0075c6d8 100644
+--- a/include/rmf_traffic_ros2/blockade/Node.hpp
++++ b/include/rmf_traffic_ros2/blockade/Node.hpp
+@@ -20,14 +20,18 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace blockade {
+ 
+ /// Make a blockade node instance
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_node(
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+ 
+ /// Make a blockade node instance, specifying a node name
++RMF_TRAFFIC_ROS2_EXPORT
+ std::shared_ptr<rclcpp::Node> make_node(
+   const std::string& node_name,
+   const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+diff --git a/include/rmf_traffic_ros2/schedule/Writer.hpp b/include/rmf_traffic_ros2/schedule/Writer.hpp
+index cf0cf625..13e17779 100644
+--- a/include/rmf_traffic_ros2/schedule/Writer.hpp
++++ b/include/rmf_traffic_ros2/schedule/Writer.hpp
+@@ -23,13 +23,15 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+ //==============================================================================
+ /// The Writer class provides an API that allows a Node to create schedule
+ /// Participants.
+-class Writer : public std::enable_shared_from_this<Writer>
++class RMF_TRAFFIC_ROS2_EXPORT Writer : public std::enable_shared_from_this<Writer>
+ {
+ public:
+ 
+diff --git a/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp b/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp
+index 028d6dc0..dc7cdc22 100644
+--- a/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp
++++ b/src/rmf_traffic_ros2/schedule/internal_YamlSerialization.hpp
+@@ -25,6 +25,8 @@
+ 
+ #include <string>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+@@ -41,6 +43,7 @@ rmf_traffic_msgs::msg::ConvexShapeContext shape_context(YAML::Node node);
+ rmf_traffic::Profile profile(YAML::Node node);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ ParticipantDescription participant_description(YAML::Node node);
+ 
+ //==============================================================================
+diff --git a/include/rmf_traffic_ros2/Profile.hpp b/include/rmf_traffic_ros2/Profile.hpp
+index d4c040ab..c6d7a649 100644
+--- a/include/rmf_traffic_ros2/Profile.hpp
++++ b/include/rmf_traffic_ros2/Profile.hpp
+@@ -22,12 +22,16 @@
+ 
+ #include <rmf_traffic/Profile.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Profile convert(const rmf_traffic_msgs::msg::Profile& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::Profile convert(const rmf_traffic::Profile& from);
+ 
+ } // namespace rmf_traffic_ros2
+diff --git a/include/rmf_traffic_ros2/Route.hpp b/include/rmf_traffic_ros2/Route.hpp
+index 19747349..f15a83b5 100644
+--- a/include/rmf_traffic_ros2/Route.hpp
++++ b/include/rmf_traffic_ros2/Route.hpp
+@@ -19,19 +19,25 @@
+ 
+ #include <rmf_traffic_msgs/msg/route.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Route convert(const rmf_traffic_msgs::msg::Route& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::Route convert(const rmf_traffic::Route& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ std::vector<rmf_traffic::Route> convert(
+   const std::vector<rmf_traffic_msgs::msg::Route>& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ std::vector<rmf_traffic_msgs::msg::Route> convert(
+   const std::vector<rmf_traffic::Route>& from);
+ 
+diff --git a/include/rmf_traffic_ros2/Trajectory.hpp b/include/rmf_traffic_ros2/Trajectory.hpp
+index 660d220b..7c86184d 100644
+--- a/include/rmf_traffic_ros2/Trajectory.hpp
++++ b/include/rmf_traffic_ros2/Trajectory.hpp
+@@ -22,6 +22,8 @@
+ 
+ #include <rmf_traffic/Trajectory.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
+@@ -31,10 +33,12 @@ namespace rmf_traffic_ros2 {
+ /// describing the issue.
+ // TODO(MXG): Consider making conversion functions that do not require any
+ // allocation.
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Trajectory convert(const rmf_traffic_msgs::msg::Trajectory& from);
+ 
+ //==============================================================================
+ /// Convert from a Trajectory instance to a Trajectory message.
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::Trajectory convert(const rmf_traffic::Trajectory& from);
+ 
+ } // namespace rmf_traffic_ros2
+diff --git a/include/rmf_traffic_ros2/agv/Graph.hpp b/include/rmf_traffic_ros2/agv/Graph.hpp
+index 9603ab94..8959df45 100644
+--- a/include/rmf_traffic_ros2/agv/Graph.hpp
++++ b/include/rmf_traffic_ros2/agv/Graph.hpp
+@@ -26,9 +26,12 @@
+ #include <optional>
+ #include <memory>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::agv::Graph convert(const rmf_site_map_msgs::msg::SiteMap& from,
+   int graph_idx = 0, double wp_tolerance = 1e-3);
+ 
+@@ -36,6 +39,7 @@ rmf_traffic::agv::Graph convert(const rmf_site_map_msgs::msg::SiteMap& from,
+ /// Convert a valid rmf_building_map_msgs::msg::Graph message to an
+ /// rmf_traffic::agv::Graph object.
+ /// Returns nullopt if required fields are missing.
++RMF_TRAFFIC_ROS2_EXPORT
+ std::optional<rmf_traffic::agv::Graph> convert(
+   const rmf_building_map_msgs::msg::Graph& from);
+ 
+@@ -43,6 +47,7 @@ std::optional<rmf_traffic::agv::Graph> convert(
+ /// Convert a valid rmf_traffic::agv::Graph object to an
+ /// rmf_building_map_msgs::msg::Graph message.
+ /// Returns nullptr if required fields are missing or fleet_name is empty.
++RMF_TRAFFIC_ROS2_EXPORT
+ std::unique_ptr<rmf_building_map_msgs::msg::Graph> convert(
+   const rmf_traffic::agv::Graph& from, const std::string& fleet_name);
+ 
+diff --git a/include/rmf_traffic_ros2/blockade/Writer.hpp b/include/rmf_traffic_ros2/blockade/Writer.hpp
+index f6b771bc..70b7e87c 100644
+--- a/include/rmf_traffic_ros2/blockade/Writer.hpp
++++ b/include/rmf_traffic_ros2/blockade/Writer.hpp
+@@ -22,13 +22,15 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace blockade {
+ 
+ //==============================================================================
+ /// The Writer class provides an API that allows a Node to create blockade
+ /// Participants.
+-class Writer : public std::enable_shared_from_this<Writer>
++class RMF_TRAFFIC_ROS2_EXPORT Writer : public std::enable_shared_from_this<Writer>
+ {
+ public:
+ 
+diff --git a/include/rmf_traffic_ros2/geometry/Circle.hpp b/include/rmf_traffic_ros2/geometry/Circle.hpp
+index cb3d888d..b3813ec2 100644
+--- a/include/rmf_traffic_ros2/geometry/Circle.hpp
++++ b/include/rmf_traffic_ros2/geometry/Circle.hpp
+@@ -22,13 +22,17 @@
+ 
+ #include <rmf_traffic_msgs/msg/circle.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::Circle convert(
+   const rmf_traffic::geometry::Circle& circle);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::geometry::Circle convert(
+   const rmf_traffic_msgs::msg::Circle& circle);
+ 
+diff --git a/include/rmf_traffic_ros2/geometry/ConvexShape.hpp b/include/rmf_traffic_ros2/geometry/ConvexShape.hpp
+index 403b2e60..2f33ac18 100644
+--- a/include/rmf_traffic_ros2/geometry/ConvexShape.hpp
++++ b/include/rmf_traffic_ros2/geometry/ConvexShape.hpp
+@@ -23,11 +23,13 @@
+ #include <rmf_traffic_msgs/msg/convex_shape.hpp>
+ #include <rmf_traffic_msgs/msg/convex_shape_context.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace geometry {
+ 
+ //==============================================================================
+-class ConvexShapeContext
++class RMF_TRAFFIC_ROS2_EXPORT ConvexShapeContext
+ {
+ public:
+ 
+@@ -47,10 +49,12 @@ private:
+ } // namespace geometry
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ geometry::ConvexShapeContext convert(
+   const rmf_traffic_msgs::msg::ConvexShapeContext& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ConvexShapeContext convert(
+   const geometry::ConvexShapeContext& from);
+ 
+diff --git a/include/rmf_traffic_ros2/geometry/Shape.hpp b/include/rmf_traffic_ros2/geometry/Shape.hpp
+index 4b5ec19a..f926cc20 100644
+--- a/include/rmf_traffic_ros2/geometry/Shape.hpp
++++ b/include/rmf_traffic_ros2/geometry/Shape.hpp
+@@ -23,11 +23,13 @@
+ #include <rmf_traffic_msgs/msg/shape.hpp>
+ #include <rmf_traffic_msgs/msg/shape_context.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace geometry {
+ 
+ //==============================================================================
+-class ShapeContext
++class RMF_TRAFFIC_ROS2_EXPORT ShapeContext
+ {
+ public:
+ 
+@@ -47,10 +49,12 @@ private:
+ } // namespace geometry
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ geometry::ShapeContext convert(
+   const rmf_traffic_msgs::msg::ShapeContext& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ShapeContext convert(
+   const geometry::ShapeContext& from);
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/Change.hpp b/include/rmf_traffic_ros2/schedule/Change.hpp
+index 644d7ee8..8d1485b9 100644
+--- a/include/rmf_traffic_ros2/schedule/Change.hpp
++++ b/include/rmf_traffic_ros2/schedule/Change.hpp
+@@ -25,41 +25,52 @@
+ #include <rmf_traffic_msgs/msg/schedule_change_cull.hpp>
+ #include <rmf_traffic_msgs/msg/schedule_change_add_item.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Change::Add::Item convert(
+   const rmf_traffic_msgs::msg::ScheduleChangeAddItem& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleChangeAddItem convert(
+   const rmf_traffic::schedule::Change::Add::Item& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Change::Add convert(
+   const rmf_traffic_msgs::msg::ScheduleChangeAdd& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleChangeAdd convert(
+   const rmf_traffic::schedule::Change::Add& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Change::Delay convert(
+   const rmf_traffic_msgs::msg::ScheduleChangeDelay& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleChangeDelay convert(
+   const rmf_traffic::schedule::Change::Delay& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::ParticipantId convert(
+   const rmf_traffic::schedule::Change::UnregisterParticipant& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Change::Cull convert(
+   const rmf_traffic_msgs::msg::ScheduleChangeCull& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleChangeCull convert(
+   const rmf_traffic::schedule::Change::Cull& from);
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/Inconsistencies.hpp b/include/rmf_traffic_ros2/schedule/Inconsistencies.hpp
+index aea4d026..bbc0e397 100644
+--- a/include/rmf_traffic_ros2/schedule/Inconsistencies.hpp
++++ b/include/rmf_traffic_ros2/schedule/Inconsistencies.hpp
+@@ -22,9 +22,12 @@
+ #include <rmf_traffic_msgs/msg/schedule_inconsistency.hpp>
+ #include <rmf_traffic/schedule/Itinerary.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleInconsistency convert(
+   const rmf_traffic::schedule::Inconsistencies::Element& from,
+   const rmf_traffic::schedule::ProgressVersion progress_version);
+diff --git a/include/rmf_traffic_ros2/schedule/Itinerary.hpp b/include/rmf_traffic_ros2/schedule/Itinerary.hpp
+index 90d74c82..7a420d98 100644
+--- a/include/rmf_traffic_ros2/schedule/Itinerary.hpp
++++ b/include/rmf_traffic_ros2/schedule/Itinerary.hpp
+@@ -23,17 +23,22 @@
+ #include <rmf_traffic_msgs/msg/route.hpp>
+ #include <rmf_traffic_msgs/msg/itinerary.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ std::vector<rmf_traffic_msgs::msg::Route> convert(
+   const rmf_traffic::schedule::Itinerary& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ std::vector<rmf_traffic::schedule::Itinerary> convert(
+   const std::vector<rmf_traffic_msgs::msg::Itinerary>& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ std::vector<rmf_traffic_msgs::msg::Itinerary> convert(
+   const std::vector<rmf_traffic::schedule::Itinerary>& from);
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/MirrorManager.hpp b/include/rmf_traffic_ros2/schedule/MirrorManager.hpp
+index d3153c92..857c4531 100644
+--- a/include/rmf_traffic_ros2/schedule/MirrorManager.hpp
++++ b/include/rmf_traffic_ros2/schedule/MirrorManager.hpp
+@@ -23,16 +23,18 @@
+ 
+ #include <rclcpp/node.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+ //==============================================================================
+-class MirrorManager
++class RMF_TRAFFIC_ROS2_EXPORT MirrorManager
+ {
+ public:
+ 
+   /// Options for the MirrorManager
+-  class Options
++  class RMF_TRAFFIC_ROS2_EXPORT Options
+   {
+   public:
+ 
+@@ -96,7 +98,7 @@ private:
+ };
+ 
+ //==============================================================================
+-class MirrorManagerFuture
++class RMF_TRAFFIC_ROS2_EXPORT MirrorManagerFuture
+ {
+ public:
+ 
+@@ -153,6 +155,7 @@ private:
+ ///
+ // TODO(MXG): Use std::optional here instead of std::unique_ptr when C++17 can
+ // be supported.
++RMF_TRAFFIC_ROS2_EXPORT
+ MirrorManagerFuture make_mirror(
+   const std::shared_ptr<rclcpp::Node>& node,
+   rmf_traffic::schedule::Query query,
+diff --git a/include/rmf_traffic_ros2/schedule/ParticipantRegistry.hpp b/include/rmf_traffic_ros2/schedule/ParticipantRegistry.hpp
+index 6601639f..c7536ce6 100644
+--- a/include/rmf_traffic_ros2/schedule/ParticipantRegistry.hpp
++++ b/include/rmf_traffic_ros2/schedule/ParticipantRegistry.hpp
+@@ -26,6 +26,8 @@
+ #include <yaml-cpp/yaml.h>
+ #include <unordered_map>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+@@ -48,7 +50,7 @@ struct AtomicOperation
+ 
+ //=============================================================================
+ /// This is the base class for the persistence logger.
+-class AbstractParticipantLogger
++class RMF_TRAFFIC_ROS2_EXPORT AbstractParticipantLogger
+ {
+ public:
+   /// Called when we wish to commit an operation to disk
+@@ -64,7 +66,7 @@ public:
+ 
+ //=============================================================================
+ /// YAML logger class. Logs everything to YAML buffers on disk
+-class YamlLogger : public AbstractParticipantLogger
++class RMF_TRAFFIC_ROS2_EXPORT YamlLogger : public AbstractParticipantLogger
+ {
+ public:
+   /// Constructor
+@@ -97,7 +99,7 @@ private:
+ /// Internally, this class implements a an append only journal. This makes it
+ /// independent of any id generation inside the database, as long as the said
+ /// database id generation algorithm is deterministic.
+-class ParticipantRegistry
++class RMF_TRAFFIC_ROS2_EXPORT ParticipantRegistry
+ {
+ public:
+   /// Constructor
+diff --git a/include/rmf_traffic_ros2/schedule/Patch.hpp b/include/rmf_traffic_ros2/schedule/Patch.hpp
+index 63915f3e..5bc62fba 100644
+--- a/include/rmf_traffic_ros2/schedule/Patch.hpp
++++ b/include/rmf_traffic_ros2/schedule/Patch.hpp
+@@ -22,21 +22,27 @@
+ 
+ #include <rmf_traffic_msgs/msg/schedule_patch.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleParticipantPatch convert(
+   const rmf_traffic::schedule::Patch::Participant& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Patch::Participant convert(
+   const rmf_traffic_msgs::msg::ScheduleParticipantPatch& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::SchedulePatch convert(
+   const rmf_traffic::schedule::Patch& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Patch convert(
+   const rmf_traffic_msgs::msg::SchedulePatch& from);
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/Query.hpp b/include/rmf_traffic_ros2/schedule/Query.hpp
+index 43ccb53d..8b13f0c5 100644
+--- a/include/rmf_traffic_ros2/schedule/Query.hpp
++++ b/include/rmf_traffic_ros2/schedule/Query.hpp
+@@ -22,29 +22,37 @@
+ 
+ #include <rmf_traffic/schedule/Query.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Query::Spacetime convert(
+   const rmf_traffic_msgs::msg::ScheduleQuerySpacetime& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleQuerySpacetime convert(
+   const rmf_traffic::schedule::Query::Spacetime& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Query::Participants convert(
+   const rmf_traffic_msgs::msg::ScheduleQueryParticipants& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleQueryParticipants convert(
+   const rmf_traffic::schedule::Query::Participants& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::Query convert(
+   const rmf_traffic_msgs::msg::ScheduleQuery& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ScheduleQuery convert(
+   const rmf_traffic::schedule::Query& from);
+ 
+diff --git a/include/rmf_traffic_ros2/schedule/ScheduleIdentity.hpp b/include/rmf_traffic_ros2/schedule/ScheduleIdentity.hpp
+index 168f5d34..4550fc59 100644
+--- a/include/rmf_traffic_ros2/schedule/ScheduleIdentity.hpp
++++ b/include/rmf_traffic_ros2/schedule/ScheduleIdentity.hpp
+@@ -21,6 +21,8 @@
+ #include <rmf_traffic_msgs/msg/schedule_identity.hpp>
+ #include <optional>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ namespace schedule {
+ 
+@@ -30,12 +32,14 @@ namespace schedule {
+ /// the data of the new incoming message and the function will return true. If
+ /// no reconnection should happen then the previous argument will not be
+ /// modified and the function will return false.
++RMF_TRAFFIC_ROS2_EXPORT
+ bool reconnect_schedule(
+   rmf_traffic_msgs::msg::ScheduleIdentity& previous,
+   const rmf_traffic_msgs::msg::ScheduleIdentity& incoming);
+ 
+ /// Same as its overload, but it accepts an optional for previous. When previous
+ /// is nullopt, this will save incoming and return true.
++RMF_TRAFFIC_ROS2_EXPORT
+ bool reconnect_schedule(
+   std::optional<rmf_traffic_msgs::msg::ScheduleIdentity>& previous,
+   const rmf_traffic_msgs::msg::ScheduleIdentity& incoming);
+@@ -43,6 +47,7 @@ bool reconnect_schedule(
+ //==============================================================================
+ /// Equivalent to reconnect_schedule, but it does not modify the previous
+ /// argument.
++RMF_TRAFFIC_ROS2_EXPORT
+ bool need_reconnection(
+   const rmf_traffic_msgs::msg::ScheduleIdentity& previous,
+   const rmf_traffic_msgs::msg::ScheduleIdentity& incoming);
+diff --git a/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp b/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp
+index 6536cc22..ac62c068 100644
+--- a/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp
++++ b/include/rmf_traffic_ros2/schedule/ParticipantDescription.hpp
+@@ -23,21 +23,27 @@
+ #include <rmf_traffic_msgs/msg/participant_description.hpp>
+ #include <rmf_traffic_msgs/msg/participants.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::ParticipantDescription convert(
+   const rmf_traffic_msgs::msg::ParticipantDescription& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::ParticipantDescription convert(
+   const rmf_traffic::schedule::ParticipantDescription& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::schedule::ParticipantDescriptionsMap convert(
+   const rmf_traffic_msgs::msg::Participants& from);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic_msgs::msg::Participants convert(
+   const rmf_traffic::schedule::ParticipantDescriptionsMap& from);
+ 
+diff --git a/src/rmf_traffic_ros2/schedule/MonitorNode.cpp b/src/rmf_traffic_ros2/schedule/MonitorNode.cpp
+index daf4e1dd..8bde4caf 100644
+--- a/src/rmf_traffic_ros2/schedule/MonitorNode.cpp
++++ b/src/rmf_traffic_ros2/schedule/MonitorNode.cpp
+@@ -19,6 +19,7 @@
+ 
+ #include "internal_Node.hpp"
+ 
++#include <rmf_traffic_ros2/schedule/MonitorNode.hpp>
+ #include <rmf_traffic_ros2/StandardNames.hpp>
+ #include <rmf_traffic_ros2/schedule/Query.hpp>
+ 
+diff --git a/include/rmf_traffic_ros2/Time.hpp b/include/rmf_traffic_ros2/Time.hpp
+index 34675318..963bc6d6 100644
+--- a/include/rmf_traffic_ros2/Time.hpp
++++ b/include/rmf_traffic_ros2/Time.hpp
+@@ -23,24 +23,32 @@
+ #include <rmf_traffic/Time.hpp>
+ #include <rclcpp/time.hpp>
+ 
++#include <rmf_traffic_ros2/detail/export.hpp>
++
+ namespace rmf_traffic_ros2 {
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ builtin_interfaces::msg::Time convert(rmf_traffic::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Time convert(builtin_interfaces::msg::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rclcpp::Time to_ros2(rmf_traffic::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Time convert(rclcpp::Time time);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rclcpp::Duration convert(rmf_traffic::Duration duration);
+ 
+ //==============================================================================
++RMF_TRAFFIC_ROS2_EXPORT
+ rmf_traffic::Duration convert(rclcpp::Duration duration);
+ 
+ } // namespace rmf_traffic_ros2

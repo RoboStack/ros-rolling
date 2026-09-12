@@ -29,7 +29,13 @@ git = "*"
 
 [pypi-dependencies]
 # This is typically the latest commit on main branch
-vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "34316c7f195b359fb9cd4bfd2ae8fd83cb559dff" }
+# TEMPORARY: pinned to RoboStack/vinca@1f1dca5 (last commit before the
+# rosdistro-cache-snapshot feature landed -- our already-generated
+# rosdistro_snapshot.yaml wasn't produced with that machinery and broke
+# against it) with the raw.githubusercontent.com tag-URL ambiguity fix
+# (RoboStack/vinca#156) cherry-picked on top. Revert to RoboStack/vinca.git
+# once #156 merges and the snapshot format is reconciled.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "9e44663eaf17a1a7ae698e3140ff095a78e849e7" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
@@ -37,14 +43,15 @@ vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "34316c7f195b359
 [tasks]
 generate-recipes = { cmd = "vinca -m", depends-on = ["remove-recipes"] }
 generate-gha-workflows = { cmd = "vinca-gha --trigger-branch dummy_build_branch_as_it_is_unused -d ./recipes", depends-on = ["generate-recipes"] }
-check-patches = { cmd = "python check_patches_clean_apply.py", depends-on = ["generate-recipes"] }
+check-orphaned-patches = { cmd = "python check_orphaned_platform_patches.py", description = "Detect patch/ files vinca's add_package_name_variants() will never wire into any recipe because a same-package patch exists under a different name-prefix variant (see script docstring)." }
+check-patches = { cmd = "python check_patches_clean_apply.py", depends-on = ["generate-recipes", "check-orphaned-patches"] }
 create_snapshot = { cmd = "vinca-snapshot -d rolling -o rosdistro_snapshot.yaml" }
 upload = "rattler-build upload prefix -c robostack-rolling --generate-attestation"
-build_continue_on_failure = { cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c robostack-rolling -c https://repo.prefix.dev/conda-forge --continue-on-failure --skip-existing", depends-on = ["generate-recipes"] }
+build_continue_on_failure = { cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://repo.prefix.dev/robostack-rolling -c https://repo.prefix.dev/conda-forge --continue-on-failure --skip-existing --channel-priority disabled", depends-on = ["generate-recipes"] }
 sort = "sh -lc 'vinca-sort-vinca-lists $@ vinca.yaml && vinca-sort-yaml-keys $@ pkg_additional_info.yaml robostack.yaml rosdistro_additional_recipes.yaml' --"
 
 [tasks.build]
-cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing"
+cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing --channel-priority disabled"
 depends-on = ["generate-recipes"]
 description = "Build all packages, from the ./recipes dir. This will skip already existing packages, so it can be used to build only a subset of packages by first removing the recipes of the packages you want to rebuild (see `pixi remove-recipes`)."
 
@@ -53,6 +60,6 @@ cmd = "rm -rf recipes_only_patch; rm -rf recipes; mkdir recipes"
 description = "Remove all generated recipes, before regenerating them."
 
 [tasks.build-one]
-cmd = "cp ./patch/{{ PACKAGE }}.*patch ./recipes/{{ PACKAGE }}/patch/; rattler-build build --recipe ./recipes/{{ PACKAGE }}/recipe.yaml -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge"
+cmd = "cp ./patch/{{ PACKAGE }}.*patch ./recipes/{{ PACKAGE }}/patch/; rattler-build build --recipe ./recipes/{{ PACKAGE }}/recipe.yaml -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --channel-priority disabled"
 args = [{ arg = "PACKAGE", default = "ros-rolling-ros-workspace" }]
 description = "Build a single package, from the ./recipes dir. Add the `ros-rolling-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"

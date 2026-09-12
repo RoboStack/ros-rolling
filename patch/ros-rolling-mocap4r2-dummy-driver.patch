@@ -1,8 +1,8 @@
 diff --git a/mocap4r2_dummy_driver/CMakeLists.txt b/mocap4r2_dummy_driver/CMakeLists.txt
-index 8e8a863..b1569d7 100644
+index 8e8a8635..f48c10b2 100644
 --- a/mocap4r2_dummy_driver/CMakeLists.txt
 +++ b/mocap4r2_dummy_driver/CMakeLists.txt
-@@ -24,18 +24,25 @@ set(dependencies
+@@ -24,18 +24,29 @@ set(dependencies
    mocap4r2_control
  )
  
@@ -20,6 +20,10 @@ index 8e8a863..b1569d7 100644
  add_library(${PROJECT_NAME}
    src/mocap4r2_dummy_driver/mocap4r2_dummy_driver.cpp)
 -ament_target_dependencies(${PROJECT_NAME} ${dependencies})
++# mocap4r2_dummy_driver_main (below) links against this library directly,
++# so it needs an import .lib on Windows -- same missing-dllexport-symbols
++# issue already fixed for mocap4r2_control.
++set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 +target_link_libraries(${PROJECT_NAME} ${target_dependencies})
  
  add_executable(mocap4r2_dummy_driver_main
@@ -30,3 +34,4 @@ index 8e8a863..b1569d7 100644
  target_link_libraries(mocap4r2_dummy_driver_main ${PROJECT_NAME})
  
  install(DIRECTORY
+ 

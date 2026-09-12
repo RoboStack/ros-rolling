@@ -86,6 +86,54 @@ index ed34a38..93ee3fc 100644
    )
    target_include_directories(${PROJECT_NAME}_test PUBLIC
      ${_ouster_ros_INCLUDE_DIRS}
+diff --git a/ouster-sdk/cmake/Findlibzip.cmake b/ouster-sdk/cmake/Findlibzip.cmake
+index 0de2ad5..266cf93 100644
+--- a/ouster-sdk/cmake/Findlibzip.cmake
++++ b/ouster-sdk/cmake/Findlibzip.cmake
+@@ -37,9 +37,11 @@ find_path(libzip_INCLUDE_DIRS
+   HINTS ${pkg_libzip_INCLUDE_DIRS})
+ mark_as_advanced(libzip_INCLUDE_DIRS)
+ 
+-# Linux/macos only
++# conda-forge's libzip ships the Windows import lib as "zip.lib" (no
++# "lib" prefix, matching MSVC convention), so it's never found by the
++# Unix-only names below -- add it too.
+ find_library(libzip_LIBRARIES NAMES
+-  libzip libzip.so libzip.dylib
++  libzip libzip.so libzip.dylib zip
+   HINTS ${pkg_libzip_LIBRARY_DIRS})
+ mark_as_advanced(libzip_LIBRARIES)
+ 
+diff --git a/ouster-sdk/ouster_client/CMakeLists.txt b/ouster-sdk/ouster_client/CMakeLists.txt
+index f17eeb4..c5eee7a 100644
+--- a/ouster-sdk/ouster_client/CMakeLists.txt
++++ b/ouster-sdk/ouster_client/CMakeLists.txt
+@@ -64,13 +64,24 @@ if(WIN32)
+   target_link_libraries(ouster_client PUBLIC ws2_32)
+ endif()
+ 
++# Use the real conda-forge spdlog/fmt instead of the bundled thirdparty
++# copy: mixing the two (e.g. a transitively-found external spdlog for
++# <spdlog/spdlog.h> alongside the vendored-only <spdlog/fmt/bundled/args.h>
++# that logging.cpp includes directly) collides on fmt's template
++# declarations (MSVC C2990/C2955/C2011/...). package.xml already declares
++# <depend>spdlog</depend>, so remove the vendored copy outright rather
++# than fight include-order for it; logging.cpp is patched to include
++# <fmt/args.h> instead of the vendored spdlog/fmt/bundled/args.h.
++file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/spdlog")
++find_package(spdlog REQUIRED CONFIG)
++target_link_libraries(ouster_client PUBLIC spdlog::spdlog)
++
+ target_include_directories(ouster_client
+   PUBLIC
+       $<INSTALL_INTERFACE:include>
+       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+   PRIVATE
+       ${OPENSSL_INCLUDE_DIR}
+-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/spdlog>
+ )
+ 
+ target_include_directories(ouster_client SYSTEM
 diff --git a/ouster-sdk/ouster_client/include/ouster/version.h b/ouster-sdk/ouster_client/include/ouster/version.h
 index 7867e3a..6994f3d 100644
 --- a/ouster-sdk/ouster_client/include/ouster/version.h
@@ -107,6 +155,18 @@ index 7867e3a..6994f3d 100644
  namespace ouster {
  namespace sdk {
  namespace core {
+diff --git a/ouster-sdk/ouster_client/src/logging.cpp b/ouster-sdk/ouster_client/src/logging.cpp
+index bf0fc72..09f5077 100644
+--- a/ouster-sdk/ouster_client/src/logging.cpp
++++ b/ouster-sdk/ouster_client/src/logging.cpp
+@@ -1,6 +1,6 @@
+ #include "ouster/impl/logging.h"
+ 
+-#include <spdlog/fmt/bundled/args.h>
++#include <fmt/args.h>
+ #include <spdlog/sinks/basic_file_sink.h>
+ #include <spdlog/sinks/ringbuffer_sink.h>
+ #include <spdlog/sinks/rotating_file_sink.h>
 diff --git a/src/os_static_transforms_broadcaster.h b/src/os_static_transforms_broadcaster.h
 index 94d50eb..b1e05ce 100644
 --- a/src/os_static_transforms_broadcaster.h
