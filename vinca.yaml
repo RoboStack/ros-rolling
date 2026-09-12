@@ -277,7 +277,6 @@ packages_select_by_deps:
   - rqt_robot_monitor
   - rqt_robot_steering
   - rqt_runtime_monitor
-  - rslidar_sdk
   - rtabmap
   - rtcm_msgs
   - rtest
@@ -385,6 +384,7 @@ packages_select_by_deps:
       - rosgraph_monitor
       - rqt_mocap4r2_control
       - rqt_tf_tree
+      - rslidar_sdk  # rs_driver's Windows socket code has multiple pre-existing min/max-macro and getsockopt/setsockopt type bugs; not pursuing further
       - rviz_2d_overlay_plugins
       - sick_safetyscanners_base
       - spacenav
