@@ -226,9 +226,35 @@ index 1302caa..0aecf7a 100644
  void wait_condition_lock(ZenohPicoWaitSetData * wait_set_data)
  {
    z_mutex_lock(z_loan_mut(wait_set_data->condition_mutex));
-@@ -141,6 +149,48 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -136,3 +144,25 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+     wait_set_data,
+     "waitset data struct is null",
+     return RMW_RET_ERROR);
++
++#if Z_FEATURE_MULTI_THREAD == 0
++  // _check_and_attach_condition() below can find a guard condition/timer
++  // already ready (e.g. rclpy's executor attaches one whenever a periodic
++  // timer is pending) and return true *before* the network-pumping loop
++  // further down ever runs -- that loop lives entirely inside the
++  // `if(!skip_wait)` branch below, so on every rmw_wait() call where
++  // something is already ready, zp_read()/zp_send_keep_alive() never get
++  // called at all. With no background thread (Z_FEATURE_MULTI_THREAD==0)
++  // nothing else ever pumps the session, so a talker whose only waitable is
++  // a repeating timer (the common case -- confirmed via rclpy's talker,
++  // where this starved the session of any traffic until the router's
++  // 10-second lease expired and force-closed the transport) can go
++  // completely silent on the wire forever, well before any real timeout.
++  // Pumping once here, unconditionally, guarantees the network gets
++  // serviced on every single call regardless of skip_wait.
++  ZenohPicoSession *__pump_session = (ZenohPicoSession *)wait_set_data->context->impl;
++  const z_loaned_session_t *__pump_zsession = z_loan(__pump_session->session);
++  (void)zp_read(__pump_zsession, NULL);
++  (void)zp_send_keep_alive(__pump_zsession, NULL);
++#endif
++
+@@ -141,6 +171,48 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      subscriptions, guard_conditions, services, clients, events, wait_set_data);
- 
+
    if(!skip_wait){
 +#if Z_FEATURE_MULTI_THREAD == 0
 +    // No background read thread exists to receive data and signal this
