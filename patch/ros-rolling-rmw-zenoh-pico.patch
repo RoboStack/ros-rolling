@@ -265,3 +265,29 @@ index 1302caa..0aecf7a 100644
    }
  
    bool wait_result = false;
+diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
+index 1111111..2222222 100644
+--- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
++++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
+@@ -94,12 +94,19 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
+     return RMW_RET_ERROR;
+   }
+ 
++#if Z_FEATURE_MULTI_THREAD == 1
+   if (_Z_IS_ERR(zp_start_read_task(z_loan_mut(session->session), NULL))
+       || _Z_IS_ERR(zp_start_lease_task(z_loan_mut(session->session), NULL))) {
+     RMW_ZENOH_LOG_ERROR("Unable to start read and lease tasks");
+     z_drop(z_move(session->config));
+     z_drop(z_move(session->session));
+     return RMW_RET_ERROR;
+   }
++#else
++  // No background read/lease task to start in single-threaded mode.
++  // zp_start_read_task()/zp_start_lease_task() are hard-coded to always
++  // return -1 here (see zenoh-pico's own zp_start_read_task() -- it's an
++  // intentional "not supported without real threads" sentinel, not a real
++  // failure): rmw_wait() pumps zp_read()/zp_send_keep_alive() itself
++  // instead (see this project's own patch to rmw_wait.c).
++#endif
+ 
+   session->enable_session = true;
