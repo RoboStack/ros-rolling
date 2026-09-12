@@ -312,11 +312,9 @@ yasmin_pcl:
 rmf_fleet_adapter_python:
   add_host: ["pybind11_json"]
 rmf_visualization_schedule:
-  remove_host: ["openssl"]
-  remove_run: ["openssl"]
   # asio isn't declared in package.xml; websocketpp's own headers need it directly (websocketpp/common/asio.hpp).
-  add_host: ["openssl >=3.6.4", "asio"]
-  add_run: ["openssl >=3.6.4", "asio"]
+  add_host: ["asio"]
+  add_run: ["asio"]
 rmf_websocket:
   # asio isn't declared in package.xml; websocketpp's own headers need it directly (websocketpp/common/asio.hpp).
   add_host: ["asio"]
