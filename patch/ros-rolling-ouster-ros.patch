@@ -156,10 +156,10 @@ index 7867e3a..6994f3d 100644
  namespace sdk {
  namespace core {
 diff --git a/ouster-sdk/ouster_client/src/logging.cpp b/ouster-sdk/ouster_client/src/logging.cpp
-index bf0fc72..09f5077 100644
+index bf0fc72..eed53e6 100644
 --- a/ouster-sdk/ouster_client/src/logging.cpp
 +++ b/ouster-sdk/ouster_client/src/logging.cpp
-@@ -1,6 +1,6 @@
+@@ -1,10 +1,11 @@
  #include "ouster/impl/logging.h"
  
 -#include <spdlog/fmt/bundled/args.h>
@@ -167,6 +167,11 @@ index bf0fc72..09f5077 100644
  #include <spdlog/sinks/basic_file_sink.h>
  #include <spdlog/sinks/ringbuffer_sink.h>
  #include <spdlog/sinks/rotating_file_sink.h>
+ #include <spdlog/sinks/stdout_sinks.h>
++#include <spdlog/pattern_formatter.h>
+ #include <spdlog/spdlog.h>
+ 
+ #include <iostream>
 diff --git a/src/os_static_transforms_broadcaster.h b/src/os_static_transforms_broadcaster.h
 index 94d50eb..b1e05ce 100644
 --- a/src/os_static_transforms_broadcaster.h
