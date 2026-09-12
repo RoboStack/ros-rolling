@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Hand-written (not vinca-generated): not a ROS package, no package.xml.
+# Lives under extra_recipes/ to survive `rm -rf recipes` regeneration;
+# copied into ./recipes/ by pixi.toml's build-emscripten task.
+#
+# Adapted from emscripten-forge/recipes' own numpy recipe (recipes/
+# recipes_emscripten/numpy/), simplified to a single "numpy" output (no
+# numpy-tests package, no pytester/playwright test steps -- we only need
+# the runtime .so's for rclpy/JupyterLite, not numpy's own test suite) and
+# with build.sh patched to drop native wasm exception handling (see
+# build.sh's own comment for why: it's incompatible with the Asyncify-based
+# MAIN_MODULE the browser demos need for rmw_wait's cooperative polling).
+
+context:
+  version: 2.5.3
+
+package:
+  name: numpy
+  version: ${{ version }}
+
+source:
+  url: https://github.com/numpy/numpy/releases/download/v${{ version }}/numpy-${{ version }}.tar.gz
+  sha256: df2d5874ff183595a4ba404edd04f6bd9b5505c1d7708573f6a6c17489a67563
+  patches:
+    - patches/0001-Skip-wasm-unsupported-NumPy-tests.patch
+    - patches/0002-Match-flang-OpenBLAS-Fortran-ABI-on-Emscripten-wasm32.patch
+    - patches/0003-Silence-clang-warnings-on-Emscripten-wasm32.patch
+
+build:
+  script: build.sh
+  # Bump whenever content changes without a version bump, to avoid
+  # rattler-build package-cache collisions under an unchanged identity.
+  number: 100
+  files:
+    exclude:
+      - '**/*.pyi'
+      - '**/tests/**'
+      - '**/*.ini'
+      - '**/__pycache__/**'
+      - '**/*.pyc'
+      - '**/test_*.py'
+      - '**/_core/_multiarray_tests*'
+      - '**/_core/_umath_tests*'
+      - '**/_core/_rational_tests*'
+      - '**/_core/_struct_ufunc_tests*'
+      - '**/_core/_operand_flag_tests*'
+      - '**/_core/_reduction_loop_tests*'
+      - '**/_core/_simd.so'
+      - '**/_core/_simd.*.so'
+      - '**/_core/_simd.wasm'
+
+requirements:
+  build:
+    - ${{ compiler("c") }}
+    - cross-python_${{ target_platform }}
+    - cython >=3.0.6
+    - meson-python >=0.18.0
+    - ninja >=1.8.2
+    - pip >=24.0
+    - pkg-config
+    - python
+  host:
+    - openblas
+    - python
+  run:
+    - openblas
+    - python
+  run_exports:
+    - numpy >=2.2,<3
+
+about:
+  homepage: http://numpy.org/
+  license: BSD-3-Clause
+  license_file: LICENSE.txt
+  summary: The fundamental package for scientific computing with Python.
