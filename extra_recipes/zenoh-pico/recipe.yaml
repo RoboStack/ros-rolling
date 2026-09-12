@@ -6,14 +6,31 @@
 
 package:
   name: zenoh-pico
-  version: "1.4.0"
+  version: "1.7.0"
 
 source:
   git: https://github.com/eclipse-zenoh/zenoh-pico.git
-  # Pinned to rmw_zenoh_pico's tested SHA: it reaches into zenoh-pico's
-  # internal _z_ structs, which have broken compat across versions.
-  # Pinned by exact rev, not the "1.4.0" tag (tag resolution is unstable).
-  rev: d08c096944807a00853892ea45696152308350a2
+  # Bumped from 1.4.0 (d08c096944807a00853892ea45696152308350a2) to pick up
+  # upstream's "Fix matching" (#1069) rewrite of the write-filter/interest
+  # subsystem: the pinned 1.4.0 rev had a real bug where declaring a SECOND
+  # publisher (any second _z_add_interest registration) on one session broke
+  # write-filter matching for *both* publishers -- reproduced with a plain
+  # two-publisher rclc demo (no rmw_zenoh_pico/wasm/Asyncify involved): the
+  # first publisher published fine alone, but as soon as a second was added,
+  # neither publisher's messages ever reached a real zenohd router again,
+  # confirmed via REST+storage-plugin verification and by disabling router
+  # TX batching (ruled out) and adding a delay between declarations (ruled
+  # out) -- pointing at the client-side interest-matching logic itself.
+  # rmw_zenoh_pico's own C source only reaches into a handful of internal
+  # _z_ symbols (_z_keyexpr_t, _z_query_rc_t/_z_bytes_to_buf/
+  # _z_condvar_wait_until/_z_simple_rc_strong_count and friends), none of
+  # which live in the filtering.c/matching.c/interest.c files this rewrite
+  # touched -- confirmed by grepping its source for every _z_-prefixed
+  # identifier it references. All 4 of this project's own patches below
+  # still apply cleanly (verified with `git apply --check`) against 1.7.0,
+  # needing only a one-line context shift in ws-locator-valid-inverted-check.
+  # Pinned by exact rev, not the tag (tag resolution is unstable).
+  rev: 569e2fbccc7d25f2eb3bb362ef8e882eba02610e
   patches:
     - ws-locator-valid-inverted-check.patch
     - emscripten-longer-ws-open-wait.patch

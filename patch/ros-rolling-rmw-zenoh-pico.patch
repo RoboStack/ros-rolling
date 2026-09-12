@@ -129,6 +129,24 @@ index 2695094..fca09f1 100644
  
    // This can be call before rmw_init()
    ZenohPicoTransportParams *params = zenoh_pico_generate_param(NULL);
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
+index 1234567..7654321 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
+@@ -54,6 +54,13 @@
+ #include <zenoh-pico/collections/string.h>
+ #include <zenoh-pico/system/common/platform.h>
+ #include <zenoh-pico/system/platform.h>
++// zenoh-pico >=1.7.0 split _Z_CHECK_SYS_ERR/_z_report_system_error out into
++// their own header (used by zenoh_pico_condition.c's z_condvar_init_with_attr).
++// Must be included here, before rmw_zenoh_pico_logging.h below redefines
++// _Z_ERROR with a different (func-name-first) calling convention -- the
++// static inline _z_report_system_error() body is compiled wherever this
++// header is first seen, so include order determines which _Z_ERROR it gets.
++#include <zenoh-pico/system/common/system_error.h>
+ #include <zenoh-pico/utils/result.h>
+
+ // debug print
 diff --git a/rmw_zenoh_pico/src/rmw_logging.c b/rmw_zenoh_pico/src/rmw_logging.c
 index 92604b2..32d2f67 100644
 --- a/rmw_zenoh_pico/src/rmw_logging.c
@@ -147,12 +165,12 @@ index 0101c23..6dae0db 100644
 --- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
 +++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
 @@ -16,7 +16,7 @@
- 
+
  #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
- 
+
 -#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
 +#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
- 
+
  z_result_t z_condvar_init_with_attr(z_owned_condvar_t *cv, pthread_condattr_t *attr){
    _Z_CHECK_SYS_ERR(pthread_cond_init(&cv->_val, attr));
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c

@@ -1335,7 +1335,7 @@ zbar:
 zenohpico:
   # emscripten-forge-4x also publishes its own newer, API-incompatible
   # zenoh-pico; pin the version to force resolution to our own build.
-  robostack: ["zenoh-pico ==1.4.0"]
+  robostack: ["zenoh-pico ==1.7.0"]
 zlib:
   robostack: [zlib]
 zziplib:
