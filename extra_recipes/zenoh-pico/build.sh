@@ -13,29 +13,27 @@ mkdir -p build
 cd build
 
 if [[ $target_platform =~ emscripten.* ]]; then
-  # No real pthreads (see vinca's build_ament_cmake.sh.in for the full
-  # rationale) -- Z_FEATURE_MULTI_THREAD=0 puts zenoh-pico into its
-  # already-existing single-threaded/no-RTOS mode (the same mode it uses
-  # for e.g. WITH_ARDUINO_OPENCR), where the application pumps the
-  # session manually via zp_read()/zp_send_keep_alive() instead of a
-  # background read thread signalling a condvar. Asyncify (below) is what
-  # lets that manual pump's blocking-style wait loop cooperatively yield
-  # to the browser event loop instead of needing a real OS thread.
+  # No real pthreads, and (as of 2026-09-13) no Asyncify either -- see
+  # vinca's build_ament_cmake.sh.in for the full rationale (Asyncify +
+  # runtime dlopen() of a SIDE_MODULE hits a real, unresolved
+  # Emscripten/Binaryen limitation). Z_FEATURE_MULTI_THREAD=0 puts
+  # zenoh-pico into its already-existing single-threaded/no-RTOS mode
+  # (the same mode it uses for e.g. WITH_ARDUINO_OPENCR), where the
+  # application pumps the session manually via
+  # zp_read()/zp_send_keep_alive() instead of a background read thread
+  # signalling a condvar -- this project's own rmw_zenoh_pico patch calls
+  # these in a genuinely non-blocking, single-poll fashion whenever the
+  # requested rmw_wait timeout is exactly zero, never actually needing to
+  # cooperatively sleep at all (see that patch, and
+  # ros-rolling-emscripten-zenoh's AGENTS.md's "MAJOR PIVOT" section).
   #
   # TARGET_SUPPORTS_SHARED_LIBS still needs the explicit override:
   # Emscripten.cmake's own default (TARGET_SUPPORTS_SHARED_LIBS=FALSE)
   # silently downgrades BUILD_SHARED_LIBS=ON to a static libzenohpico.a,
   # unrelated to threading.
-  #
-  # The toolchain env's own activation script injects -fwasm-exceptions
-  # into every em++/emcc call via EMCC_CFLAGS, which is incompatible with
-  # Asyncify (crashes binaryen's Asyncify pass on any object using wasm EH
-  # instructions). zenoh-pico is plain C with no exceptions, so this is
-  # mostly precautionary -- see build_ament_cmake.sh.in's fuller comment.
-  export EMCC_CFLAGS="${EM_FORGE_CFLAGS_BASE:-}"
   cat > "$SRC_DIR/__vinca_shared_lib_patch.cmake" <<'EOF'
 set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
-set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s ASSERTIONS=1 -s SIDE_MODULE=1 -sWASM_BIGINT -s ALLOW_MEMORY_GROWTH=1 -sASYNCIFY -s ASYNCIFY_STACK_SIZE=24576 ")
+set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s ASSERTIONS=1 -s SIDE_MODULE=1 -sWASM_BIGINT -s ALLOW_MEMORY_GROWTH=1 ")
 EOF
 
   emcmake cmake .. \
@@ -53,8 +51,7 @@ EOF
     -DZ_FEATURE_LINK_UDP_MULTICAST=0 \
     -DZ_FEATURE_LINK_UDP_UNICAST=0 \
     -DZ_FEATURE_SCOUTING_UDP=0 \
-    -DCMAKE_EXE_LINKER_FLAGS="-sALLOW_MEMORY_GROWTH=1 -sASYNCIFY -s ASYNCIFY_STACK_SIZE=24576" \
-    -DCMAKE_SHARED_LINKER_FLAGS="-sASYNCIFY -s ASYNCIFY_STACK_SIZE=24576" \
+    -DCMAKE_EXE_LINKER_FLAGS="-sALLOW_MEMORY_GROWTH=1" \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_TESTING=OFF
 else

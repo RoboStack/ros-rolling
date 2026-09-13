@@ -45,10 +45,14 @@ git = "*"
 # 2026-09-10. Real pthreads was tried (needing a real OS thread for
 # libc++'s condition_variable timed-wait to wake up) and reverted --
 # Asyncify instead, see build_ament_cmake.sh.in's own comment for why.
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "31fbd83e07cf14292c2aaf8f3e8db8ddd62ec852" }
-# Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
-# (and regenerate the pixi.lock) once you push the modified commit to the repo
-# vinca = { path = "../vinca", editable = true }
+# Re-pinned 2026-09-13 to Tobias-Fischer/vinca@f6c8903, which drops
+# Asyncify project-wide from build_ament_cmake.sh.in (see that commit's
+# message / build_ament_cmake.sh.in's own comments for the full
+# rationale: Asyncify + runtime dlopen() of a SIDE_MODULE is a confirmed,
+# unresolved upstream Emscripten/Binaryen limitation) and fixes an
+# EMCC_CFLAGS override that was clobbering the toolchain's own
+# -fwasm-exceptions default instead of appending to it.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "f6c8903111918141129c9ef8d90f2ea482f26d6c" }
 
 [tasks]
 generate-recipes = { cmd = "vinca -m", depends-on = ["remove-recipes"] }

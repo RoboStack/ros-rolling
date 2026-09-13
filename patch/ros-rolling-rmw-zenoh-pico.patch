@@ -1,8 +1,8 @@
 diff --git a/rmw_zenoh_pico/CMakeLists.txt b/rmw_zenoh_pico/CMakeLists.txt
-index 1038b63..3c6690f 100644
+index 1038b63..0d30f93 100644
 --- a/rmw_zenoh_pico/CMakeLists.txt
 +++ b/rmw_zenoh_pico/CMakeLists.txt
-@@ -22,13 +22,51 @@ project(rmw_zenoh_pico
+@@ -22,13 +22,75 @@ project(rmw_zenoh_pico
      C
  )
  
@@ -26,6 +26,30 @@ index 1038b63..3c6690f 100644
 +      endif()
 +      if(DEFINED ${_dep}_LIBRARIES)
 +        target_link_libraries(${_target} ${${_dep}_LIBRARIES})
++      elseif(TARGET ${_dep}::${_dep}_shared)
++        # Some modern, target-only packages (no legacy ${pkg}_LIBRARIES
++        # variable at all -- confirmed for zenohpico's own Config.cmake,
++        # which only exports the zenohpico::zenohpico_shared imported
++        # target) fall through the branch above with NOTHING linked at
++        # all. On a normal platform this is silently wrong but harmless
++        # (the symbols get pulled in some other way, or the link just
++        # fails loudly); on this project's Emscripten SIDE_MODULE builds
++        # it's silently WRONG in a much worse way: wasm-ld still resolves
++        # the actual symbol references at THIS package's own build time
++        # (this project's dynamic-linking side modules are lazy about
++        # unresolved externals by design), so the build succeeds with
++        # zero errors or warnings -- but the resulting .so's
++        # own dylink metadata never records the dependency as NEEDED,
++        # since target_link_libraries() was never actually called for it.
++        # At runtime, Emscripten's dynamic linker then has no reason to
++        # ensure that dependency is loaded before this one, and symbol
++        # resolution becomes pure luck-of-load-order instead of a real
++        # guarantee -- confirmed via a real crash: `rclpy.init()` failing
++        # with "Dynamic linking error: cannot resolve symbol z_malloc"
++        # (zenohpico's own allocator, needed by rmw_zenoh_pico.so) the
++        # first time this project's own JupyterLite rclpy integration
++        # actually got far enough to construct a real zenoh session.
++        target_link_libraries(${_target} ${_dep}::${_dep}_shared)
 +      endif()
 +      if(DEFINED ${_dep}_DEFINITIONS)
 +        target_compile_definitions(${_target} PUBLIC ${${_dep}_DEFINITIONS})
@@ -55,7 +79,7 @@ index 1038b63..3c6690f 100644
  # Build options
  option(BUILD_DOCUMENTATION              "Use doxygen to create product documentation" OFF)
  
-@@ -147,6 +185,22 @@ target_link_libraries(${PROJECT_NAME}
+@@ -147,6 +209,47 @@ target_link_libraries(${PROJECT_NAME}
    microcdr
  )
  
@@ -63,15 +87,65 @@ index 1038b63..3c6690f 100644
 +  # rmw_zenoh_pico_set_unicast() (and friends, declared in
 +  # rmw_zenoh_pico_options.h) aren't part of the standard rmw.h ABI surface,
 +  # so nothing inside this library or a normal ROS 2 caller references them
-+  # -- unlike the standard rmw_* functions (looked up by rmw_implementation
-+  # via dlopen+dlsym, so implicitly kept), wasm-ld's side-module build drops
-+  # anything with zero references from the dylink export table. A wasm32
-+  # app that wants to override the compiled-in zenoh connect address at
-+  # runtime (see ros2-emscripten-zenoh-demo) needs these actually exported.
++  # -- unlike most of the standard rmw_* functions (looked up by
++  # rmw_implementation via dlopen+dlsym, so implicitly kept), wasm-ld's
++  # side-module build drops anything with zero references from the dylink
++  # export table. A wasm32 app that wants to override the compiled-in
++  # zenoh connect address at runtime (see ros2-emscripten-zenoh-demo)
++  # needs these actually exported.
++  #
++  # rmw_identifier.c's own three functions (rmw_get_implementation_identifier,
++  # rmw_get_serialization_format, rmw_zenoh_pico_typesupport_c) turned out
++  # to need the exact same treatment: confirmed via `wasm-objdump -x` that
++  # this entire translation unit -- not just one symbol -- was absent from
++  # the built .so's export table, because (unlike rmw_create_node and most
++  # other standard rmw_* entry points, which stay reachable via some other
++  # internal reference chain in this same link unit) NOTHING in this
++  # module references any of these three, so wasm-ld's dead-code
++  # elimination drops the whole object. This was likely always the case
++  # (nothing about dropping this project's Asyncify usage touched this
++  # file), just never observed before: `import rclpy` never got far
++  # enough to actually dlsym() rmw_get_implementation_identifier() until
++  # the unrelated Asyncify+dlopen trap earlier in the same call chain was
++  # fixed (see ros-rolling-emscripten-zenoh/AGENTS.md's "MAJOR PIVOT"
++  # section). Without this export, rclpy's own dlopen() of
++  # _rclpy_pybind11.so fails with "Dynamic linking error: cannot resolve
++  # symbol rmw_get_implementation_identifier" -- rmw_implementation's own
++  # dispatcher calls this immediately after loading the selected RMW
++  # backend, to confirm the loaded library actually identifies as the
++  # implementation that was asked for.
 +  target_link_options(${PROJECT_NAME} PRIVATE
 +    "-Wl,--export=rmw_zenoh_pico_set_unicast"
 +    "-Wl,--export=rmw_zenoh_pico_set_mode"
 +    "-Wl,--export=rmw_zenoh_pico_get_mode"
++    "-Wl,--export=rmw_get_implementation_identifier"
++    "-Wl,--export=rmw_get_serialization_format"
++    "-Wl,--export=rmw_zenoh_pico_typesupport_c"
++  )
++endif()
++
+ # Type support lock-up mechanism
+ find_package(rosidl_typesupport_microxrcedds_c)
+ if(rosidl_typesupport_microxrcedds_c_FOUND)
++  # elimination drops the whole object. This was likely always the case
++  # (nothing about dropping this project's Asyncify usage touched this
++  # file), just never observed before: `import rclpy` never got far
++  # enough to actually dlsym() rmw_get_implementation_identifier() until
++  # the unrelated Asyncify+dlopen trap earlier in the same call chain was
++  # fixed (see ros-rolling-emscripten-zenoh/AGENTS.md's "MAJOR PIVOT"
++  # section). Without this export, rclpy's own dlopen() of
++  # _rclpy_pybind11.so fails with "Dynamic linking error: cannot resolve
++  # symbol rmw_get_implementation_identifier" -- rmw_implementation's own
++  # dispatcher calls this immediately after loading the selected RMW
++  # backend, to confirm the loaded library actually identifies as the
++  # implementation that was asked for.
++  target_link_options(${PROJECT_NAME} PRIVATE
++    "-Wl,--export=rmw_zenoh_pico_set_unicast"
++    "-Wl,--export=rmw_zenoh_pico_set_mode"
++    "-Wl,--export=rmw_zenoh_pico_get_mode"
++    "-Wl,--export=rmw_get_implementation_identifier"
++    "-Wl,--export=rmw_get_serialization_format"
++    "-Wl,--export=rmw_zenoh_pico_typesupport_c"
 +  )
 +endif()
 +
@@ -310,10 +384,38 @@ index 1302caa..0aecf7a 100644
  
    bool wait_result = false;
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
-index 1111111..2222222 100644
+index f54ac92..0551e04 100644
 --- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
 +++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
-@@ -94,12 +94,19 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
+@@ -89,11 +89,33 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
+ 
+   RMW_ZENOH_LOG_DEBUG("Opening session...");
+ 
+-  if(_Z_IS_ERR(z_open(&session->session, z_move(session->config), NULL))){
+-    RMW_ZENOH_LOG_ERROR("Error setting up zenoh session");
++  // NOTE (no-Asyncify): z_open()'s own zenoh session/link-open handshake
++  // can genuinely need several attempts to complete -- each recv()/send()
++  // in zenoh-pico's emscripten link layer now makes exactly one
++  // non-blocking attempt per call instead of internally sleeping-and-
++  // retrying (see zenoh-pico's own emscripten-nonblocking-io.patch: there
++  // is no way to cooperatively yield to the browser's event loop from
++  // inside a single synchronous call without Asyncify, which this whole
++  // project deliberately doesn't use). session_connect() is therefore
++  // expected to be called repeatedly (from a Python-side `await
++  // asyncio.sleep()` retry loop, driven through rclpy.init()) until it
++  // stops returning RMW_RET_ERROR.
++  //
++  // z_open() takes ownership of (z_move()s) whatever config pointer it's
++  // given, whether or not it ultimately succeeds -- so retrying with
++  // session->config itself (as the original code did) would hand z_open()
++  // an already-consumed, invalid config on the second and every later
++  // attempt. Clone a fresh, disposable copy for each attempt instead: this
++  // keeps the ORIGINAL session->config (set up once in
++  // zenoh_pico_generate_session()) alive and valid across every retry.
++  z_owned_config_t attempt_config;
++  z_config_clone(&attempt_config, z_loan(session->config));
++  if(_Z_IS_ERR(z_open(&session->session, z_move(attempt_config), NULL))){
++    RMW_ZENOH_LOG_DEBUG("zenoh session not yet established, will retry");
      return RMW_RET_ERROR;
    }
  
@@ -321,7 +423,7 @@ index 1111111..2222222 100644
    if (_Z_IS_ERR(zp_start_read_task(z_loan_mut(session->session), NULL))
        || _Z_IS_ERR(zp_start_lease_task(z_loan_mut(session->session), NULL))) {
      RMW_ZENOH_LOG_ERROR("Unable to start read and lease tasks");
-     z_drop(z_move(session->config));
+@@ -101,6 +123,14 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
      z_drop(z_move(session->session));
      return RMW_RET_ERROR;
    }
@@ -335,3 +437,4 @@ index 1111111..2222222 100644
 +#endif
  
    session->enable_session = true;
+ 

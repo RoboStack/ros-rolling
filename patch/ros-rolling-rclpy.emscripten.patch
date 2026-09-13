@@ -23,4 +23,69 @@ index 4c81ea76..93e1f613 100644
 +if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT APPLE AND NOT EMSCRIPTEN)
    target_link_libraries(_rclpy_pybind11 PRIVATE atomic)
  endif()
+
+diff --git a/src/rclpy/signal_handler.cpp b/src/rclpy/signal_handler.cpp
+index bb72763..6c13dad 100644
+--- a/src/rclpy/signal_handler.cpp
++++ b/src/rclpy/signal_handler.cpp
+@@ -119,6 +119,27 @@ wait_for_signal()
+ void
+ setup_deferred_signal_handler()
+ {
++#if defined(__EMSCRIPTEN__)
++  // This project's wasm32/emscripten target has no real OS-level signal
++  // delivery (no SIGINT/SIGTERM ever reaches a wasm binary running in a
++  // JupyterLite kernel), and -- more importantly -- no real pthreads
++  // support (this whole build deliberately avoids real threads project-wide
++  // in favor of Asyncify-based cooperative polling, see
++  // ros-rolling-emscripten-zenoh/AGENTS.md's Asyncify migration section).
++  // Unconditionally spawning `g_deferred_signal_handling_thread` below
++  // (a real std::thread, regardless of `signal_handler_options` -- that
++  // value only controls which signals get hooked to it afterward, in
++  // `install_signal_handlers()`, never whether this thread itself gets
++  // created) throws `std::system_error: thread constructor failed:
++  // Resource temporarily unavailable` on this target. Make both this
++  // function and its `teardown_deferred_signal_handler()` counterpart
++  // complete no-ops: `g_signal_handler_installed` is simply never set to
++  // true here, so `teardown_deferred_signal_handler()`'s own
++  // `if (!g_signal_handler_installed.exchange(false)) { return; }` guard
++  // takes the early-return path there too, safely -- neither the
++  // semaphore nor the thread are ever touched in either direction.
++  return;
++#else
+   if (g_signal_handler_installed.exchange(true)) {
+     return;
+   }
+@@ -153,6 +174,7 @@ setup_deferred_signal_handler()
+         }
+       }
+     });
++#endif  // defined(__EMSCRIPTEN__)
+ }
+
+ void
+ 
+diff --git a/rclpy/node.py b/rclpy/node.py
+index ce13f2d8..36af1fd9 100644
+--- a/rclpy/node.py
++++ b/rclpy/node.py
+@@ -206,7 +206,9 @@ class BaseNode(ABC):
+ 
+         self._parameter_event_publisher: Optional[BasePublisher[ParameterEvent]] = \
+             self.create_publisher(ParameterEvent, '/parameter_events',
+-                                  qos_profile_parameter_events)
++                                  qos_profile_parameter_events,
++                                  event_callbacks=PublisherEventCallbacks(
++                                      use_default_callbacks=False))
+ 
+         with self.handle:
+             self._parameter_overrides = self.handle.get_parameters(Parameter)
+@@ -236,7 +238,7 @@ class BaseNode(ABC):
+         if enable_logger_service:
+             self._logger_service = LoggingService(self)
+ 
+-        self._type_description_service = TypeDescriptionService(self)
++        self._type_description_service = None
+ 
+         self._context.track_node(self)
  

@@ -16,8 +16,24 @@ recipes_only_patch/
 # generated output -- caught this one myself before it repeated the
 # extra_recipes mistake above (2026-09-10).
 !/sync_native_bootstrap_mirror.sh
+# Same deal again: browser_demo/'s own hand-written build*.sh scripts are
+# real, committed source (not generated output) too.
+!browser_demo/*.sh
 .DS_Store
 # pixi environments
 .pixi
 *.egg-info
 output/
+# Throwaway local test/build artifacts -- large binaries, extracted
+# packages, build logs, isolated test builds. Never committed; see
+# AGENTS.md for what each holds and how to regenerate it.
+scratch/
+scratch_test_recipes/
+browser_demo/out/
+# A hand-flattened local scratch extraction of a conda environment used
+# for manual browser_demo testing (see its own README) -- a derived,
+# regeneratable build artifact, not source; never committed.
+demo_env/
+# Local zenohd router binary + plugins, downloaded/extracted for manual
+# testing against a real router -- never committed.
+zenoh_router/

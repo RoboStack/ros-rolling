@@ -1,0 +1,36 @@
+diff --git a/src/transport/common/rx.c b/src/transport/common/rx.c
+index 59d2dfbb..9feb12c3 100644
+--- a/src/transport/common/rx.c
++++ b/src/transport/common/rx.c
+@@ -15,6 +15,7 @@
+ #include "zenoh-pico/transport/common/rx.h"
+ 
+ #include <stddef.h>
++#include <stdio.h>
+ 
+ #include "zenoh-pico/protocol/codec/transport.h"
+ #include "zenoh-pico/transport/multicast/rx.h"
+@@ -76,11 +77,23 @@ z_result_t _z_link_recv_t_msg(_z_transport_message_t *t_msg, const _z_link_t *zl
+             break;
+     }
+     if (ret == _Z_RES_OK) {
++        printf("[RX_DEBUG] read stage OK, zbuf len=%zu, bytes:", _z_zbuf_len(&zbf));
++        {
++            size_t dbg_len = _z_zbuf_len(&zbf);
++            const uint8_t *dbg_start = _z_zbuf_start(&zbf);
++            for (size_t i = 0; i < dbg_len && i < 32; i++) {
++                printf(" %02x", dbg_start[i]);
++            }
++        }
++        printf("\n");
+         _z_transport_message_t l_t_msg;
+         ret = _z_transport_message_decode(&l_t_msg, &zbf);
++        printf("[RX_DEBUG] decode ret=%d\n", (int)ret);
+         if (ret == _Z_RES_OK) {
+             _z_t_msg_copy(t_msg, &l_t_msg);
+         }
++    } else {
++        printf("[RX_DEBUG] read stage failed, ret=%d\n", (int)ret);
+     }
+     _z_zbuf_clear(&zbf);
+ 

@@ -33,7 +33,43 @@ source:
   rev: 569e2fbccc7d25f2eb3bb362ef8e882eba02610e
   patches:
     - ws-locator-valid-inverted-check.patch
-    - emscripten-longer-ws-open-wait.patch
+    # REPLACES the old "emscripten-longer-ws-open-wait.patch" (2026-09-13):
+    # that patch bumped a z_sleep_ms() delay from 100ms to 2000ms to "fix"
+    # the WS transport's connect-before-actually-open race. It only ever
+    # worked because Asyncify was enabled at the time -- z_sleep_ms() is
+    # emscripten_sleep(), an Asyncify-only primitive, and this project
+    # dropped Asyncify project-wide (see AGENTS.md's "MAJOR PIVOT"). Without
+    # it, that delay was silently a no-op, and _z_open_ws/_z_read_ws/
+    # _z_send_ws's internal "retry with sleep until timeout" loops just
+    # busy-spun for the whole timeout with zero chance of ever observing
+    # progress -- a synchronous C call cannot make network progress without
+    # returning control to the browser's event loop, no matter how it waits
+    # internally. This patch instead makes all three genuinely
+    # non-blocking (exactly one attempt per call, return immediately) and
+    # makes z_sleep_us/z_sleep_ms real no-ops -- the "wait a bit, then
+    # retry" cadence now lives entirely at the caller's level (a
+    # Python-driven `await asyncio.sleep()` loop), the same pattern already
+    # proven for rmw_wait()'s zero-timeout fast path. See
+    # rmw_zenoh_pico's own patch (session_connect_poll) for the resumable
+    # session-open state machine that drives this.
+    - emscripten-nonblocking-io.patch
+    - emscripten-nonblocking-sleep.patch
+    # Makes the CLIENT-mode Init/Open handshake in
+    # _z_unicast_handshake_open (transport/unicast/transport.c) resumable
+    # across separate top-level calls instead of a single blocking
+    # sequence -- required because a naive "just retry the whole thing"
+    # approach (tried first) resends InitSyn on a connection zenohd is
+    # already past that stage on (confirmed via zenohd's own debug log:
+    # "Received invalid message instead of an OpenSyn ... InitSyn(...)"),
+    # since emscripten-nonblocking-io.patch's persistent-fd cache means a
+    # retry really does reuse the same underlying socket, not a fresh one.
+    - emscripten-resumable-handshake.patch
+    # TEMPORARY diagnostic tracing (TODO: remove) -- dumps raw received
+    # bytes + decode result on every _z_link_recv_t_msg call, added to
+    # root-cause a _Z_ERR_MESSAGE_DESERIALIZATION_FAILED (-119) seen on
+    # every single resumable-handshake retry (not the expected -99
+    # "nothing available yet").
+    - emscripten-rx-debug.patch
     # Z_FEATURE_MULTI_THREAD=0 (below) leaves platform.c's mutex/condvar
     # bodies undefined -- their types/declarations are always present (see
     # platform.h's "dummy types for correct macros work"), but nothing
@@ -52,7 +88,33 @@ build:
   script: build.sh
   # Bump whenever content changes without a version bump, to avoid
   # rattler-build package-cache collisions under an unchanged identity.
-  number: 5
+  # 5->6: emscripten-nonblocking-io/-sleep patches replace
+  # emscripten-longer-ws-open-wait (see patches list comment above).
+  # 6->7: emscripten-nonblocking-io.patch extended with a persistent-fd
+  # cache in _z_open_ws()/_z_close_ws() -- the underlying WebSocket fd now
+  # survives a failed/incomplete handshake attempt (instead of being
+  # closed and reopened fresh every retry), so a later attempt can resume
+  # progress on the SAME connection. See rmw_zenoh_pico's session_connect()
+  # patch (build 28) for the caller-side half of this.
+  # 7->8: added emscripten-resumable-handshake.patch (see patches list
+  # comment above) -- makes the client handshake itself phase-aware and
+  # resumable, not just the underlying socket persistent.
+  # 8->9: temporary printf-based tracing added to
+  # emscripten-resumable-handshake.patch to diagnose why a duplicate
+  # InitSyn was still observed after the build-8 fix (TODO: remove once
+  # root-caused).
+  # 9->10: added emscripten-rx-debug.patch, more diagnostic tracing.
+  # 10->11: added raw recv()/errno tracing to _z_read_ws in
+  # emscripten-nonblocking-io.patch.
+  # 11->12: root-caused via the raw recv() tracing -- WS links use
+  # Z_LINK_CAP_FLOW_DATAGRAM, whose read path only treats SIZE_MAX as a
+  # hard failure; a clean "nothing yet" (0 bytes) falls through to
+  # decode()ing an empty buffer, producing
+  # _Z_ERR_MESSAGE_DESERIALIZATION_FAILED (-119), not
+  # _Z_ERR_TRANSPORT_RX_FAILED (-99) as emscripten-resumable-handshake.patch
+  # originally assumed. Fixed: -119 is now ALSO treated as "not ready yet,
+  # keep waiting" in the resumable handshake.
+  number: 12
 
 requirements:
   build:

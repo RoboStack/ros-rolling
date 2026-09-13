@@ -1,0 +1,224 @@
+diff --git a/src/transport/unicast/transport.c b/src/transport/unicast/transport.c
+index 85ce3d44..b3cd83d2 100644
+--- a/src/transport/unicast/transport.c
++++ b/src/transport/unicast/transport.c
+@@ -14,6 +14,7 @@
+ #include "zenoh-pico/transport/common/transport.h"
+ 
+ #include <stdbool.h>
++#include <stdio.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+@@ -101,6 +102,199 @@ z_result_t _z_unicast_transport_create(_z_transport_t *zt, _z_link_t *zl,
+     return ret;
+ }
+ 
++#ifdef __EMSCRIPTEN__
++// NOTE (no-Asyncify resumable client handshake): without Asyncify there is
++// no way to cooperatively yield to the browser's event loop from inside a
++// single synchronous call (see zenoh-pico's own emscripten-nonblocking-io/
++// -sleep patches, and rmw_zenoh_pico's session_connect() patch, for the
++// full rationale) -- so the client-side Init/Open handshake below
++// (_z_unicast_handshake_open, CLIENT mode only) needs to survive being
++// entered, exited, and re-entered across SEPARATE top-level calls (each
++// one driven by a fresh Python-level `await asyncio.sleep()` retry), never
++// resending a message that a prior call already sent. A naive "just call
++// the whole thing again" retry was tried first and empirically confirmed
++// broken via zenohd's own debug log: it logs "Received invalid message
++// instead of an OpenSyn ... InitSyn(...)" when a retry re-sends InitSyn
++// on a connection zenohd is already past that stage on -- the persistent
++// per-fd connection (see network.c's _z_ws_persistent_fd) means the SAME
++// underlying socket really is reused, so the server sees this as a
++// genuine protocol violation, not two separate sessions.
++//
++// This tracks handshake progress in a single static slot (this project
++// only ever has one zenoh session in flight at a time) and, on each call,
++// does at most the ONE next non-blocking step: send whatever hasn't been
++// sent yet, then attempt exactly one non-blocking receive for whatever
++// response is next expected.
++//
++// WS links use Z_LINK_CAP_FLOW_DATAGRAM (see _z_link_recv_t_msg in
++// transport/common/rx.c): its read path only treats a raw SIZE_MAX return
++// from _z_read_ws as a hard failure -- a clean "nothing available yet"
++// (0 bytes) is NOT special-cased at all, so it falls through to
++// attempting to decode an empty buffer, which
++// _z_transport_message_decode() naturally rejects with
++// _Z_ERR_MESSAGE_DESERIALIZATION_FAILED (-119). Confirmed via temporary
++// raw byte-level tracing: a "no data yet" attempt shows raw recv()==-1
++// (errno=ENXIO) but still reaches decode() with a genuinely empty (0-byte)
++// zbuf, producing -119 -- NOT the _Z_ERR_TRANSPORT_RX_FAILED (-99) this
++// code originally (incorrectly) assumed was the only "try again" signal.
++// So: -119 is ALSO treated as "still in progress, call again later" here,
++// alongside -99 -- safe for this project's usage because a WS "message"
++// is always delivered as one complete, atomic unit (never a partial/
++// garbled fragment) against a trusted local zenohd, so a non-empty read
++// that still fails to decode would be a genuine, different bug, not
++// something this fast path is being asked to paper over. Any OTHER error
++// is treated as a real protocol failure and resets the phase so a
++// subsequent retry starts a fresh handshake attempt.
++typedef enum {
++    _Z_HS_PHASE_NOT_STARTED = 0,
++    _Z_HS_PHASE_INIT_SENT,
++    _Z_HS_PHASE_OPEN_SENT,
++} _z_hs_phase_t;
++
++typedef struct {
++    _z_hs_phase_t phase;
++    _z_transport_message_t ism;
++    _z_transport_unicast_establish_param_t param;
++} _z_hs_state_t;
++
++static _z_hs_state_t _z_hs_state = {0};
++
++static z_result_t _z_unicast_handshake_open_client_resumable(_z_transport_unicast_establish_param_t *param,
++                                                              const _z_link_t *zl, const _z_id_t *local_zid,
++                                                              _z_sys_net_socket_t *socket) {
++    z_result_t ret = _Z_RES_OK;
++    printf("[HS_DEBUG] entering resumable handshake, phase=%d\n", (int)_z_hs_state.phase);
++
++    if (_z_hs_state.phase == _Z_HS_PHASE_NOT_STARTED) {
++        _z_hs_state.ism = _z_t_msg_make_init_syn(Z_WHATAMI_CLIENT, *local_zid);
++        _z_hs_state.param._seq_num_res = _z_hs_state.ism._body._init._seq_num_res;
++        _z_hs_state.param._req_id_res = _z_hs_state.ism._body._init._req_id_res;
++        _z_hs_state.param._batch_size = _z_hs_state.ism._body._init._batch_size;
++
++        _Z_DEBUG("Sending Z_INIT(Syn) [resumable]");
++        ret = _z_link_send_t_msg(zl, &_z_hs_state.ism, socket);
++        if (ret != _Z_RES_OK) {
++            _z_t_msg_clear(&_z_hs_state.ism);
++            return ret;
++        }
++        _z_hs_state.phase = _Z_HS_PHASE_INIT_SENT;
++    }
++
++    if (_z_hs_state.phase == _Z_HS_PHASE_INIT_SENT) {
++        _z_transport_message_t iam = {0};
++        ret = _z_link_recv_t_msg(&iam, zl, socket);
++        if (ret != _Z_RES_OK) {
++            printf("[HS_DEBUG] InitAck recv failed, ret=%d\n", (int)ret);
++            if (ret == _Z_ERR_TRANSPORT_RX_FAILED || ret == _Z_ERR_MESSAGE_DESERIALIZATION_FAILED) {
++                return ret;  // Nothing available yet -- keep waiting, don't resend.
++            }
++            _z_t_msg_clear(&_z_hs_state.ism);
++            _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;
++            return ret;
++        }
++        if ((_Z_MID(iam._header) != _Z_MID_T_INIT) || !_Z_HAS_FLAG(iam._header, _Z_FLAG_T_INIT_A)) {
++            _z_t_msg_clear(&iam);
++            _z_t_msg_clear(&_z_hs_state.ism);
++            _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;
++            _Z_ERROR_RETURN(_Z_ERR_MESSAGE_UNEXPECTED);
++        }
++        _z_hs_state.param._remote_whatami = iam._body._init._whatami;
++        _Z_DEBUG("Received Z_INIT(Ack) [resumable]");
++
++        if (iam._body._init._seq_num_res <= _z_hs_state.param._seq_num_res) {
++            _z_hs_state.param._seq_num_res = iam._body._init._seq_num_res;
++        } else {
++            _Z_ERROR_LOG(_Z_ERR_TRANSPORT_OPEN_SN_RESOLUTION);
++            ret = _Z_ERR_TRANSPORT_OPEN_SN_RESOLUTION;
++        }
++        if (iam._body._init._req_id_res <= _z_hs_state.param._req_id_res) {
++            _z_hs_state.param._req_id_res = iam._body._init._req_id_res;
++        } else {
++            _Z_ERROR_LOG(_Z_ERR_TRANSPORT_OPEN_SN_RESOLUTION);
++            ret = _Z_ERR_TRANSPORT_OPEN_SN_RESOLUTION;
++        }
++        if (iam._body._init._batch_size <= _z_hs_state.param._batch_size) {
++            _z_hs_state.param._batch_size = iam._body._init._batch_size;
++        } else {
++            _Z_ERROR_LOG(_Z_ERR_TRANSPORT_OPEN_SN_RESOLUTION);
++            ret = _Z_ERR_TRANSPORT_OPEN_SN_RESOLUTION;
++        }
++#if Z_FEATURE_FRAGMENTATION == 1
++        if (iam._body._init._patch <= _z_hs_state.ism._body._init._patch) {
++            _z_hs_state.param._patch = iam._body._init._patch;
++        } else {
++            _Z_ERROR_LOG(_Z_ERR_GENERIC);
++            ret = _Z_ERR_GENERIC;
++        }
++#endif
++        if (ret != _Z_RES_OK) {
++            _z_t_msg_clear(&iam);
++            _z_t_msg_clear(&_z_hs_state.ism);
++            _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;
++            return ret;
++        }
++        _z_hs_state.param._key_id_res = (uint8_t)(0x08 << _z_hs_state.param._key_id_res);
++        _z_hs_state.param._req_id_res = (uint8_t)(0x08 << _z_hs_state.param._req_id_res);
++
++        z_random_fill(&_z_hs_state.param._initial_sn_tx, sizeof(_z_hs_state.param._initial_sn_tx));
++        _z_hs_state.param._initial_sn_tx =
++            _z_hs_state.param._initial_sn_tx & !_z_sn_modulo_mask(_z_hs_state.param._seq_num_res);
++
++        _z_hs_state.param._remote_zid = iam._body._init._zid;
++
++        _z_zint_t lease = Z_TRANSPORT_LEASE;
++        _z_zint_t initial_sn = _z_hs_state.param._initial_sn_tx;
++        _z_slice_t cookie = _z_slice_null();
++        if (!_z_slice_is_empty(&iam._body._init._cookie)) {
++            _z_slice_copy(&cookie, &iam._body._init._cookie);
++        }
++        _z_transport_message_t osm = _z_t_msg_make_open_syn(lease, initial_sn, cookie);
++        _z_t_msg_clear(&iam);
++        _z_t_msg_clear(&_z_hs_state.ism);
++
++        _Z_DEBUG("Sending Z_OPEN(Syn) [resumable]");
++        ret = _z_link_send_t_msg(zl, &osm, socket);
++        _z_t_msg_clear(&osm);
++        if (ret != _Z_RES_OK) {
++            _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;
++            return ret;
++        }
++        _z_hs_state.phase = _Z_HS_PHASE_OPEN_SENT;
++    }
++
++    if (_z_hs_state.phase == _Z_HS_PHASE_OPEN_SENT) {
++        _z_transport_message_t oam = {0};
++        ret = _z_link_recv_t_msg(&oam, zl, socket);
++        if (ret != _Z_RES_OK) {
++            printf("[HS_DEBUG] OpenAck recv failed, ret=%d\n", (int)ret);
++            if (ret == _Z_ERR_TRANSPORT_RX_FAILED || ret == _Z_ERR_MESSAGE_DESERIALIZATION_FAILED) {
++                return ret;  // Nothing available yet -- keep waiting, don't resend.
++            }
++            _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;
++            return ret;
++        }
++        if ((_Z_MID(oam._header) != _Z_MID_T_OPEN) || !_Z_HAS_FLAG(oam._header, _Z_FLAG_T_OPEN_A)) {
++            _z_t_msg_clear(&oam);
++            _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;
++            _Z_ERROR_LOG(_Z_ERR_MESSAGE_UNEXPECTED);
++            return _Z_ERR_MESSAGE_UNEXPECTED;
++        }
++        // THIS LOG STRING USED IN TEST, change with caution
++        _Z_DEBUG("Received Z_OPEN(Ack) [resumable]");
++        _z_hs_state.param._lease =
++            (oam._body._open._lease < Z_TRANSPORT_LEASE) ? oam._body._open._lease : Z_TRANSPORT_LEASE;
++        _z_hs_state.param._initial_sn_rx = oam._body._open._initial_sn;
++        _z_t_msg_clear(&oam);
++
++        *param = _z_hs_state.param;
++        _z_hs_state.phase = _Z_HS_PHASE_NOT_STARTED;  // reset -- ready for any future session
++        return _Z_RES_OK;
++    }
++
++    return _Z_ERR_TRANSPORT_RX_FAILED;
++}
++#endif  // __EMSCRIPTEN__
++
+ static z_result_t _z_unicast_handshake_open(_z_transport_unicast_establish_param_t *param, const _z_link_t *zl,
+                                             const _z_id_t *local_zid, z_whatami_t mode, _z_sys_net_socket_t *socket) {
+     _z_transport_message_t ism = _z_t_msg_make_init_syn(mode, *local_zid);
+@@ -292,7 +486,11 @@ z_result_t _z_unicast_handshake_listen(_z_transport_unicast_establish_param_t *p
+ 
+ z_result_t _z_unicast_open_client(_z_transport_unicast_establish_param_t *param, const _z_link_t *zl,
+                                   const _z_id_t *local_zid) {
++#ifdef __EMSCRIPTEN__
++    return _z_unicast_handshake_open_client_resumable(param, zl, local_zid, NULL);
++#else
+     return _z_unicast_handshake_open(param, zl, local_zid, Z_WHATAMI_CLIENT, NULL);
++#endif
+ }
+ 
+ z_result_t _z_unicast_open_peer(_z_transport_unicast_establish_param_t *param, const _z_link_t *zl,

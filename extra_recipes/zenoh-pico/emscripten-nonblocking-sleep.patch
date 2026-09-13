@@ -1,0 +1,36 @@
+diff --git a/src/system/emscripten/system.c b/src/system/emscripten/system.c
+index a7209801..1cb6d1be 100644
+--- a/src/system/emscripten/system.c
++++ b/src/system/emscripten/system.c
+@@ -125,12 +125,29 @@ z_result_t _z_condvar_wait_until(_z_condvar_t *cv, _z_mutex_t *m, const z_clock_
+ 
+ /*------------------ Sleep ------------------*/
+ z_result_t z_sleep_us(size_t time) {
+-    emscripten_sleep((time / 1000) + (time % 1000 == 0 ? 0 : 1));
++    // emscripten_sleep() requires Asyncify to actually suspend/resume the
++    // wasm call stack while yielding to the browser event loop -- this
++    // project's whole emscripten-wasm32 ROS2 build deliberately doesn't use
++    // Asyncify (see rmw_zenoh_pico's own patch and this project's AGENTS.md
++    // "MAJOR PIVOT" for the full rationale: Asyncify + runtime dlopen() of a
++    // SIDE_MODULE is a confirmed, unresolved upstream Emscripten/Binaryen
++    // limitation). Without Asyncify, emscripten_sleep() cannot genuinely
++    // wait -- it's a dead call here regardless of what it might otherwise
++    // do, so calling it bought nothing but a nonfunctional 100%-CPU stall.
++    // Every caller of z_sleep_us/z_sleep_ms in this platform's link layer
++    // (_z_open_ws/_z_read_ws/_z_send_ws) has been rewritten to make exactly
++    // one non-blocking attempt per call instead of retrying-with-sleep
++    // internally -- the actual "wait a bit, then retry" cadence now lives at
++    // the caller's own level (ultimately a Python-side `await
++    // asyncio.sleep()` loop), the same non-Asyncify pattern already used for
++    // rmw_wait()'s zero-timeout fast path. This is now a real no-op rather
++    // than a call into a primitive that silently can't do its job.
++    (void)time;
+     return 0;
+ }
+ 
+ z_result_t z_sleep_ms(size_t time) {
+-    emscripten_sleep(time);
++    (void)time;
+     return 0;
+ }
+ 

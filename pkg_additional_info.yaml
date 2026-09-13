@@ -241,20 +241,69 @@ visp:
     override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
+action_msgs:
+  # Bump forces a rebuild against the fixed rosidl_generator_py.emscripten
+  # patch (Python3 NumPy component no longer required against the native
+  # $BUILD_PREFIX python) -- see rosidl_generator_py's own entry below.
+  build_number: 26
+builtin_interfaces:
+  build_number: 26
 cv_bridge:
   build_number: 26
 distro_mutex:
   build_number: 26
+example_interfaces:
+  # Same rosidl_generator_py NumPy fix as action_msgs above.
+  build_number: 26
+geometry_msgs:
+  build_number: 26
 libmavconn:
+  build_number: 26
+lifecycle_msgs:
+  # Same rosidl_generator_py NumPy fix as action_msgs above.
   build_number: 26
 mavlink:
   build_number: 29
+micro_ros_msgs:
+  # Same rosidl_generator_py NumPy fix as action_msgs above.
+  build_number: 26
 pcl_conversions:
   build_number: 26
-rclpy:
-  # Bump forces a new identity so rattler's extraction cache can't serve a
-  # stale _rclpy_pybind11.so built against the old pthreads-enabled ABI.
+rcl_interfaces:
+  # Same rosidl_generator_py NumPy fix as action_msgs above.
   build_number: 26
+rclpy:
+  # Bumped 26 -> 27: added the signal_handler.cpp EMSCRIPTEN guard (see
+  # patch/ros-rolling-rclpy.emscripten.patch) that makes
+  # setup_deferred_signal_handler()/teardown_deferred_signal_handler() safe
+  # no-ops on this target -- unconditionally constructing
+  # g_deferred_signal_handling_thread (a real std::thread, regardless of
+  # `signal_handler_options` passed to rclpy.init()) previously aborted
+  # with `thread constructor failed: Resource temporarily unavailable`,
+  # since this build has no real pthreads support. Bump forces a new
+  # identity so rattler's extraction cache can't serve a stale
+  # _rclpy_pybind11.so built from the pre-patch source (also: bump forces a
+  # new identity so rattler's extraction cache can't serve a stale
+  # _rclpy_pybind11.so built against the old pthreads-enabled ABI).
+  #
+  # 27 -> 28: added a rclpy/node.py patch (ported from
+  # ros2-emscripten-zenoh-demo/patches/rclpy-node-rmw_zenoh_pico-workarounds.patch,
+  # which was already applied in the separate demo_env_build deployment
+  # path but never folded into this project's own rattler-build recipe
+  # pipeline until now): (1) the default `/parameter_events` publisher
+  # Node.__init__() creates unconditionally now passes
+  # `event_callbacks=PublisherEventCallbacks(use_default_callbacks=False)`,
+  # and (2) `self._type_description_service` is set to `None` instead of
+  # constructing a real `TypeDescriptionService(self)`. Both work around
+  # rmw_zenoh_pico (a prototype/incomplete RMW implementation) not fully
+  # supporting standard QoS publisher events -- confirmed via
+  # `RCLError('failed to create publisher event: Publisher implementation
+  # identifier not from this implementation, ... rmw_event.c:242')` the
+  # first time Node() construction got far enough to actually reach this
+  # code (i.e. after the zenoh-pico session-open resumable-handshake fix
+  # -- see AGENTS.md's "THE CURRENT BLOCKER" section -- finally let
+  # rmw_create_node() succeed at all).
+  build_number: 28
 rmf_battery:
   build_number: 26
 rmf_task:
@@ -267,9 +316,68 @@ rmf_traffic_ros2:
   build_number: 30
 rmf_utils:
   build_number: 27
+rmw_zenoh_pico:
+  # Bumped 25 -> 26: extended patch/ros-rolling-rmw-zenoh-pico.patch's
+  # existing Emscripten "-Wl,--export=..." list (for rmw_zenoh_pico_set_
+  # unicast/set_mode/get_mode) to also cover rmw_identifier.c's three
+  # functions (rmw_get_implementation_identifier, rmw_get_serialization_
+  # format, rmw_zenoh_pico_typesupport_c) -- wasm-ld's dead-code
+  # elimination was dropping that whole translation unit (nothing in this
+  # link unit references any of the three directly), causing
+  # `import rclpy` to fail with "Dynamic linking error: cannot resolve
+  # symbol rmw_get_implementation_identifier" the moment rmw_implementation
+  # dlsym()'d it after loading this library. See AGENTS.md's "MAJOR PIVOT"
+  # section for the full writeup.
+  #
+  # 26 -> 27: fixed this project's own `ament_target_dependencies()` shim
+  # (added earlier in the same patch, because rolling's real ament_cmake
+  # dropped that macro) to fall back to linking a package's own
+  # `${pkg}::${pkg}_shared` imported target when it has no legacy
+  # `${pkg}_LIBRARIES` variable at all -- confirmed exactly this for
+  # zenohpico's own modern, target-only Config.cmake. Without this
+  # fallback, `ament_target_dependencies(rmw_zenoh_pico "zenohpico" ...)`
+  # silently linked nothing at all for zenohpico specifically: wasm-ld
+  # still resolved the actual z_*/ze_* symbol references at THIS
+  # package's own build time (Emscripten SIDE_MODULE builds are lazy
+  # about unresolved externals by design, so this produced no build
+  # error), but librmw_zenoh_pico.so's own dylink metadata never recorded
+  # zenoh-pico as a NEEDED dependency, since target_link_libraries() was
+  # never actually called for it. At runtime this became pure
+  # load-order luck instead of a real guarantee, surfacing as
+  # `rclpy.init()` failing with "Dynamic linking error: cannot resolve
+  # symbol z_malloc" (zenoh-pico's own allocator) the first time this
+  # project's JupyterLite rclpy integration got far enough to construct a
+  # real zenoh session -- see AGENTS.md's "MAJOR PIVOT" section.
+  #
+  # 27 -> 28: fixed session_connect() (zenoh_pico_session.c) to clone a
+  # fresh z_owned_config_t for each z_open() attempt instead of z_move()ing
+  # session->config directly -- z_open() consumes (moves-from) its config
+  # argument whether or not it succeeds, so a naive retry would hand it an
+  # already-invalidated config on the second and every later call. This
+  # matters now because z_open()'s own session/link-open handshake can
+  # legitimately need several retries to complete without Asyncify (see
+  # zenoh-pico's own emscripten-nonblocking-io.patch and
+  # emscripten-nonblocking-sleep.patch, bumping that package's build
+  # 5 -> 6): every blocking wait in that handshake was rewritten to make
+  # exactly one non-blocking attempt per call (there's no way to
+  # cooperatively yield to the browser's event loop from inside a single
+  # synchronous call without Asyncify), so session_connect() is now
+  # expected to be called repeatedly from a Python-side `await
+  # asyncio.sleep()` retry loop until it stops returning RMW_RET_ERROR.
+  build_number: 28
 ros2cli:
   build_number: 26
+rosgraph_msgs:
+  # Same rosidl_generator_py NumPy fix as action_msgs above.
+  build_number: 26
 rosidl_cli:
+  build_number: 26
+rosidl_generator_py:
+  # Bump forces a new identity so rattler's cache can't serve the stale
+  # rosidl_generator_py_generate_interfaces.cmake that hard-required the
+  # Python3 NumPy component against the native $BUILD_PREFIX python (which
+  # never has numpy installed -- numpy is only ever a cross-compiled target
+  # package) -- see patch/ros-rolling-rosidl-generator-py.emscripten.patch.
   build_number: 26
 rosidl_typesupport_microxrcedds_c:
   # Bump forces a new identity so rattler's extraction cache can't serve stale
@@ -278,3 +386,18 @@ rosidl_typesupport_microxrcedds_c:
 rosidl_typesupport_microxrcedds_cpp:
   # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
   build_number: 28
+sensor_msgs:
+  # Same rosidl_generator_py NumPy fix as action_msgs above.
+  build_number: 26
+service_msgs:
+  build_number: 26
+statistics_msgs:
+  build_number: 26
+std_msgs:
+  build_number: 26
+test_msgs:
+  build_number: 26
+type_description_interfaces:
+  build_number: 26
+unique_identifier_msgs:
+  build_number: 26
