@@ -127,31 +127,45 @@ index 1038b63..0d30f93 100644
  # Type support lock-up mechanism
  find_package(rosidl_typesupport_microxrcedds_c)
  if(rosidl_typesupport_microxrcedds_c_FOUND)
-+  # elimination drops the whole object. This was likely always the case
-+  # (nothing about dropping this project's Asyncify usage touched this
-+  # file), just never observed before: `import rclpy` never got far
-+  # enough to actually dlsym() rmw_get_implementation_identifier() until
-+  # the unrelated Asyncify+dlopen trap earlier in the same call chain was
-+  # fixed (see ros-rolling-emscripten-zenoh/AGENTS.md's "MAJOR PIVOT"
-+  # section). Without this export, rclpy's own dlopen() of
-+  # _rclpy_pybind11.so fails with "Dynamic linking error: cannot resolve
-+  # symbol rmw_get_implementation_identifier" -- rmw_implementation's own
-+  # dispatcher calls this immediately after loading the selected RMW
-+  # backend, to confirm the loaded library actually identifies as the
-+  # implementation that was asked for.
-+  target_link_options(${PROJECT_NAME} PRIVATE
-+    "-Wl,--export=rmw_zenoh_pico_set_unicast"
-+    "-Wl,--export=rmw_zenoh_pico_set_mode"
-+    "-Wl,--export=rmw_zenoh_pico_get_mode"
-+    "-Wl,--export=rmw_get_implementation_identifier"
-+    "-Wl,--export=rmw_get_serialization_format"
-+    "-Wl,--export=rmw_zenoh_pico_typesupport_c"
-+  )
-+endif()
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
+index 7cc5e97..5721f75 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
+@@ -56,6 +56,13 @@
+ #include <zenoh-pico/collections/string.h>
+ #include <zenoh-pico/system/common/platform.h>
+ #include <zenoh-pico/system/platform.h>
++// zenoh-pico >=1.7.0 split _Z_CHECK_SYS_ERR/_z_report_system_error out into
++// their own header (used by zenoh_pico_condition.c's z_condvar_init_with_attr).
++// Must be included here, before rmw_zenoh_pico_logging.h below redefines
++// _Z_ERROR with a different (func-name-first) calling convention -- the
++// static inline _z_report_system_error() body is compiled wherever this
++// header is first seen, so include order determines which _Z_ERROR it gets.
++#include <zenoh-pico/system/common/system_error.h>
+ #include <zenoh-pico/utils/result.h>
+ 
+ // debug print
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
+index 8de2826..9022321 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
+@@ -14,6 +14,16 @@
+  * limitations under the License.
+  */
+ 
++// pthread_condattr_t (used below) is declared by <pthread.h> unconditionally
++// on emscripten -- the type and the real pthread_cond_init/pthread_mutex_init
++// symbols it's used with both exist in emscripten's libc even without
++// -pthread/USE_PTHREADS=1 (confirmed via nm on the non-pthreads libc.a: only
++// *real* OS-level threading is unavailable without it, not these symbols).
++// zenoh-pico's own platform header only includes <pthread.h> when
++// Z_FEATURE_MULTI_THREAD==1, which this file can't rely on for a type it
++// references regardless.
++#include <pthread.h>
 +
- # Type support lock-up mechanism
- find_package(rosidl_typesupport_microxrcedds_c)
- if(rosidl_typesupport_microxrcedds_c_FOUND)
+ #include <rmw_zenoh_pico/rmw_zenoh_pico_rosMessage.h>
+ #include <rmw_zenoh_pico/rmw_zenoh_pico_wait.h>
+ 
 diff --git a/rmw_zenoh_pico/package.xml b/rmw_zenoh_pico/package.xml
 index f17bd1d..a6462eb 100644
 --- a/rmw_zenoh_pico/package.xml
@@ -203,24 +217,6 @@ index 2695094..fca09f1 100644
  
    // This can be call before rmw_init()
    ZenohPicoTransportParams *params = zenoh_pico_generate_param(NULL);
-diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
-index 1234567..7654321 100644
---- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
-+++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
-@@ -54,6 +54,13 @@
- #include <zenoh-pico/collections/string.h>
- #include <zenoh-pico/system/common/platform.h>
- #include <zenoh-pico/system/platform.h>
-+// zenoh-pico >=1.7.0 split _Z_CHECK_SYS_ERR/_z_report_system_error out into
-+// their own header (used by zenoh_pico_condition.c's z_condvar_init_with_attr).
-+// Must be included here, before rmw_zenoh_pico_logging.h below redefines
-+// _Z_ERROR with a different (func-name-first) calling convention -- the
-+// static inline _z_report_system_error() body is compiled wherever this
-+// header is first seen, so include order determines which _Z_ERROR it gets.
-+#include <zenoh-pico/system/common/system_error.h>
- #include <zenoh-pico/utils/result.h>
-
- // debug print
 diff --git a/rmw_zenoh_pico/src/rmw_logging.c b/rmw_zenoh_pico/src/rmw_logging.c
 index 92604b2..32d2f67 100644
 --- a/rmw_zenoh_pico/src/rmw_logging.c
@@ -234,55 +230,8 @@ index 92604b2..32d2f67 100644
  
  void z_log_prefix(const char *prefix, const char *func_name, const char *fmt, ...) {
    static char tstamp[64];
-diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
-index 0101c23..6dae0db 100644
---- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
-+++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
-@@ -16,7 +16,7 @@
-
- #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
-
--#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
-+#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
-
- z_result_t z_condvar_init_with_attr(z_owned_condvar_t *cv, pthread_condattr_t *attr){
-   _Z_CHECK_SYS_ERR(pthread_cond_init(&cv->_val, attr));
-diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
-index 3e3f027..6984719 100644
---- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
-+++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
-@@ -16,7 +16,7 @@
- 
- #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
- 
--#if defined(ZENOH_LINUX) || defined(ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
-+#if defined(ZENOH_LINUX) || defined(ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
- 
- #define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
- #define XXH_IMPLEMENTATION      /* access definitions */
-diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
-index 8de2826..9022321 100644
---- a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
-+++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
-@@ -14,6 +14,16 @@
-  * limitations under the License.
-  */
- 
-+// pthread_condattr_t (used below) is declared by <pthread.h> unconditionally
-+// on emscripten -- the type and the real pthread_cond_init/pthread_mutex_init
-+// symbols it's used with both exist in emscripten's libc even without
-+// -pthread/USE_PTHREADS=1 (confirmed via nm on the non-pthreads libc.a: only
-+// *real* OS-level threading is unavailable without it, not these symbols).
-+// zenoh-pico's own platform header only includes <pthread.h> when
-+// Z_FEATURE_MULTI_THREAD==1, which this file can't rely on for a type it
-+// references regardless.
-+#include <pthread.h>
-+
- #include <rmw_zenoh_pico/rmw_zenoh_pico_rosMessage.h>
- #include <rmw_zenoh_pico/rmw_zenoh_pico_wait.h>
- 
 diff --git a/rmw_zenoh_pico/src/rmw_wait.c b/rmw_zenoh_pico/src/rmw_wait.c
-index 1302caa..0aecf7a 100644
+index 1302caa..3e90394 100644
 --- a/rmw_zenoh_pico/src/rmw_wait.c
 +++ b/rmw_zenoh_pico/src/rmw_wait.c
 @@ -15,6 +15,14 @@
@@ -300,11 +249,10 @@ index 1302caa..0aecf7a 100644
  void wait_condition_lock(ZenohPicoWaitSetData * wait_set_data)
  {
    z_mutex_lock(z_loan_mut(wait_set_data->condition_mutex));
-@@ -136,3 +144,25 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
-     wait_set_data,
+@@ -137,10 +145,73 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      "waitset data struct is null",
      return RMW_RET_ERROR);
-+
+ 
 +#if Z_FEATURE_MULTI_THREAD == 0
 +  // _check_and_attach_condition() below can find a guard condition/timer
 +  // already ready (e.g. rclpy's executor attaches one whenever a periodic
@@ -326,9 +274,9 @@ index 1302caa..0aecf7a 100644
 +  (void)zp_send_keep_alive(__pump_zsession, NULL);
 +#endif
 +
-@@ -141,6 +171,48 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+   bool skip_wait = _check_and_attach_condition(
      subscriptions, guard_conditions, services, clients, events, wait_set_data);
-
+ 
    if(!skip_wait){
 +#if Z_FEATURE_MULTI_THREAD == 0
 +    // No background read thread exists to receive data and signal this
@@ -375,7 +323,7 @@ index 1302caa..0aecf7a 100644
      z_loaned_mutex_t *lock = z_loan_mut(wait_set_data->condition_mutex);
      z_loaned_condvar_t *cv = z_loan_mut(wait_set_data->condition_variable);
  
-@@ -167,6 +217,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -167,6 +238,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      wait_set_data->triggered = false;
  
      z_mutex_unlock(lock);
@@ -383,6 +331,32 @@ index 1302caa..0aecf7a 100644
    }
  
    bool wait_result = false;
+diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
+index 0101c23..6dae0db 100644
+--- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
++++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
+@@ -16,7 +16,7 @@
+ 
+ #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
+ 
+-#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
++#if defined(ZENOH_LINUX) || defined (ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
+ 
+ z_result_t z_condvar_init_with_attr(z_owned_condvar_t *cv, pthread_condattr_t *attr){
+   _Z_CHECK_SYS_ERR(pthread_cond_init(&cv->_val, attr));
+diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
+index 3e3f027..6984719 100644
+--- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
++++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_gid.c
+@@ -16,7 +16,7 @@
+ 
+ #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
+ 
+-#if defined(ZENOH_LINUX) || defined(ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF)
++#if defined(ZENOH_LINUX) || defined(ZENOH_ARDUINO_ESP32) || defined (ZENOH_ESPIDF) || defined(ZENOH_EMSCRIPTEN)
+ 
+ #define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
+ #define XXH_IMPLEMENTATION      /* access definitions */
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
 index f54ac92..0551e04 100644
 --- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c

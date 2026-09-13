@@ -3549,3 +3549,41 @@ crashes, zero Asyncify, and zero data loss.
   is not currently blocking real builds, but it's a landmine for anyone who tries to
   `git apply --check` this patch file directly, and the duplicated content should be cleaned up
   properly at some point.
+
+## UPDATE 2026-09-14 (continued) -- patch/ros-rolling-rmw-zenoh-pico.patch was silently corrupted this whole time; regenerated cleanly, and this uncovered a real fix that had never actually been compiled in
+
+While auditing this project's emscripten patches for leftover cruft, `git apply --check` against a
+fresh clone of `rmw_zenoh_pico` at the pinned rev turned up a genuine, reproducible failure: the last
+hunk in `src/rmw_wait.c`'s diff (adding the unconditional `zp_read()`/`zp_send_keep_alive()` network
+pump at the very top of `rmw_wait()`) failed to apply. Root cause: the patch file's `CMakeLists.txt`
+hunk had somehow accumulated a **duplicated block** of its own content (the `-Wl,--export=...` comment
+and `target_link_options()` call appeared twice, back-to-back, with mismatched hunk line-count
+headers) -- almost certainly from an earlier session's manual patch-file editing going wrong. This
+corruption threw off hunk-position tracking badly enough for the LAST hunk in a LATER file
+(`rmw_wait.c`) to fail, even though the actual content problem was entirely contained in the FIRST
+file's diff.
+
+**The real, unpleasant discovery**: real `rattler-build` builds all session (and, per the persistent
+`output/src_cache` clone's own untouched state, likely for a while before that too) use a fuzzier
+`patch`-based apply that tolerated the corruption for `CMakeLists.txt` (silently reconciling the
+duplicate into one correct copy) but **silently rejected** the `rmw_wait.c` hunk entirely, saving it to
+a `.rej` file with no hard build failure. That means the "unconditional network pump" fix -- the exact
+mechanism the earlier "CELL2 hang, ROOT-CAUSED" section of this document credits with fixing the
+session-lease-expiry issue -- was **never actually compiled into any build**, this session's included.
+Confirmed conclusively by manually re-deriving a correct apply of all 4 `rmw_wait.c` hunks and diffing
+it against what every prior build actually used: the `__pump_session`/`__pump_zsession`/`zp_read`/
+`zp_send_keep_alive` block was missing outright.
+
+Regenerated `patch/ros-rolling-rmw-zenoh-pico.patch` from scratch (fresh pristine clone, every existing
+change re-applied by hand, including manually restoring the missing `rmw_wait.c` hunk, then a clean
+`git diff`) -- it now passes a strict `git apply --check`. Rebuilt (`rmw_zenoh_pico` build 33) and
+re-ran the full end-to-end browser demo as a regression check: still 39/39 messages received, no
+change in observable behavior for that specific test (which spins both nodes in a tight loop and never
+actually goes idle long enough to exercise the lease-expiry path this pump protects against) -- but the
+fix is now genuinely present in the compiled artifact for the first time, for whenever a talker-only
+(no-subscription, timer-only) scenario actually needs it.
+
+**Lesson for future patch-file edits in this project**: after hand-editing any multi-hunk `.patch` file
+(not just regenerating it fresh from a scratch clone), always verify with a strict
+`git apply --check` against a truly fresh clone at the pinned rev before considering the edit done --
+`rattler-build`'s own patch tool is forgiving enough to silently swallow exactly this class of mistake.

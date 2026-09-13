@@ -459,7 +459,31 @@ rmw_zenoh_pico:
   # (rmw_zenoh_pico_generate_recv_sample_msg_data's hex/ASCII payload
   # dump, and rmw_zenoh_pico_deserialize's pointer/size/return-value +
   # String-struct dump) is removed in this build -- its job is done.
-  build_number: 32
+  #
+  # 32 -> 33: regenerated patch/ros-rolling-rmw-zenoh-pico.patch cleanly
+  # from scratch (git diff against a fresh pristine clone with every
+  # existing change re-applied by hand), replacing a malformed version of
+  # the file that had accumulated a duplicated hunk somewhere along the
+  # way (a chunk of the CMakeLists.txt `-Wl,--export=...` comment/hunk
+  # content appeared twice). That corruption threw off strict `git apply`
+  # / `patch --dry-run` hunk-position tracking badly enough that
+  # rmw_wait.c's LAST hunk -- the unconditional `zp_read()`/
+  # `zp_send_keep_alive()` network pump added at the very top of
+  # `rmw_wait()`, guarding against a talker with no subscriptions ever
+  # starving the session of traffic until its lease expired -- silently
+  # failed to apply via plain `patch` (rejected to a .rej file, with no
+  # hard build failure) every single time this recipe has been built,
+  # this session included: confirmed by grepping the persistent
+  # `output/src_cache` clone and, more conclusively, by manually
+  # re-deriving what a correct, non-corrupted apply of all 4 rmw_wait.c
+  # hunks actually produces and diffing it against what every previous
+  # build actually used -- the pump code was genuinely never compiled in.
+  # This build is the first time it actually exists in a real artifact.
+  # Re-verified the full end-to-end browser demo still passes (39/39
+  # messages) after this fix, as a regression check -- this rebuild
+  # doesn't need to be, and isn't, contingent on rerunning the full
+  # investigation that led here.
+  build_number: 33
 ros2cli:
   build_number: 26
 rosgraph_msgs:
