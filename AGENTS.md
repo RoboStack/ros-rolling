@@ -3477,3 +3477,75 @@ codegen (or a patch to the generated `.c` file, or a wrapper that pre-grows `ros
 string fields before calling `cdr_deserialize`) to `realloc()` the destination string buffer to
 `string_size` before/during deserialization, mirroring what every other RMW's typesupport does.
 This has not been attempted yet -- next session should start there.
+
+## UPDATE 2026-09-14 -- the string-typesupport bug is FIXED and CONFIRMED: full end-to-end pub/sub now works, 39/39 messages received
+
+Fixed the `rosidl_typesupport_microxrcedds_c` bug described in the previous section. Cloned
+`Tobias-Fischer/rosidl_typesupport_microxrcedds` (the fork this project's `ros2-rosidl-typesupport-
+microxrcedds-c` recipe pins by exact rev) and patched its `.em` codegen template directly
+(`patch/ros-rolling-rosidl-typesupport-microxrcedds-c.emscripten.patch`, wired in via the standard
+vinca `<package>.emscripten.patch` naming convention -- no `patches:` list edit needed, vinca
+auto-discovers it by filename).
+
+### The actual bug was worse than "capacity too small, deserialize politely rejects"
+
+Reading micro-CDR's own source (`src/c/types/sequence.c`'s `ucdr_deserialize_sequence_header`,
+`src/c/types/array.c`'s `ucdr_buffer_to_array`) showed the capacity check
+(`if (*length > capacity) { ub->error = true; }`) only ever sets an out-of-band error flag -- it
+does **not** stop the very next line, an unconditional `ucdr_deserialize_endian_array_char()` call,
+from `memcpy()`-ing the *full* incoming length into the destination regardless. Given
+`rclpy`/`rosidl_runtime_c__String__init()` always allocates a 1-byte "empty string" buffer before
+`rmw_take()`, and any real incoming string (e.g. `"hello 0"`, needing 8 bytes) is larger than that
+1-byte capacity, this codegen path was a genuine, silent **heap buffer overflow** every single time
+a non-empty string was ever taken -- not merely a rejected/truncated string as the generated
+fallback code (`else if(string_size > capacity){ ...skip past it... }`) assumed.
+
+### The fix
+
+In `msg__type_support_c.c.em`'s `_cdr_deserialize()` codegen, for both a single `AbstractString`
+member and a sequence-of-strings member: before calling `ucdr_deserialize_sequence_char()`, peek
+the incoming length via a **throwaway copy of the `ucdrBuffer` cursor** (`ucdrBuffer peek_cdr = *cdr;`
+then `ucdr_deserialize_uint32_t(&peek_cdr, &incoming_size)` -- safe because `ucdrBuffer` is a plain
+value-type struct with no self-referential pointers, so copying it and advancing the copy has zero
+effect on the real `cdr`), and `realloc()` the destination string's buffer to fit *before* the real
+deserialize call. This is exactly what every other RMW's typesupport already does for unbounded
+strings; this codegen just never grew the buffer at all.
+
+### Verified genuinely end-to-end in a real browser run
+
+Rebuilt `rosidl_typesupport_microxrcedds_c` (build 28) and, since the actual per-message
+`_cdr_deserialize()` C code is generated at *each message package's own* build time from that
+template, also rebuilt `std_msgs` (build 27) to pick up the fix for `std_msgs/String` specifically
+(every other interface package with a string field carries the same stale, unfixed codegen and
+will need the same rebuild eventually -- not done yet, out of scope for this session's demo).
+
+Result, with all temporary debug tracing removed from every layer (zenoh-pico, rmw_zenoh_pico) and
+one final clean rebuild + browser run: **all 39 published `"hello 0"`..`"hello 38"` messages are
+received by the subscriber's `on_msg` callback, byte-for-byte correct, `received count: 39`.** This
+is the first genuinely complete, working, non-Asyncify ROS2 pub/sub loop in this whole project's
+history -- publisher and subscriber on the same wasm-side session, in a real browser, with zero
+crashes, zero Asyncify, and zero data loss.
+
+### What's left (not done this session)
+
+- Every other ROS interface package containing a string field (nearly all of them) still carries
+  the pre-fix, buggy generated typesupport code baked in from its last build -- each will silently
+  hit the exact same class of bug (or, for messages that happen to fit within whatever capacity
+  they were initialized with, might coincidentally not) the first time it's actually exercised with
+  local delivery. Rebuilding all of them is straightforward (same pattern as `std_msgs` above:
+  bump each package's `build_number` in `pkg_additional_info.yaml`, regenerate recipes, rebuild) but
+  not done yet -- do it lazily as each message type is actually needed, or proactively rebuild
+  everything in one pass if a clean baseline is preferred.
+- **Known, pre-existing, unrelated issue found in passing**: `patch/ros-rolling-rmw-zenoh-pico.patch`
+  has a genuine internal inconsistency -- a chunk of its `CMakeLists.txt` hunk content
+  (the `-Wl,--export=...` comment block) appears duplicated, and this throws off `git apply`'s
+  (and plain `patch`'s) hunk-position tracking badly enough that `rmw_wait.c`'s last hunk
+  (the `Z_FEATURE_MULTI_THREAD == 0` unconditional network-pump added at the top of `rmw_wait()`)
+  fails to apply on a strict, fresh clone (`git apply --check` / `patch --dry-run` both reproduce
+  this deterministically, confirmed against a byte-for-byte fresh clone at the exact pinned rev).
+  `rattler-build`'s own patch-apply step is evidently more fuzzy/tolerant and has applied this same
+  file successfully in every build this session (confirmed: the `rmw_wait()` network-pump fix is
+  demonstrably present and working at runtime throughout this whole session's testing) -- so this
+  is not currently blocking real builds, but it's a landmine for anyone who tries to
+  `git apply --check` this patch file directly, and the duplicated content should be cleaned up
+  properly at some point.

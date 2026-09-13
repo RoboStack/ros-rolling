@@ -1,0 +1,75 @@
+diff --git a/rosidl_typesupport_microxrcedds_c/resource/msg__type_support_c.c.em b/rosidl_typesupport_microxrcedds_c/resource/msg__type_support_c.c.em
+index 6a6a0e6..b1ec2b5 100644
+--- a/rosidl_typesupport_microxrcedds_c/resource/msg__type_support_c.c.em
++++ b/rosidl_typesupport_microxrcedds_c/resource/msg__type_support_c.c.em
+@@ -30,6 +30,7 @@ include_base = '/'.join(include_parts)
+ header_files = [
+     'stdint.h',
+     'stdio.h',
++    'stdlib.h',
+     'string.h',
+     # Provides the rosidl_typesupport_microxrcedds_c__identifier symbol declaration.
+     'rosidl_typesupport_microxrcedds_c/identifier.h',
+@@ -353,6 +354,38 @@ static bool _@(message.structure.namespaced_type.name)__cdr_deserialize(
+     ros_message->@(member.name).size = size;
+ 
+     for (size_t i = 0; rv && i < size; i++) {
++      // NOTE: unlike a bounded string (sized once, at IDL-compile-time,
++      // and correctly rejected/skipped when oversized by the `else if`
++      // branch below), the destination buffer here was allocated by
++      // `rosidl_runtime_c__String__init()` at message-construction time,
++      // long before the actual wire content is known -- it defaults to an
++      // empty string (capacity 1). `ucdr_deserialize_sequence_char()`
++      // does NOT clamp to `capacity` on its own: its internal
++      // `ucdr_buffer_to_array()` memcpy()s the FULL incoming length into
++      // the destination regardless of the capacity check it performs
++      // first (that check only ever sets `cdr->error`, an out-of-band
++      // flag inspected by the caller, not something that stops the copy
++      // already in flight) -- so calling it with a too-small destination
++      // is a real heap buffer overflow, not merely a rejected/truncated
++      // string. Peek the incoming length first (via a throwaway copy of
++      // `cdr`'s cursor -- `ucdrBuffer` is a plain value type with no
++      // self-referential pointers, so copying it is a safe, side-effect-free
++      // way to read ahead) and grow the destination first if needed, so the
++      // real deserialize call below is always given a large-enough buffer.
++      uint32_t incoming_size = 0;
++      {
++        ucdrBuffer peek_cdr = *cdr;
++        ucdr_deserialize_uint32_t(&peek_cdr, &incoming_size);
++      }
++      if (incoming_size > ros_message->@(member.name).data[i].capacity) {
++        char * new_data = (char *)realloc(ros_message->@(member.name).data[i].data, incoming_size);
++        if (new_data == NULL) {
++          rv = false;
++          break;
++        }
++        ros_message->@(member.name).data[i].data = new_data;
++        ros_message->@(member.name).data[i].capacity = incoming_size;
++      }
+       size_t capacity = ros_message->@(member.name).data[i].capacity;
+       uint32_t string_size;
+       char * data = ros_message->@(member.name).data[i].data;
+@@ -374,6 +407,23 @@ static bool _@(message.structure.namespaced_type.name)__cdr_deserialize(
+   rv = ucdr_deserialize_@(get_suffix(member.type.typename))(cdr, &ros_message->@(member.name));
+ @[  elif isinstance(member.type, AbstractString)]@
+   {
++    // See the sequence-of-strings branch above for the full rationale:
++    // grow the destination buffer to fit the incoming string BEFORE
++    // calling ucdr_deserialize_sequence_char(), which does not clamp its
++    // own memcpy to the capacity it's given.
++    uint32_t incoming_size = 0;
++    {
++      ucdrBuffer peek_cdr = *cdr;
++      ucdr_deserialize_uint32_t(&peek_cdr, &incoming_size);
++    }
++    if (incoming_size > ros_message->@(member.name).capacity) {
++      char * new_data = (char *)realloc(ros_message->@(member.name).data, incoming_size);
++      if (new_data == NULL) {
++        return false;
++      }
++      ros_message->@(member.name).data = new_data;
++      ros_message->@(member.name).capacity = incoming_size;
++    }
+     size_t capacity = ros_message->@(member.name).capacity;
+     uint32_t string_size;
+     rv = ucdr_deserialize_sequence_char(cdr, ros_message->@(member.name).data, capacity, &string_size);

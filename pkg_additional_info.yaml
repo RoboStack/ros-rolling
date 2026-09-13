@@ -419,7 +419,22 @@ rmw_zenoh_pico:
   # (treating it as a rosidl_runtime_c__String, valid for std_msgs/String
   # specifically) right before cdr_deserialize() is called, to confirm
   # this directly.
-  build_number: 31
+  #
+  # 31 -> 32: build-31's `ros_message as String: ... capacity=1` dump
+  # confirmed the hypothesis exactly. Fixed at the source
+  # (rosidl_typesupport_microxrcedds_c's own `.em` codegen template -- see
+  # that package's build 28 and patch/ros-rolling-rosidl-typesupport-
+  # microxrcedds-c.emscripten.patch) rather than here: this package's own
+  # `zenoh_pico_rosMessage.c` was never wrong, it was just the messenger.
+  # With the fixed typesupport + a rebuilt std_msgs, rmw_take() now
+  # genuinely succeeds -- confirmed via a real browser run: all 39
+  # published "hello N" strings arrive at the subscriber's `on_msg`
+  # callback, byte-for-byte correct, `received count: 39`. All temporary
+  # debug tracing added while diagnosing this
+  # (rmw_zenoh_pico_generate_recv_sample_msg_data's hex/ASCII payload
+  # dump, and rmw_zenoh_pico_deserialize's pointer/size/return-value +
+  # String-struct dump) is removed in this build -- its job is done.
+  build_number: 32
 ros2cli:
   build_number: 26
 rosgraph_msgs:
@@ -437,7 +452,34 @@ rosidl_generator_py:
 rosidl_typesupport_microxrcedds_c:
   # Bump forces a new identity so rattler's extraction cache can't serve stale
   # content; also needed install(EXPORT ...) + rosidl_export_typesupport_targets().
-  build_number: 27
+  #
+  # 27 -> 28: added patch/ros-rolling-rosidl-typesupport-microxrcedds-c.emscripten.patch,
+  # fixing a real heap buffer overflow in the generated `..._cdr_deserialize()`
+  # for any variable-length (unbounded) string field. Root-caused via
+  # rmw_zenoh_pico's own message-take path (see that package's build 29-31
+  # comments and ros-rolling-emscripten-zenoh/AGENTS.md): `rclpy` always
+  # constructs a fresh message via `..._String__init()` before `rmw_take()`,
+  # which allocates a 1-byte "empty string" buffer -- and this codegen's
+  # `AbstractString` deserialize branch calls
+  # `ucdr_deserialize_sequence_char(cdr, ros_message->data, capacity, &size)`
+  # using THAT tiny capacity. Reading micro-CDR's own source
+  # (src/c/types/sequence.c's `ucdr_deserialize_sequence_header` /
+  # src/c/types/array.c's `ucdr_buffer_to_array`) shows the capacity check
+  # only ever sets an out-of-band `cdr->error` flag -- it does NOT stop the
+  # subsequent unconditional `memcpy()` of the full incoming length into the
+  # destination, so any incoming string longer than the pre-allocated
+  # capacity (i.e. almost any non-empty string, since the default capacity
+  # is 1) overflows the destination heap allocation. This was never
+  # previously exposed because nothing on the wasm side of this project had
+  # ever reached `rmw_take()` before zenoh-pico's Z_FEATURE_LOCAL_SUBSCRIBER
+  # fix (same session) made same-session local pub/sub delivery work for the
+  # first time. Fix: peek the incoming length first (a side-effect-free
+  # `ucdrBuffer` struct copy -- it's a plain value type, no self-referential
+  # pointers) and `realloc()` the destination to fit BEFORE calling the real
+  # deserialize, for both a single string member and a sequence-of-strings
+  # member. This is the general, correct behavior every other RMW's
+  # typesupport already has for unbounded strings.
+  build_number: 28
 rosidl_typesupport_microxrcedds_cpp:
   # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
   build_number: 28
@@ -449,7 +491,18 @@ service_msgs:
 statistics_msgs:
   build_number: 26
 std_msgs:
-  build_number: 26
+  # Bumped 26 -> 27: forces a rebuild against the fixed
+  # rosidl_typesupport_microxrcedds_c (build 28, see that package's own
+  # pkg_additional_info.yaml entry) -- std_msgs/String's generated
+  # `_cdr_deserialize()` is CODEGEN'd at std_msgs's own build time from
+  # that package's .em template, so a stale std_msgs artifact would still
+  # carry the old, buggy (heap-overflowing) deserializer even after the
+  # template itself is fixed. Every other interface package with a string
+  # field has the same staleness and will need the same rebuild eventually
+  # -- std_msgs is fixed first here because it's what this project's own
+  # browser_test.html demo actually exercises (a plain std_msgs/String
+  # chatter topic).
+  build_number: 27
 test_msgs:
   build_number: 26
 type_description_interfaces:
