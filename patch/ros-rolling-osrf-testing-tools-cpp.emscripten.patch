@@ -1,26 +1,29 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 97f7726..d3b786f 100644
+index 97f7726..c12d966 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -15,17 +15,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-   -Wshadow -Wnon-virtual-dtor)
- endif()
+@@ -17,15 +17,15 @@ endif()
  
--add_subdirectory(src)
--
+ add_subdirectory(src)
+ 
 -include(CTest)
 -if(BUILD_TESTING)
 -  include(cmake/osrf_testing_tools_cpp_require_googletest.cmake)
 -  # ensures target gtest_main exists
 -  osrf_testing_tools_cpp_require_googletest(VERSION_GTE 1.14
 -    VENDOR_DIR "${CMAKE_SOURCE_DIR}/vendor")
-+if (EMSCRIPTEN)
-+  set(CMAKE_CXX_FLAGS "-pthread ${CMAKE_CXX_FLAGS}")
-+ endif()
- 
+-
 -  add_subdirectory(test)
 -endif()
-+add_subdirectory(src)
++# googletest's own vendored build doesn't cross-compile cleanly for this
++# project's emscripten-wasm32 pipeline, and nothing here needs the test
++# suite built as part of a normal package build -- skip it outright.
++# (Note: `if(EMSCRIPTEN)` doesn't work as a platform gate in this specific
++# build path -- build_catkin.sh's emscripten branch never loads
++# Emscripten.cmake's own toolchain file, so CMake's EMSCRIPTEN variable is
++# never actually set here, confirmed empirically. Since this project only
++# ever builds this recipe for emscripten-wasm32 in practice, skip
++# unconditionally rather than add a platform check that wouldn't work.)
  
  configure_file(osrf_testing_tools_cppConfig.cmake.in
    "${PROJECT_BINARY_DIR}/osrf_testing_tools_cppConfig.cmake" @ONLY)

@@ -141,6 +141,31 @@ openvdb_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 orocos_kdl_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+osrf_testing_tools_cpp:
+  # Dropped a leftover `set(CMAKE_CXX_FLAGS "-pthread ${CMAKE_CXX_FLAGS}")`
+  # from patch/ros-rolling-osrf-testing-tools-cpp.emscripten.patch's
+  # top-level CMakeLists.txt hunk -- a relic of this project's old
+  # pthreads-enabled build, now stale and actively wrong (this whole
+  # build is pthread-free; unconditionally adding -pthread to only this
+  # one package's flags would create exactly the kind of atomics/
+  # bulk-memory ABI mismatch this project's own zenoh-pico/rmw_zenoh_pico
+  # bugs this session were caused by). The same hunk's removal of the
+  # include(CTest)/BUILD_TESTING/googletest block turned out to still be
+  # genuinely necessary and is kept as-is: this package builds via
+  # build_catkin.sh, not build_ament_cmake.sh, and that script's
+  # emscripten branch never loads Emscripten.cmake's own toolchain file
+  # -- confirmed empirically that CMake's `EMSCRIPTEN` variable is never
+  # actually set in this specific build path, so an `if(NOT EMSCRIPTEN)`
+  # gate (tried first) still built the whole googletest/test_runner
+  # suite and failed the exact same way ("--shared-memory is disallowed
+  # ... not compiled with 'atomics' or 'bulk-memory' features") that the
+  # leftover -pthread flag was originally (incorrectly) added to paper
+  # over. Skip the test block unconditionally instead, matching what the
+  # original patch already did. The other three hunks (EMSCRIPTEN guards
+  # in count_function_occurrences_in_backtrace.hpp, backward.hpp, and
+  # src/test_runner/CMakeLists.txt) are genuinely still needed and
+  # unchanged. Rebuilt to confirm this compiles correctly.
+  build_number: 26
 pcl_ros:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 pinocchio:
