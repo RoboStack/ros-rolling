@@ -17,23 +17,21 @@ if [[ $target_platform =~ emscripten.* ]]; then
   # wasm-ld treats the same static archive appearing twice on the link
   # line as a hard error, unlike a normal linker. Build a real dynamically
   # linked SIDE_MODULE .so instead, same fix as zenoh-pico's own build.sh.
-  # No real pthreads (see vinca's build_ament_cmake.sh.in for the full
-  # rationale) -- Asyncify instead. This package's own build.sh sets its
+  # No real pthreads, and (as of 2026-09-13) no Asyncify either -- see
+  # vinca's build_ament_cmake.sh.in for the full rationale (Asyncify +
+  # runtime dlopen() of a SIDE_MODULE hits a real, unresolved
+  # Emscripten/Binaryen limitation). This package's own build.sh sets its
   # shared-module flags directly (bypassing vinca's template, since it's
   # a hand-written extra_recipe, not vinca-generated), so it needed this
-  # fixed separately -- missed in the initial sweep since it still built
-  # fine, just silently produced a pthreads/shared-memory .so that later
-  # failed at runtime (WebAssembly.instantiate() shared-memory mismatch)
-  # the first time something non-pthreads actually tried to dlopen it.
+  # fix applied separately here too -- confirmed necessary the hard way:
+  # a plain vinca-template rebuild left this package's own hardcoded
+  # -sASYNCIFY untouched, still requiring a shared __asyncify_state
+  # global at dlopen() time even after every other package's Asyncify was
+  # dropped.
   cat > "$SRC_DIR/__vinca_shared_lib_patch.cmake" <<'EOF'
 set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
-set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s ASSERTIONS=1 -s SIDE_MODULE=1 -sWASM_BIGINT -s ALLOW_MEMORY_GROWTH=1 -sASYNCIFY -s ASYNCIFY_STACK_SIZE=24576 ")
+set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s ASSERTIONS=1 -s SIDE_MODULE=1 -sWASM_BIGINT -s ALLOW_MEMORY_GROWTH=1 ")
 EOF
-
-  # See zenoh-pico's build.sh for why: the toolchain env's own activation
-  # script injects -fwasm-exceptions into every em++/emcc call via
-  # EMCC_CFLAGS, incompatible with Asyncify.
-  export EMCC_CFLAGS="${EM_FORGE_CFLAGS_BASE:-}"
 
   emcmake cmake .. \
     -G Ninja \

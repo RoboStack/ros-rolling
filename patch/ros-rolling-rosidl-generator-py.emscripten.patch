@@ -1,11 +1,45 @@
 diff --git a/cmake/rosidl_generator_py_generate_interfaces.cmake b/cmake/rosidl_generator_py_generate_interfaces.cmake
-index 2fe245b..458dbdb 100644
+index 2fe245b..7a1c9de 100644
 --- a/cmake/rosidl_generator_py_generate_interfaces.cmake
 +++ b/cmake/rosidl_generator_py_generate_interfaces.cmake
-@@ -162,11 +162,30 @@ add_dependencies(
+@@ -33,7 +33,32 @@
+ cmake_policy(SET CMP0094 NEW)
+ set(Python3_FIND_UNVERSIONED_NAMES FIRST)
+
+-find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
++if(EMSCRIPTEN)
++  # numpy is only ever installed as a cross-compiled TARGET package (a
++  # `host:` dependency of whichever *_msgs/*_interfaces package is
++  # calling rosidl_generate_interfaces(), living under $PREFIX) -- it is
++  # never installed into the native $BUILD_PREFIX python that vinca
++  # points PYTHON_EXECUTABLE/Python3_EXECUTABLE at for cross-compiling
++  # purposes. So the NumPy *component* of find_package(Python3) can never
++  # be found here (confirmed via CI: "Could NOT find Python3 (missing:
++  # Python3_NumPy_INCLUDE_DIRS NumPy)" even though the target-side numpy
++  # package resolved correctly). Only NumPy's headers are needed (the
++  # EMSCRIPTEN branch below doesn't link Python3::NumPy either) -- locate
++  # them directly under the target prefix instead.
++  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
++  file(GLOB _rosidl_generator_py_numpy_include_dirs
++    "$ENV{PREFIX}/lib/python*/site-packages/numpy/_core/include"
++  )
++  list(LENGTH _rosidl_generator_py_numpy_include_dirs _rosidl_generator_py_numpy_include_dirs_len)
++  if(_rosidl_generator_py_numpy_include_dirs_len EQUAL 0)
++    message(FATAL_ERROR "rosidl_generator_py: could not find numpy's "
++      "_core/include under $ENV{PREFIX}/lib/python*/site-packages/numpy -- "
++      "is numpy a host: dependency of this package?")
++  endif()
++  list(GET _rosidl_generator_py_numpy_include_dirs 0 Python3_NumPy_INCLUDE_DIRS)
++else()
++  find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
++endif()
+
+ # Get a list of typesupport implementations from valid rmw implementations.
+ rosidl_generator_py_get_typesupports(_typesupport_impls)
+@@ -162,11 +187,30 @@ add_dependencies(
    ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
  )
- 
+
 -target_link_libraries(
 -  ${_target_name_lib} PRIVATE
 -  Python3::NumPy
