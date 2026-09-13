@@ -64,12 +64,6 @@ source:
     # since emscripten-nonblocking-io.patch's persistent-fd cache means a
     # retry really does reuse the same underlying socket, not a fresh one.
     - emscripten-resumable-handshake.patch
-    # TEMPORARY diagnostic tracing (TODO: remove) -- dumps raw received
-    # bytes + decode result on every _z_link_recv_t_msg call, added to
-    # root-cause a _Z_ERR_MESSAGE_DESERIALIZATION_FAILED (-119) seen on
-    # every single resumable-handshake retry (not the expected -99
-    # "nothing available yet").
-    - emscripten-rx-debug.patch
     # Z_FEATURE_MULTI_THREAD=0 (below) leaves platform.c's mutex/condvar
     # bodies undefined -- their types/declarations are always present (see
     # platform.h's "dummy types for correct macros work"), but nothing
@@ -114,7 +108,90 @@ build:
   # _Z_ERR_TRANSPORT_RX_FAILED (-99) as emscripten-resumable-handshake.patch
   # originally assumed. Fixed: -119 is now ALSO treated as "not ready yet,
   # keep waiting" in the resumable handshake.
-  number: 12
+  # 12->13: added emscripten-writefilter-debug.patch (see patches list
+  # comment above) to trace the message-delivery bug where only the
+  # first published message ever reaches the router.
+  # 13->14: added raw send()/errno tracing to _z_send_ws (same file as the
+  # emscripten-writefilter-debug.patch tracing above touches).
+  # 14->15: enabled Z_FEATURE_LOCAL_SUBSCRIBER/Z_FEATURE_LOCAL_QUERYABLE in
+  # build.sh's cmake configure line (both default OFF in zenoh-pico's own
+  # config.h). Root-caused via the writefilter/send tracing above plus
+  # zenohd's own storage-plugin state (`curl 127.0.0.1:8000/**` showed the
+  # LATEST published value actually reached the router/storage every time
+  # -- the "only one send_push ever logged" red herring was a zenohd
+  # logging/span-caching quirk, not real data loss): a publisher and a
+  # subscriber sharing the SAME zenoh session (this project's own
+  # rmw_zenoh_pico topology -- one ZenohPicoSession singleton shared by
+  # every rmw "node" in one process) never actually loop data back to
+  # each other over the network at all -- the router correctly never
+  # re-sends data to the face it originated from, and same-session
+  # local-subscriber delivery is a SEPARATE, opt-in client-library
+  # feature that was simply never turned on. Confirmed via
+  # `READ_WS_DEBUG` tracing: our client's own recv() never once saw a
+  # message-sized read during the whole spin loop, even though the
+  # publish itself provably succeeded.
+  # 15->16: added emscripten-write-locality-debug.patch (see patches list
+  # comment above) -- the build-15 fix alone did not change the observed
+  # symptom (`received count: 0`), so this adds direct tracing inside
+  # _z_write() itself to find out where the local-delivery path actually
+  # diverges from expectations.
+  # 16->17: build-16 tracing showed _z_session_deliver_push_locally()
+  # returning _Z_RES_OK (0) on every single publish -- proving the local
+  # dispatch call site itself is reached and doesn't error out. But
+  # _z_trigger_subscriptions_impl() (session/subscription.c) also returns
+  # _Z_RES_OK when it matches ZERO subscriptions (an empty dispatch loop
+  # isn't an error), so "returned 0" never actually proved the subscriber's
+  # own callback fired. Added emscripten-subscription-match-debug.patch to
+  # trace the real matching logic (candidate count, allowed_origin check,
+  # keyexpr intersection) and settle this directly.
+  # 17->18: build-17 confirmed sub_nb=1 (a real subscription match!) and
+  # deliver_push_locally() returning _Z_RES_OK -- but rclpy's subsequent
+  # rmw_take() then fails with "Typesupport deserialize error"
+  # (rmw_take.c:38). Root cause hypothesis: _z_write()'s remote branch
+  # (_z_n_msg_make_push_put) does a bare struct copy of the caller's
+  # _z_bytes_t into its own _z_network_message_t -- _z_bytes_t internally
+  # holds _z_arc_slice_t entries wrapping a _z_slice_simple_rc_t (an
+  # atomically-refcounted heap buffer), and a raw struct copy doesn't
+  # increment that refcount the way an explicit clone would. If anything in
+  # the remote TX path (serialization/batching) drops its ostensible
+  # reference on that basis, the buffer could be freed before the NEW
+  # Z_FEATURE_LOCAL_SUBSCRIBER branch steals the same (by-then-dangling)
+  # _z_bytes_t for local dispatch, which would read freed memory as the
+  # payload -- exactly matching "callback fires, but the bytes deserialize
+  # to garbage". Extended emscripten-write-locality-debug.patch to print
+  # _z_bytes_len(payload) right before the local-delivery call, to confirm
+  # or rule this out empirically before writing the real fix.
+  # 18->19: build-18's tracing DISPROVED the "premature free" hypothesis
+  # above -- _z_bytes_len(payload) read a correct, non-zero length (16)
+  # right before local delivery, and a follow-up hex dump (added to
+  # rmw_zenoh_pico's own patch, see that package's build 29-30 comments)
+  # confirmed the actual bytes handed to the local subscriber are a
+  # byte-for-byte-correct, well-formed CDR-encoded message. So
+  # Z_FEATURE_LOCAL_SUBSCRIBER / Z_FEATURE_LOCAL_QUERYABLE (enabled at
+  # build 15) is a COMPLETE, CORRECT fix for this project's own
+  # message-delivery bug: local pub/sub on one shared session now
+  # genuinely dispatches, with intact data, to the matching local
+  # subscription (confirmed via subscription-match tracing: sub_nb=1,
+  # origin_allowed=1, intersects=1). All temporary printf-based tracing
+  # added while diagnosing this (emscripten-rx-debug.patch,
+  # emscripten-writefilter-debug.patch, emscripten-write-locality-debug.patch,
+  # emscripten-subscription-match-debug.patch) is removed in this build --
+  # its job is done. The remaining "Typesupport deserialize error" seen at
+  # rmw_take.c:38 is a SEPARATE, downstream bug in rmw_zenoh_pico's own
+  # microxrcedds-based typesupport (a string-deserialize codegen that
+  # doesn't grow the destination buffer to fit an incoming variable-length
+  # string) -- see rmw_zenoh_pico's own pkg_additional_info.yaml entry
+  # (builds 29-31) for the full root-cause writeup. That bug is unrelated
+  # to zenoh-pico and needs no further changes here.
+  # 19->20: removed the remaining leftover printf tracing that build 19
+  # missed -- `SEND_WS_DEBUG`/`READ_WS_DEBUG` in emscripten-nonblocking-io.patch
+  # (from the raw send()/recv() byte-level tracing used to root-cause the
+  # -119-vs--99 and message-delivery investigations, both now resolved) and
+  # `HS_DEBUG` in emscripten-resumable-handshake.patch (from the original
+  # handshake-retry debugging, also long since resolved). No functional
+  # changes -- confirmed zero `_DEBUG`-tagged printf tracing remains
+  # anywhere in zenoh-pico's patched source tree.
+  number: 20
 
 requirements:
   build:

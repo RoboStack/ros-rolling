@@ -364,7 +364,62 @@ rmw_zenoh_pico:
   # synchronous call without Asyncify), so session_connect() is now
   # expected to be called repeatedly from a Python-side `await
   # asyncio.sleep()` retry loop until it stops returning RMW_RET_ERROR.
-  build_number: 28
+  #
+  # 28 -> 29: TEMPORARY diagnostic tracing (TODO: remove) appended to
+  # patch/ros-rolling-rmw-zenoh-pico.patch -- added a printf hex/ASCII dump
+  # of the received payload bytes right after rmw_zenoh_pico_generate_
+  # recv_sample_msg_data()'s own _z_bytes_to_buf() copy
+  # (zenoh_pico_rosMessage.c), to determine whether the bytes handed to
+  # rmw_take() for a SESSION-LOCAL (same-process pub/sub) delivery are
+  # actually correct ROS CDR content or corrupted/garbage. This is the
+  # rmw_zenoh_pico-side half of tracing the "Typesupport deserialize
+  # error" seen at rmw_take.c:38 once zenoh-pico's own
+  # Z_FEATURE_LOCAL_SUBSCRIBER path (see that project's recipe.yaml,
+  # builds 15-18) started actually dispatching locally-published messages
+  # to same-session subscriptions: the subscription match now succeeds
+  # (sub_nb=1) and the callback fires, but the ROS message never
+  # deserializes correctly downstream.
+  #
+  # 29 -> 30: build-29's hex dump confirmed the FIRST locally-delivered
+  # message's bytes are entirely correct, well-formed CDR
+  # (00 01 00 00 08 00 00 00 "hello 0\0" -- a valid CDR_LE-encapsulated
+  # std_msgs/String, byte-for-byte, for a 16-byte payload) -- yet
+  # rmw_take() still fails with "Typesupport deserialize error" on exactly
+  # this first message. Extended the tracing directly into
+  # rmw_zenoh_pico_deserialize() itself (same file) to print the
+  # payload pointer/size/callbacks pointer it actually receives at
+  # take-time, plus cdr_deserialize()'s own return value, to find out
+  # whether the bytes are still intact by the time rmw_take() dequeues
+  # them (ruling out a queue/lifetime bug between generate and take) or
+  # whether cdr_deserialize() itself is what's rejecting well-formed
+  # input specifically for a locally-looped-back message.
+  #
+  # 30 -> 31: build-30 confirmed cdr_deserialize() itself is what returns
+  # false (0), given the exact same correct 16-byte payload seen at
+  # generate-time. Root cause hypothesis, from reading rosidl_typesupport_
+  # microxrcedds_c's own msg__type_support_c.c.em codegen template: an
+  # AbstractString member's deserializer does
+  # `ucdr_deserialize_sequence_char(cdr, ros_message->data, capacity,
+  # &string_size)` using ros_message's PRE-EXISTING capacity -- it does NOT
+  # dynamically grow/reallocate the destination buffer the way
+  # rosidl_runtime_c's usual dynamic-string convention (and every other
+  # RMW's deserializer) does. rclpy always constructs a fresh message via
+  # the standard `..._String__init()` before rmw_take(), which allocates
+  # capacity=1 (an empty string) -- so ANY nonempty incoming string (e.g.
+  # "hello 0", needing capacity>=8) is larger than what's pre-allocated,
+  # and this codegen's deserializer simply fails/truncates rather than
+  # growing the buffer. This would be a general, always-present
+  # microxrcedds-typesupport limitation for unbounded strings -- unrelated
+  # to local-vs-remote delivery -- that was simply never exercised before,
+  # because Z_FEATURE_LOCAL_SUBSCRIBER (builds 15-18 above) is the FIRST
+  # time any message has ever reached rmw_take() on the wasm side of this
+  # whole project (remote peers always used their OWN native RMW to
+  # receive, which handles dynamic strings fine). Extended the debug
+  # tracing to print ros_message's `data`/`size`/`capacity` fields
+  # (treating it as a rosidl_runtime_c__String, valid for std_msgs/String
+  # specifically) right before cdr_deserialize() is called, to confirm
+  # this directly.
+  build_number: 31
 ros2cli:
   build_number: 26
 rosgraph_msgs:

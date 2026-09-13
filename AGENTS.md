@@ -3389,3 +3389,91 @@ to chase it further, but the exact file, function, and mechanism are now pinned 
 enough that this should be a fast, bounded fix for whoever picks it up next (same
 `printf`-tracing-plus-`zenohd`-log-cross-reference technique used for every other layer this
 session).
+
+## UPDATE 2026-09-13, later same session -- message-delivery bug FULLY ROOT-CAUSED AND FIXED at the zenoh-pico layer; a NEW, separate bug found one layer up in rmw_zenoh_pico
+
+The write-filter/`CONNECTION_DROPPED` hypothesis above turned out to be a dead end: direct
+`printf` tracing inside `_z_write_filter_callback()` showed `write_filter_active=0` (i.e. NOT
+blocking) on virtually every real publish call. The write filter was never the problem.
+
+### The real root cause: `Z_FEATURE_LOCAL_SUBSCRIBER` was never enabled
+
+Raw `send()`-level tracing (`SEND_WS_DEBUG` in `_z_send_ws`) showed every publish succeeding at
+the socket level (100% of requested bytes sent), yet `zenohd`'s own debug log only ever showed
+one `send_push` event, ever. Querying `zenohd`'s REST admin/storage interface directly
+(`curl http://127.0.0.1:8000/**`) proved this was a **logging artifact, not real data loss** --
+the storage plugin held the value from the *latest* published message every single time, meaning
+every publish genuinely reached the router.
+
+The actual bug: this project's `rclpy` publisher and subscriber, in the same process, share
+**one single `_zenohSession`** (rmw_zenoh_pico's `zenoh_pico_session.c` declares it as a
+file-scope `static ZenohPicoSession _zenohSession`, a true per-process singleton -- confirmed by
+reading the source directly, not inferred). A router correctly never echoes data back to the
+same face it originated from, so **same-session pub/sub was never actually looping data back at
+all** -- not a bug in delivery, but a missing feature. zenoh-pico ships exactly this as an
+opt-in, separate feature: `Z_FEATURE_LOCAL_SUBSCRIBER` / `Z_FEATURE_LOCAL_QUERYABLE`, both
+`0` (off) by default in zenoh-pico's own `config.h`, and never turned on anywhere in this
+project's build. Enabling both via `extra_recipes/zenoh-pico/build.sh`'s cmake configure line
+(`-DZ_FEATURE_LOCAL_SUBSCRIBER=1 -DZ_FEATURE_LOCAL_QUERYABLE=1`, zenoh-pico build 15) is the
+fix -- confirmed genuinely complete via a `printf`-tracing chain all the way down zenoh-pico's own
+call stack (`_z_write()` → `_z_session_deliver_push_locally()` → `_z_handle_network_message()` →
+`_z_trigger_push()` → `_z_trigger_subscriptions_impl()` → `__unsafe_z_get_subscriptions_by_key()`),
+which showed, on every publish: `sub_nb=1`, `origin_allowed=1`, `intersects=1` -- a real,
+correct subscription match -- and the exact bytes handed to the local subscriber are a
+byte-for-byte-correct, well-formed CDR-encoded message (hex-dumped and verified: for a published
+`"hello 0"` string, the local subscriber's callback receives
+`00 01 00 00 08 00 00 00 68 65 6c 6c 6f 20 30 00`, i.e. a correct CDR_LE header + 8-byte
+length-prefixed "hello 0\0" -- exactly right). **The zenoh-pico layer is done and confirmed
+correct.** All temporary diagnostic `printf` patches added while chasing this
+(`emscripten-rx-debug.patch`, `emscripten-writefilter-debug.patch`,
+`emscripten-write-locality-debug.patch`, `emscripten-subscription-match-debug.patch`) have been
+removed again (zenoh-pico build 19) now that the fix is confirmed -- see that recipe's own
+`recipe.yaml` build-number comments (15 through 19) for the blow-by-blow.
+
+### A NEW bug, one layer up: rmw_zenoh_pico's string typesupport never grows the destination buffer
+
+With local delivery now genuinely working, the subscriber's callback fires and rclpy's `rmw_take()`
+is reached for the very first time ever in this whole project's history (previously, only remote
+peers -- running their own, different, dynamic-string-capable RMW -- ever received wasm-published
+messages; nothing on the wasm side had ever successfully taken a message before today). It fails
+immediately with `RCLError('failed to take message from subscription: Typesupport deserialize
+error.', rmw_take.c:38)`.
+
+Traced directly into `rmw_zenoh_pico_deserialize()` (`zenoh_pico_rosMessage.c`): the payload
+bytes reaching it are still correct (`payload_size=16`, matching the hex dump above), and
+`callbacks->cdr_deserialize(&temp_buffer, ros_message)` itself is what returns `false`. Printed
+`ros_message`'s fields (treating it as a `rosidl_runtime_c__String`, valid for `std_msgs/String`):
+`size=0 capacity=1`. Reading `rosidl_typesupport_microxrcedds_c`'s own codegen template
+(`msg__type_support_c.c.em`) confirms why: its `AbstractString` deserialize branch does
+
+```c
+size_t capacity = ros_message->data.capacity;
+rv = ucdr_deserialize_sequence_char(cdr, ros_message->data.data, capacity, &string_size);
+```
+
+-- it deserializes **into the destination's pre-existing, fixed capacity**, and never grows or
+reallocates it. `rclpy` always constructs a fresh message via the standard
+`..._String__init()` before calling `rmw_take()`, which allocates the DDS/rosidl_runtime_c
+default: an empty string, `capacity=1`. Any nonempty incoming string (here, `"hello 0"`, needing
+capacity ≥ 8) exceeds that, and this codegen path simply fails rather than reallocating -- unlike
+every other RMW's deserializer (fastrtps, cyclonedds, etc.), which dynamically resizes the
+destination string to fit.
+
+**This is a general, always-present limitation of `rmw_zenoh_pico`'s microxrcedds-based
+typesupport for any unbounded/variable-length string field** (the micro-XRCE-DDS/micro-ROS world
+this codegen comes from is built around *bounded* strings sized at IDL-compile-time, not
+DDS-style dynamic strings) -- completely unrelated to local-vs-remote delivery, and it was simply
+never exposed before because nothing on the wasm side had ever reached `rmw_take()` until
+`Z_FEATURE_LOCAL_SUBSCRIBER` started working today. Full root-cause trail (builds 29-31, with the
+hex dump and the `capacity=1` confirmation) is documented in `rmw_zenoh_pico`'s own entry in
+`pkg_additional_info.yaml`. The debug tracing added to chase this
+(`rmw_zenoh_pico_generate_recv_sample_msg_data`'s hex/ASCII dump, and
+`rmw_zenoh_pico_deserialize`'s pointer/size/return-value + `String` struct dump, both in
+`zenoh_pico_rosMessage.c`) is left in place (build 31) since this bug is NOT yet fixed -- remove
+it once it is.
+
+**Not yet done**: an actual fix. The real fix has to live in `rosidl_typesupport_microxrcedds_c`'s
+codegen (or a patch to the generated `.c` file, or a wrapper that pre-grows `ros_message`'s
+string fields before calling `cdr_deserialize`) to `realloc()` the destination string buffer to
+`string_size` before/during deserialization, mirroring what every other RMW's typesupport does.
+This has not been attempted yet -- next session should start there.

@@ -1,5 +1,5 @@
 diff --git a/src/transport/unicast/transport.c b/src/transport/unicast/transport.c
-index 85ce3d44..b3cd83d2 100644
+index 85ce3d44..64057c35 100644
 --- a/src/transport/unicast/transport.c
 +++ b/src/transport/unicast/transport.c
 @@ -14,6 +14,7 @@
@@ -10,7 +10,7 @@ index 85ce3d44..b3cd83d2 100644
  #include <stddef.h>
  #include <stdint.h>
  #include <stdlib.h>
-@@ -101,6 +102,199 @@ z_result_t _z_unicast_transport_create(_z_transport_t *zt, _z_link_t *zl,
+@@ -101,6 +102,196 @@ z_result_t _z_unicast_transport_create(_z_transport_t *zt, _z_link_t *zl,
      return ret;
  }
  
@@ -75,7 +75,6 @@ index 85ce3d44..b3cd83d2 100644
 +                                                              const _z_link_t *zl, const _z_id_t *local_zid,
 +                                                              _z_sys_net_socket_t *socket) {
 +    z_result_t ret = _Z_RES_OK;
-+    printf("[HS_DEBUG] entering resumable handshake, phase=%d\n", (int)_z_hs_state.phase);
 +
 +    if (_z_hs_state.phase == _Z_HS_PHASE_NOT_STARTED) {
 +        _z_hs_state.ism = _z_t_msg_make_init_syn(Z_WHATAMI_CLIENT, *local_zid);
@@ -96,7 +95,6 @@ index 85ce3d44..b3cd83d2 100644
 +        _z_transport_message_t iam = {0};
 +        ret = _z_link_recv_t_msg(&iam, zl, socket);
 +        if (ret != _Z_RES_OK) {
-+            printf("[HS_DEBUG] InitAck recv failed, ret=%d\n", (int)ret);
 +            if (ret == _Z_ERR_TRANSPORT_RX_FAILED || ret == _Z_ERR_MESSAGE_DESERIALIZATION_FAILED) {
 +                return ret;  // Nothing available yet -- keep waiting, don't resend.
 +            }
@@ -178,7 +176,6 @@ index 85ce3d44..b3cd83d2 100644
 +        _z_transport_message_t oam = {0};
 +        ret = _z_link_recv_t_msg(&oam, zl, socket);
 +        if (ret != _Z_RES_OK) {
-+            printf("[HS_DEBUG] OpenAck recv failed, ret=%d\n", (int)ret);
 +            if (ret == _Z_ERR_TRANSPORT_RX_FAILED || ret == _Z_ERR_MESSAGE_DESERIALIZATION_FAILED) {
 +                return ret;  // Nothing available yet -- keep waiting, don't resend.
 +            }
@@ -210,7 +207,7 @@ index 85ce3d44..b3cd83d2 100644
  static z_result_t _z_unicast_handshake_open(_z_transport_unicast_establish_param_t *param, const _z_link_t *zl,
                                              const _z_id_t *local_zid, z_whatami_t mode, _z_sys_net_socket_t *socket) {
      _z_transport_message_t ism = _z_t_msg_make_init_syn(mode, *local_zid);
-@@ -292,7 +486,11 @@ z_result_t _z_unicast_handshake_listen(_z_transport_unicast_establish_param_t *p
+@@ -292,7 +483,11 @@ z_result_t _z_unicast_handshake_listen(_z_transport_unicast_establish_param_t *p
  
  z_result_t _z_unicast_open_client(_z_transport_unicast_establish_param_t *param, const _z_link_t *zl,
                                    const _z_id_t *local_zid) {

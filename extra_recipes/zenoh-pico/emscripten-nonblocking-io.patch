@@ -1,5 +1,5 @@
 diff --git a/src/system/emscripten/network.c b/src/system/emscripten/network.c
-index 66f745fe..b8bf9c6f 100644
+index 66f745fe..1e6b20bc 100644
 --- a/src/system/emscripten/network.c
 +++ b/src/system/emscripten/network.c
 @@ -14,6 +14,7 @@
@@ -72,7 +72,7 @@ index 66f745fe..b8bf9c6f 100644
          }
      } else {
          _Z_ERROR_LOG(_Z_ERR_GENERIC);
-@@ -132,20 +169,37 @@ z_result_t _z_listen_ws(_z_sys_net_socket_t *sock, const _z_sys_net_endpoint_t l
+@@ -132,20 +169,36 @@ z_result_t _z_listen_ws(_z_sys_net_socket_t *sock, const _z_sys_net_endpoint_t l
      return ret;
  }
  
@@ -110,7 +110,6 @@ index 66f745fe..b8bf9c6f 100644
 +    // Python's own `await asyncio.sleep()` in between) instead of spinning
 +    // uselessly in here for the entire timeout every single call.
 +    ssize_t rb = recv(sock._ws._fd, ptr, len, 0);
-+    printf("[READ_WS_DEBUG] fd=%d requested_len=%zu raw_rb=%zd errno=%d\n", sock._ws._fd, len, rb, errno);
      if (rb < 0) {
 -        rb = SIZE_MAX;
 +        rb = 0;  // Nothing available yet -- not a hard error, try again later.
@@ -120,7 +119,7 @@ index 66f745fe..b8bf9c6f 100644
  }
  
  size_t _z_read_exact_ws(const _z_sys_net_socket_t sock, uint8_t *ptr, size_t len) {
-@@ -167,18 +221,18 @@ size_t _z_read_exact_ws(const _z_sys_net_socket_t sock, uint8_t *ptr, size_t len
+@@ -167,18 +220,18 @@ size_t _z_read_exact_ws(const _z_sys_net_socket_t sock, uint8_t *ptr, size_t len
  }
  
  size_t _z_send_ws(const _z_sys_net_socket_t sock, const uint8_t *ptr, size_t len) {
