@@ -22,6 +22,19 @@ name: Diagnose xeus-python cross-platform build (temporary)
 
 on:
   workflow_dispatch:
+  # workflow_dispatch alone can't be triggered via the API/CLI unless the
+  # workflow file also exists on the repo's default branch (a real GitHub
+  # restriction) -- this repo's default branch is a separate, regularly
+  # RoboStack-synced `main`, unrelated to this feature branch's work, so
+  # touching it just for this throwaway diagnostic isn't worth it. A push
+  # trigger scoped to just this branch works instead, without needing
+  # anything on `main`.
+  push:
+    branches:
+      - feature/emscripten-wasm32-zenoh-pico
+    paths:
+      - '.github/workflows/diagnose-xeus-python-platform.yml'
+      - 'scratch_test_recipes/xeus-python-stockdeps/**'
 
 jobs:
   build-xeus-python-diagnostic:
