@@ -1,11 +1,11 @@
 diff --git a/cmake/rosidl_generator_py_generate_interfaces.cmake b/cmake/rosidl_generator_py_generate_interfaces.cmake
-index 2fe245b..7a1c9de 100644
+index 2fe245b..11d679c 100644
 --- a/cmake/rosidl_generator_py_generate_interfaces.cmake
 +++ b/cmake/rosidl_generator_py_generate_interfaces.cmake
-@@ -33,7 +33,32 @@
+@@ -33,7 +33,32 @@ cmake_minimum_required(VERSION 3.20)
  cmake_policy(SET CMP0094 NEW)
  set(Python3_FIND_UNVERSIONED_NAMES FIRST)
-
+ 
 -find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
 +if(EMSCRIPTEN)
 +  # numpy is only ever installed as a cross-compiled TARGET package (a
@@ -33,13 +33,13 @@ index 2fe245b..7a1c9de 100644
 +else()
 +  find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
 +endif()
-
+ 
  # Get a list of typesupport implementations from valid rmw implementations.
  rosidl_generator_py_get_typesupports(_typesupport_impls)
-@@ -162,11 +187,30 @@ add_dependencies(
+@@ -162,11 +187,29 @@ add_dependencies(
    ${rosidl_generate_interfaces_TARGET}__rosidl_typesupport_c
  )
-
+ 
 -target_link_libraries(
 -  ${_target_name_lib} PRIVATE
 -  Python3::NumPy
@@ -49,15 +49,14 @@ index 2fe245b..7a1c9de 100644
 +  # Python3::Python and Python3::Module both resolve to the same static
 +  # libpython3.a here -- emscripten-forge's cross-python package ships no
 +  # shared libpython, so CMake's FindPython3 has nothing else to point
-+  # Development.Module at. Linking that static archive fails
-+  # ("--shared-memory is disallowed by call.o because it was not compiled
-+  # with 'atomics' or 'bulk-memory' features", confirmed 2026-09-08
-+  # building builtin_interfaces): it was built without pthread
-+  # atomics/bulk-memory support, unlike our USE_PTHREADS=1 SIDE_MODULE.
-+  # Skip linking it entirely -- the link already passes
-+  # --unresolved-symbols=import-dynamic, so CPython API symbols resolve at
-+  # runtime against the MAIN_MODULE's own (pthread-enabled) Python
-+  # instead. Only the headers are needed at compile time.
++  # Development.Module at. This project builds every ROS package as a
++  # dynamically-linked SIDE_MODULE loaded into a single MAIN_MODULE
++  # interpreter (see vinca's build_ament_cmake.sh.in), so statically
++  # linking a second copy of libpython3.a into each one of them is both
++  # unnecessary and unwanted. Skip linking it entirely -- the link already
++  # passes --unresolved-symbols=import-dynamic, so CPython API symbols
++  # resolve at runtime against the MAIN_MODULE's own Python instead. Only
++  # the headers are needed at compile time.
 +  target_include_directories(${_target_name_lib} PRIVATE
 +    ${Python3_INCLUDE_DIRS}
 +    ${Python3_NumPy_INCLUDE_DIRS}

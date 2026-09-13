@@ -1,22 +1,21 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 539c4bf..1f71c23 100644
+index 539c4bf..766fde1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -22,6 +22,18 @@ ament_vendor(spdlog_vendor
+@@ -22,6 +22,17 @@ ament_vendor(spdlog_vendor
      -DSPDLOG_BUILD_TESTS:BOOL=OFF
      -DSPDLOG_BUILD_EXAMPLE:BOOL=OFF
      "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
 +    # Forward the parent build's CMAKE_PROJECT_INCLUDE (vinca's
 +    # __vinca_shared_lib_patch.cmake under emscripten) into this nested
 +    # ament_vendor/ExternalProject build. Without it, the inner spdlog
-+    # build never sees the outer build's SIDE_MODULE/pthread/etc. settings,
-+    # so its object files get compiled without the atomics/bulk-memory
-+    # wasm features our pthread-enabled build requires -- silently
-+    # producing a libspdlog.a that fails to link ("wasm-ld: error:
-+    # --shared-memory is disallowed by spdlog.cpp.o because it was not
-+    # compiled with 'atomics' or 'bulk-memory' features") into anything
-+    # that links it (rcl_logging_spdlog). Harmless no-op on platforms
-+    # where CMAKE_PROJECT_INCLUDE isn't set.
++    # build never sees the outer build's SIDE_MODULE=1 compile/link flags
++    # (see build_ament_cmake.sh.in), so its object files end up built for
++    # a plain static/EXE-style link instead -- silently producing a
++    # libspdlog.a that's incompatible with (and fails to link into)
++    # anything that links it as a SIDE_MODULE dependency
++    # (rcl_logging_spdlog). Harmless no-op on platforms where
++    # CMAKE_PROJECT_INCLUDE isn't set.
 +    "-DCMAKE_PROJECT_INCLUDE=${CMAKE_PROJECT_INCLUDE}"
  )
  
