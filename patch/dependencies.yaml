@@ -304,6 +304,10 @@ mujoco_ros2_control_plugins:
   add_host:
     - if: linux
       then: ["libegl-devel"]
+roboplan_example_models:
+  # src/resources.cpp uses dladdr() from dlfcn.h, which is POSIX-only.
+  # On Windows we need to depend on dlfcn-win32 instead.
+  add_host: ["${{ 'dlfcn-win32' if win }}"]
 roboplan_ros_examples:
   add_host: ["ros-rolling-ament-cmake"]
 yasmin_pcl:
