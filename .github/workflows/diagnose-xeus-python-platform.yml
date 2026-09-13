@@ -1,0 +1,121 @@
+name: Diagnose xeus-python cross-platform build (temporary)
+
+# Throwaway diagnostic workflow, manually triggered only. Investigates
+# whether the "null function or function signature mismatch"
+# indirect-call-table-corruption bug seen when locally recompiling
+# xeus-python on a macOS ARM64 (osx-arm64) host is specific to that build
+# platform -- as opposed to the currently-published, working stock
+# xeus-python-0.19.0 package on the emscripten-forge-4x channel, which was
+# almost certainly built on a Linux x86_64 CI runner. Builds the exact same
+# scratch diagnostic recipe (zero xeus-python source patches, stock
+# xeus/xeus-lite/pyjs-dev/python host deps -- the same "stockdeps-test"
+# config already confirmed to crash when built locally on osx-arm64) on
+# both ubuntu-latest (linux-64) and macos-15 (osx-arm64, matching the local
+# dev machine) for direct comparison, and uploads the resulting
+# xpython.js/xpython.wasm from each as build artifacts.
+#
+# See ~/robot/ros-rolling-emscripten-zenoh/AGENTS.md's "BREAKTHROUGH
+# 2026-09-13" sections (search for "null function" and "toolchain
+# non-determinism") for the full background on why this test exists.
+#
+# Safe to delete this file once the investigation concludes either way.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-xeus-python-diagnostic:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-64
+          - os: macos-15
+            platform: osx-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout ros-rolling-emscripten-zenoh
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          frozen: true
+
+      - name: Checkout emscripten-forge/recipes (for cross-python/compiler/pytester toolchain packages)
+        uses: actions/checkout@v6
+        with:
+          repository: emscripten-forge/recipes
+          path: emscripten_forge_recipes
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Build emscripten toolchain packages (compiler, cross-python, pytester)
+        shell: bash -l {0}
+        working-directory: emscripten_forge_recipes
+        run: |
+          pixi run rattler-build build \
+            --package-format tar-bz2 \
+            -c https://repo.prefix.dev/emscripten-forge-4x \
+            -c microsoft \
+            -c conda-forge \
+            --skip-existing all \
+            -m variant.yaml \
+            --recipe recipes/recipes/emscripten_emscripten-wasm32
+          pixi run rattler-build build \
+            --package-format tar-bz2 \
+            -c https://repo.prefix.dev/emscripten-forge-4x \
+            -c microsoft \
+            -c conda-forge \
+            --skip-existing all \
+            -m variant.yaml \
+            --recipe recipes/recipes/cross-python_emscripten-wasm32
+          pixi run rattler-build build \
+            --package-format tar-bz2 \
+            -c https://repo.prefix.dev/emscripten-forge-4x \
+            -c microsoft \
+            -c conda-forge \
+            --skip-existing all \
+            -m variant.yaml \
+            --recipe recipes/recipes/pytester
+
+      - name: Build diagnostic xeus-python (zero patches, stock host deps)
+        shell: bash -l {0}
+        run: |
+          pixi run rattler-build build \
+            --package-format tar-bz2 \
+            -r ./scratch_test_recipes/xeus-python-stockdeps/recipe.yaml \
+            -m ./conda_build_config.yaml \
+            --output-dir ./ci_output \
+            -c https://repo.prefix.dev/conda-forge \
+            -c https://repo.prefix.dev/emscripten-forge-4x \
+            -c "file://${{ github.workspace }}/emscripten_forge_recipes/output" \
+            -c microsoft \
+            -c robostack-staging \
+            --target-platform emscripten-wasm32 \
+            --test skip \
+            --channel-priority disabled
+
+      - name: Extract xpython.js/xpython.wasm for upload
+        shell: bash -l {0}
+        run: |
+          mkdir -p extracted_artifact
+          tar xjf ./ci_output/emscripten-wasm32/xeus-python-stockdeps-test-*.tar.bz2 -C extracted_artifact
+          # also record a sha256 of the wasm binary directly in the log, for
+          # a quick eyeball diff between the two matrix legs without needing
+          # to download both artifacts
+          shasum -a 256 extracted_artifact/bin/xpython.wasm extracted_artifact/bin/xpython.js
+
+      - name: Upload xpython.js/xpython.wasm
+        uses: actions/upload-artifact@v4
+        with:
+          name: xeus-python-diagnostic-${{ matrix.platform }}
+          path: |
+            extracted_artifact/bin/xpython.js
+            extracted_artifact/bin/xpython.wasm
+          retention-days: 7

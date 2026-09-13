@@ -1,0 +1,101 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Hand-written (not vinca-generated): not a ROS package, no package.xml.
+# Lives under extra_recipes/ to survive `rm -rf recipes` regeneration;
+# copied into ./recipes/ by pixi.toml's build-emscripten task.
+#
+# Identical to emscripten-forge/recipes' own xeus-python recipe (recipes/
+# recipes_emscripten/xeus-python/, version 0.19.0 build 3 as of this
+# writing) except for one patch: rclpy's own compiled extension
+# (_rclpy_pybind11...so) is built as an Emscripten SIDE_MODULE with
+# -sASYNCIFY (needed for rmw_wait's cooperative-polling fix -- see
+# ros-rolling-emscripten-zenoh's vinca fork). dlopen()'ing it into a plain
+# xpython.wasm MAIN_MODULE (stock emscripten-forge-4x build, no Asyncify)
+# fails at link time:
+#   LinkError: ... Import #71 "env" "__asyncify_state": imported mutable
+#   global must be a WebAssembly.Global object
+# because Asyncify's dynamic-linking support needs a shared
+# __asyncify_state global that only exists when the MAIN_MODULE hosting
+# it also has ASYNCIFY enabled. Confirmed via a live JupyterLite
+# `import rclpy` traceback, 2026-09-12. Patched below to add -sASYNCIFY
+# (and a matching ASYNCIFY_STACK_SIZE) to xpython's own link step --
+# xpython's own code never needs to actually yield/unwind itself, so no
+# ASYNCIFY_IMPORTS entries are added here, only the scaffolding a side
+# module needs. The patch also strips xeus's own hardcoded
+# -fwasm-exceptions from xpython's compile/link flags (WasmBuildOptions.cmake,
+# Emscripten >=4.0.0 branch): Binaryen's Asyncify pass hard-crashes on wasm
+# native exception-handling instructions ("UNREACHABLE executed ...
+# Asyncify.cpp"), same class of bug already fixed project-wide for every
+# ROS package via vinca's EMCC_CFLAGS override -- replaced with the older
+# JS-based -fexceptions mechanism, which Asyncify does handle.
+
+context:
+  version: 0.19.0
+
+package:
+  name: xeus-python-stockdeps-test
+  version: ${{ version }}
+
+source:
+  url: https://github.com/jupyter-xeus/xeus-python/archive/refs/tags/${{ version }}.tar.gz
+  sha256: 9f85288bbfea0b9087bab57c1d8d827ed0bf0323e63b94af507990c7040cad01
+
+build:
+  script: build.sh
+  # Bump whenever content changes without a version bump, to avoid
+  # rattler-build package-cache collisions under an unchanged identity.
+  number: 102
+
+requirements:
+  build:
+    - ${{ compiler("cxx") }}
+    - cmake
+    - ninja
+    # Without this, CMake's find_package(PythonInterp/PythonLibs) (pulled
+    # in transitively by pybind11Config.cmake) resolves $BUILD_PREFIX/bin/
+    # python to whatever native build-platform python rattler-build's own
+    # env happens to have, not a wasm32-target-shaped one -- fails with
+    # "Python config failure: Python is 64-bit, chosen compiler is 32-bit".
+    # Matches the same fix vinca's build_ament_cmake.sh.in template applies
+    # to every ROS package here that embeds Python.
+    - if: build_platform != target_platform
+      then:
+        - cross-python_${{ target_platform }}
+  host:
+    - python
+    - libpython
+    - openssl <4
+    - nlohmann_json
+    - nlohmann_json-abi
+    - xeus
+    - xeus-lite >=5.0.0
+    - pybind11
+    - pybind11_json
+    - xtl
+    # Depends on pyjs-dev directly (not the meta "pyjs" package, which
+    # just aggregates pyjs-rt + pyjs-dev) so this resolves to our own
+    # locally-rebuilt pyjs-dev (extra_recipes/pyjs) instead of the stock
+    # remote one -- see that recipe's comment for why.
+    - pyjs-dev >=4.0.6
+    - zstd
+  run:
+    - python
+    - xeus-python-shell-lite >=0.8,<0.9
+    - pyjs-rt >=4.0.6
+
+tests:
+  - package_contents:
+      files:
+        - bin/xpython.wasm
+        - bin/xpython.js
+
+about:
+  license: BSD-3-Clause
+  license_family: BSD-3
+  license_file: LICENSE
+  summary: xeus-python (patched locally for Asyncify dynamic-linking compat with this project's rclpy build)
+  homepage: https://github.com/jupyter-xeus/xeus-python
+
+extra:
+  recipe-maintainers:
+    - Tobias-Fischer
