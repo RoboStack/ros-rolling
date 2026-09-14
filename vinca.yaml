@@ -158,9 +158,84 @@ packages_select_by_deps:
   - ur_client_library
   - ur_simulation_gz
 
-packages_to_generate:
-  - diagnostic_updater
-  - controller_manager
+  # - web-video-server
+  - persist-parameter-server
+
+
+  - twist_stamper  # Requested in https://github.com/RoboStack/ros-rolling/issues/12
+
+  - urdf_tutorial
+
+  # These packages are only built on Linux as they depend on Linux-specific API
+  - if: linux
+    then:
+      - libcamera
+      - nobleo_socketcan_bridge  # Depends on socketcan
+      - ros2_socketcan  # Depends on socketcan
+      - rosgraph_monitor
+      - usb_cam  # Depends on v4l
+
+  # These packages are currently only build on Linux,
+  # as trying to build them in the past on macos or Windows resulted in errors
+  - if: linux
+    then:
+      - apriltag_ros  # Depends on camera_ros
+      - camera_ros  # Depends on libcamera that is only available on linux
+      - livox_ros_driver2
+      - mavros  # libmavconn currently fails to build on macOS and windows
+      - py_binding_tools
+      - swri_serial_util  # Serial communication only implemented for linux
+      - v4l2_camera  # Depends on v4l that is only available on linux
+
+  # These packages are currently not build on Windows, but they be with some work
+  - if: not win
+    then:
+      - apriltag_detector_mit
+      - apriltag_detector_umich
+      - apriltag_draw
+      - apriltag_tools
+      - autoware_core
+      - autoware_core_control  # depends on autoware_motion_utils
+      - autoware_core_localization  # depends on autoware_ekf_localizer
+      - autoware_ekf_localizer  # Windows error: error C2338: static_assert failed: 'First argument to logging macros must be an rclcpp::Logger'
+      - autoware_lanlet2_utils  # Windows errors: C3546 (no parameter packs to expand), C2678 (no operator '|' for transform_view)
+      - autoware_motion_utils  # Windows error: error C2765: 'function': an explicit specialization of a function template cannot have any default arguments
+      - autoware_osqp_interface
+      - autoware_pose_initializer  # depends on autoware_motion_utils
+      - autoware_qp_interface
+      - autoware_trajectory  # depends on autoware_motion_utils
+      - dual-laser-merger
+      - ffmpeg_image_transport  # TODO on windows: fix iconv link issue
+      - foxglove_compressed_video_transport
+      - grid_map  # rviz linking problems on Windows, see https://github.com/RoboStack/ros-jazzy/pull/79#issuecomment-2993499990
+      - laser-segmentation
+      - libg2o
+      - mocap4r2_control
+      - mocap4r2_control_msgs
+      - mocap4r2_dummy_driver
+      - mocap4r2_marker_publisher
+      - mocap4r2_marker_viz
+      - mocap4r2_marker_viz_srvs
+      - mocap4r2_robot_gt
+      - mocap4r2_robot_gt_msgs
+      - moveit-hybrid-planning  # Windows error: error C3861: '__builtin_unreachable': identifier not found
+      - moveit-py
+      - moveit-ros-occupancy-map-monitor
+      - moveit-ros-perception
+      - moveit-runtime
+      - odom_to_tf_ros2
+      - ouster_ros  # TODO on windows: cannot open pcl_io.lib
+      - pinocchio
+      - plotjuggler-ros
+      - pointcloud-to-laserscan
+      - rplidar_ros
+      - rqt_mocap4r2_control
+      - rqt_tf_tree
+      - rslidar_sdk
+      - rviz_satellite
+      - serial_driver
+      - swri_console  # Until sync of: https://github.com/ros/rosdistro/pull/49750
+      - velodyne
 
 patch_dir: patch
 rosdistro_snapshot: rosdistro_snapshot.yaml
