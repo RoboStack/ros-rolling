@@ -231,25 +231,10 @@ index 92604b2..32d2f67 100644
  void z_log_prefix(const char *prefix, const char *func_name, const char *fmt, ...) {
    static char tstamp[64];
 diff --git a/rmw_zenoh_pico/src/rmw_wait.c b/rmw_zenoh_pico/src/rmw_wait.c
-index 1302caa..3e90394 100644
+index 1302caa..294b642 100644
 --- a/rmw_zenoh_pico/src/rmw_wait.c
 +++ b/rmw_zenoh_pico/src/rmw_wait.c
-@@ -15,6 +15,14 @@
- 
- #include <rmw_zenoh_pico/rmw_zenoh_pico.h>
- 
-+#if Z_FEATURE_MULTI_THREAD == 0
-+// Matches WS_LINK_SLEEP, the poll interval zenoh-pico's own emscripten WS
-+// transport already uses for its blocking-read-with-timeout loop (see
-+// src/system/emscripten/network.c) -- keep this in step with that so
-+// rmw_wait doesn't introduce its own, different latency floor.
-+#define RMW_ZENOH_PICO_SINGLE_THREAD_POLL_MS 1
-+#endif
-+
- void wait_condition_lock(ZenohPicoWaitSetData * wait_set_data)
- {
-   z_mutex_lock(z_loan_mut(wait_set_data->condition_mutex));
-@@ -137,10 +145,73 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -137,10 +137,65 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      "waitset data struct is null",
      return RMW_RET_ERROR);
  
@@ -285,45 +270,37 @@ index 1302caa..3e90394 100644
 +    // nothing will ever make wait_set_data->triggered become true unless
 +    // *we* pump the session ourselves. zp_read()/zp_send_keep_alive() are
 +    // the documented single-threaded-mode replacement for that background
-+    // thread (see zenoh-pico's "Single Thread helpers"); z_sleep_ms()
-+    // between polls is what actually yields back to the browser event loop
-+    // (via Asyncify, see build_ament_cmake.sh.in) so a pending WebSocket
-+    // message can be delivered before the next zp_read() call -- a tight
-+    // loop with no yield would starve the very network layer it's waiting
-+    // on, hanging exactly the way a real blocking wait would have.
++    // thread (see zenoh-pico's "Single Thread helpers").
++    //
++    // This used to loop here -- poll, and if not yet triggered and time
++    // remains, z_sleep_ms() before polling again -- for any nonzero
++    // requested timeout. That's wrong on this platform specifically:
++    // z_sleep_ms() is a hard no-op here (this whole project dropped
++    // Asyncify project-wide; see emscripten-nonblocking-sleep.patch), so
++    // "sleeping between polls" was really just spinning zp_read() as fast
++    // as possible for the full requested timeout with zero yield back to
++    // the browser's event loop the whole time -- freezing the tab for up
++    // to that many milliseconds on any caller that ever passed a nonzero
++    // wait_timeout (rclpy.spin_once(timeout_sec=0) never does, which is
++    // the only reason this never showed up in this project's own testing).
++    // A synchronous call on this platform can never usefully wait longer
++    // than a single attempt anyway -- only the caller, across separate
++    // top-level calls with a real yield in between (Python's own `await
++    // asyncio.sleep()`, or a JS tick()), can actually do that -- so this
++    // now always behaves like the old timeout_ms == 0 case regardless of
++    // what was requested: poll exactly once, then return immediately.
 +    ZenohPicoSession *rmw_session = (ZenohPicoSession *)wait_set_data->context->impl;
 +    const z_loaned_session_t *zsession = z_loan(rmw_session->session);
 +
-+    bool has_timeout = (wait_timeout != NULL);
-+    unsigned long timeout_ms = 0;
-+    if (has_timeout) {
-+      timeout_ms = (unsigned long)wait_timeout->sec * 1000UL +
-+	(unsigned long)(wait_timeout->nsec / 1000000UL);
-+    }
-+
-+    z_time_t start = z_time_now();
-+    while (!wait_set_data->triggered) {
-+      (void)zp_read(zsession, NULL);
-+      (void)zp_send_keep_alive(zsession, NULL);
-+
-+      if (wait_set_data->triggered) {
-+	break;
-+      }
-+      if (has_timeout && (timeout_ms == 0 || z_time_elapsed_ms(&start) >= timeout_ms)) {
-+	// timeout_ms == 0 means "poll once, don't wait at all", matching
-+	// the Z_FEATURE_MULTI_THREAD==1 branch's handling of a zero
-+	// rmw_time_t below.
-+	break;
-+      }
-+      z_sleep_ms(RMW_ZENOH_PICO_SINGLE_THREAD_POLL_MS);
-+    }
++    (void)zp_read(zsession, NULL);
++    (void)zp_send_keep_alive(zsession, NULL);
 +
 +    wait_set_data->triggered = false;
 +#else
      z_loaned_mutex_t *lock = z_loan_mut(wait_set_data->condition_mutex);
      z_loaned_condvar_t *cv = z_loan_mut(wait_set_data->condition_variable);
  
-@@ -167,6 +238,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -167,6 +222,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      wait_set_data->triggered = false;
  
      z_mutex_unlock(lock);
