@@ -297,6 +297,25 @@ pcl_conversions:
 rcl_interfaces:
   # Same rosidl_generator_py NumPy fix as action_msgs above.
   build_number: 26
+rclc:
+  # Bumped 25 -> 26: no patch change -- this package's own build 25 was
+  # produced on 2026-09-12, in the window between vinca commit 69fa7de
+  # ("revert: drop real pthreads for emscripten-wasm32, use Asyncify
+  # instead", 2026-09-11) and f6c8903 ("fix: drop Asyncify project-wide",
+  # 2026-09-13), so its .so was compiled with -sASYNCIFY even though the
+  # vinca template (and every other package in this build) has been
+  # Asyncify-free since f6c8903 -- confirmed via `wasm-objdump -x` showing
+  # env.__asyncify_state/__asyncify_data imports nowhere else in demo_env
+  # except this package and rclcpp (same bump, see below). This is exactly
+  # the same class of staleness as the xeus-python local-channel
+  # contamination bug earlier in this project (see AGENTS.md) -- the fix
+  # is simply forcing a rebuild against the current, already-correct
+  # template, not any new patch.
+  build_number: 26
+rclcpp:
+  # Same stale-Asyncify-build staleness as rclc above -- rebuilt for the
+  # same reason, same day, same vinca commit window.
+  build_number: 26
 rclpy:
   # Bumped 26 -> 27: added the signal_handler.cpp EMSCRIPTEN guard (see
   # patch/ros-rolling-rclpy.emscripten.patch) that makes
