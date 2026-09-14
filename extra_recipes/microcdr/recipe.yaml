@@ -13,7 +13,9 @@ source:
 build:
   script: build.sh
   # Bumped after switching static -> dynamic linking (no version bump).
-  number: 1
+  # 1 -> 2: -DUCDR_ISOLATED_INSTALL=OFF, installing flat instead of under
+  # a nested microcdr-2.0.2/ subdirectory -- see build.sh's own comment.
+  number: 2
 
 requirements:
   build:

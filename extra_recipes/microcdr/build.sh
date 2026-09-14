@@ -5,6 +5,22 @@ set -eo pipefail
 # cross-compiling conda-forge toolchains.
 unset -f cmake || true
 
+# -DUCDR_ISOLATED_INSTALL=OFF: micro-CDR's own CMakeLists.txt defaults
+# this ON, appending "/${PROJECT_NAME}-${PROJECT_VERSION}" (here,
+# "microcdr-2.0.2") onto CMAKE_INSTALL_PREFIX -- meaning every other file
+# this build installs lands flat under $PREFIX/lib, $PREFIX/include, etc,
+# but microcdr's own lands nested under $PREFIX/microcdr-2.0.2/lib,
+# $PREFIX/microcdr-2.0.2/include. Harmless for a plain CMake consumer
+# (its own exported *Config.cmake sets absolute paths accordingly), but
+# genuinely breaks anything that assumes every package's files sit at
+# the same flat prefix -- confirmed two ways: browser_demo/build_rclc.sh
+# and build_rclpy.sh both need this package special-cased to a different
+# path than every other .so they link/copy, and jupyterlite-xeus's own
+# kernel-package eager-preload logic doesn't know to look here at all,
+# 404ing on libmicrocdr.so.2.0.2 at runtime in the real deployed
+# JupyterLite kernel. Flat install eliminates both problems at the
+# source instead of working around them downstream.
+
 mkdir -p build
 cd build
 
@@ -41,6 +57,7 @@ EOF
     -DCMAKE_CROSSCOMPILING_EMULATOR="$BUILD_PREFIX/bin/node" \
     -DCMAKE_PROJECT_INCLUDE="$SRC_DIR/__vinca_shared_lib_patch.cmake" \
     -DUCDR_SUPERBUILD=OFF \
+    -DUCDR_ISOLATED_INSTALL=OFF \
     -DUCDR_BUILD_TESTS=OFF \
     -DUCDR_BUILD_EXAMPLES=OFF \
     -DBUILD_SHARED_LIBS=ON
@@ -50,6 +67,7 @@ else
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
     -DUCDR_SUPERBUILD=OFF \
+    -DUCDR_ISOLATED_INSTALL=OFF \
     -DUCDR_BUILD_TESTS=OFF \
     -DUCDR_BUILD_EXAMPLES=OFF \
     -DBUILD_SHARED_LIBS=OFF
