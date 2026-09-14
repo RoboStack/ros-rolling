@@ -46,8 +46,117 @@ skip_existing:
   - https://prefix.dev/robostack-rolling/
 
 packages_select_by_deps:
-  - diagnostic_updater
-  - controller_manager
+  - ackermann-msgs
+  - ament_cmake_black
+  - ament_cmake_catch2
+  - ament_cmake_clang_tidy
+  - ament_cmake_core
+  - ament_cmake_mypy
+  - apriltag_detector
+  - asio_cmake_module
+  - autoware_cmake
+  - autoware_common_msgs
+  - autoware_component_interface_specs
+  - autoware_control_msgs
+  - autoware_geography_utils
+  - autoware_global_parameter_loader
+  - autoware_internal_msgs
+  - autoware_interpolation
+  - autoware_kalman_filter
+  - autoware_localization_msgs
+  - autoware_map_msgs
+  - autoware_node
+  - autoware_object_recognition_utils
+  - autoware_perception_msgs
+  - autoware_planning_msgs
+  - autoware_point_types
+  - autoware_sensing_msgs
+  - autoware_signal_processing
+  - autoware_system_msgs
+  - autoware_utils
+  - autoware_v2x_msgs
+  - autoware_vehicle_info_utils
+  - autoware_vehicle_msgs
+  - battery_state_broadcaster
+  - behaviortree_cpp
+  - better_launch
+  - bond_core
+  - bondcpp
+  - can_msgs
+  - data_tamer_cpp  # Requested in https://github.com/RoboStack/ros-humble/issues/325
+  - desktop
+  - desktop_full
+  - dev_tools
+  - diagnostic-remote-logging
+  - diagnostics
+  - flex_sync
+  - foxglove_bridge
+  - foxglove_msgs
+  - gripper_controllers
+  - gtsam
+  - gz_ros2_control
+  - gz_ros2_control_demos
+  - lanelet2
+  - magic_enum
+  - moveit
+  - moveit-chomp-optimizer-adapter  # Requested in https://www.linkedin.com/feed/update/urn:li:activity:7346559234177703938/
+  - moveit-planners-chomp
+  - moveit-ros-control-interface
+  - moveit-ros-trajectory-cache
+  - moveit-servo
+  - moveit-visual-tools
+  - nav2_minimal_tb3_sim
+  - nav2_minimal_tb4_sim
+  - navigation2
+  - nmea-navsat-driver
+  - perception
+  - point_cloud_transport_plugins
+  - polygon_msgs
+  - proxsuite
+  - py-trees
+  - py-trees-ros
+  - py-trees-ros-interfaces
+  - py-trees-ros-viewer
+  - rmw_zenoh_cpp  # requested in https://github.com/RoboStack/ros-humble/issues/252
+  - roboplan  # requested in https://github.com/RoboStack/ros-rolling/issues/28
+  - roboplan_cartesian_planning
+  - roboplan_example_models
+  - roboplan_examples
+  - roboplan_oink
+  - roboplan_ros_cpp
+  - roboplan_ros_examples
+  - roboplan_ros_py
+  - roboplan_ros_visualization
+  - roboplan_rrt
+  - roboplan_simple_ik
+  - roboplan_toppra
+  - robot
+  - robot-localization
+  - ros2_control
+  - ros2_controllers
+  - ros2_fmt_logger
+  - ros2_socketcan_msgs
+  - ros_base
+  - ros_environment
+  - ros_gz
+  - ros_workspace
+  - rosbridge_suite
+  - rosidl_buffer
+  - rosidl_buffer_backend
+  - rosidl_buffer_backend_registry
+  - rosidl_buffer_py
+  - rviz_visual_tools
+  - sbg_driver
+  - simulation
+  - slam_toolbox
+  - teleop
+  - toppra
+  - turtlebot3
+  - twist_mux  # requested in https://github.com/RoboStack/ros-humble/issues/249
+  - ublox
+  - ur
+  - ur_client_library
+  - ur_simulation_gz
 
 packages_to_generate:
   - diagnostic_updater

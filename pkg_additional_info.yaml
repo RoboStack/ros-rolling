@@ -17,8 +17,6 @@ compressed_depth_image_transport:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 console_bridge_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
-controller_manager:
-  build_number: 1
 cyclonedds:
   generate_dummy_package_with_run_deps:
     dep_name: cyclonedds
@@ -28,7 +26,8 @@ data_tamer_cpp:  # Remove once https://github.com/PickNikRobotics/data_tamer/pul
 diagnostic_aggregator:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 diagnostic_updater:
-  build_number: 1
+  additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
+  build_number: 26
 eigenpy:
   generate_dummy_package_with_run_deps:
     dep_name: eigenpy
