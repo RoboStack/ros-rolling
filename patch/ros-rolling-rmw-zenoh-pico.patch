@@ -358,10 +358,33 @@ index 3e3f027..6984719 100644
  #define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
  #define XXH_IMPLEMENTATION      /* access definitions */
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
-index f54ac92..0551e04 100644
+index f54ac92..baf0d6c 100644
 --- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
 +++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
-@@ -89,11 +89,33 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
+@@ -43,7 +43,21 @@ ZenohPicoSession *zenoh_pico_generate_session(const z_loaned_config_t *config,
+   }
+ 
+   session->graph_guard_condition.implementation_identifier = rmw_get_implementation_identifier();
+-  session->graph_guard_condition.data = zenoh_pico_guard_condition_data;
++  // Upstream bug (missing call parens): this used to assign the bare
++  // FUNCTION zenoh_pico_guard_condition_data (a code pointer) instead of
++  // calling it to get the heap-allocated ZenohPicoGuardConditionData* it
++  // actually returns. Dormant during normal operation -- graph_guard_
++  // condition.data is never touched except at session teardown -- but
++  // zenoh_pico_destroy_session() later casts this "pointer" back to
++  // ZenohPicoGuardConditionData* and dereferences/frees it, which on
++  // Emscripten (code and linear memory are separate address spaces) reads
++  // as a wasm trap: "RuntimeError: memory access out of bounds", not some
++  // platform-agnostic C-level UB that happens to limp along elsewhere.
++  // Confirmed via an isolated minimal repro reproducing the exact same
++  // trap from nothing but this one pattern (assign-without-calling, then
++  // cast-and-dereference) -- see ros2-emscripten-zenoh-demo's commit
++  // fixing demo.ipynb's rclpy.shutdown() crash for the full writeup.
++  session->graph_guard_condition.data = zenoh_pico_guard_condition_data();
+ 
+   session->enable_session = false;
+ 
+@@ -89,11 +103,33 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
  
    RMW_ZENOH_LOG_DEBUG("Opening session...");
  
@@ -397,7 +420,7 @@ index f54ac92..0551e04 100644
    if (_Z_IS_ERR(zp_start_read_task(z_loan_mut(session->session), NULL))
        || _Z_IS_ERR(zp_start_lease_task(z_loan_mut(session->session), NULL))) {
      RMW_ZENOH_LOG_ERROR("Unable to start read and lease tasks");
-@@ -101,6 +123,14 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
+@@ -101,6 +137,14 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
      z_drop(z_move(session->session));
      return RMW_RET_ERROR;
    }
