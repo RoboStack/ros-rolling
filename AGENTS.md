@@ -222,7 +222,18 @@ For full rebuilds also remember:
 - clear stale `pkg_additional_info.yaml` build-number overrides unless intentional
 - remember that in CI there is a build cache, if you fix a problem in an already built package you need to delete the cache for this package in the .github/workflows/testpr.yml under "Delete specific outdated cache entries"
 
-## Emscripten-wasm32 Asyncify migration (active sub-project, this repo + the demo repo)
+## Emscripten-wasm32 Asyncify migration (superseded -- see "MAJOR PIVOT" below)
+
+**HISTORICAL as of the pivot documented later in this file**: the Asyncify
+approach this section describes was itself abandoned in favor of a
+non-blocking, single-poll-per-call design with no Asyncify and no real
+threads at all -- see this file's own "MAJOR PIVOT" section for why, and
+the top of the file / README for what's actually shipped today. Kept
+here for the historical record of how that conclusion was reached; treat
+everything below as "what we tried next after pthreads," not as the
+current architecture. Also stale: the branch name below
+(`feature/emscripten-wasm32-zenoh-pico`) -- the actual current branch is
+`pico-update-tmp`.
 
 This repo (fork branch `feature/emscripten-wasm32-zenoh-pico`, pushed to
 `Tobias-Fischer/ros-rolling`) plus the deployed demo at
