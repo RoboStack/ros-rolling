@@ -296,7 +296,13 @@ pcl_conversions:
   build_number: 26
 rcl_interfaces:
   # Same rosidl_generator_py NumPy fix as action_msgs above.
-  build_number: 26
+  #
+  # 26 -> 27: no patch change to this package itself -- forces a rebuild
+  # against rosidl_typesupport_microxrcedds_c's own build 29 (see that
+  # package's note) so GetParameters.Request's `string[] names` field (an
+  # unbounded sequence<string>, the message used to find and verify that
+  # fix) is regenerated with the corrected deserialize code.
+  build_number: 27
 rclc:
   # Bumped 25 -> 26: no patch change -- this package's own build 25 was
   # produced on 2026-09-12, in the window between vinca commit 69fa7de
@@ -824,7 +830,39 @@ rosidl_typesupport_microxrcedds_c:
   # deserialize, for both a single string member and a sequence-of-strings
   # member. This is the general, correct behavior every other RMW's
   # typesupport already has for unbounded strings.
-  build_number: 28
+  #
+  # 28 -> 29: fixed a sibling bug in the same deserialize function, one
+  # level above build 28's fix: an *unbounded sequence<string>* member
+  # (e.g. `rcl_interfaces/GetParameters.Request`'s `string[] names`) has
+  # its own outer capacity separate from each individual string element's
+  # capacity -- how many String elements the sequence itself can hold, not
+  # how many bytes each one is. That outer check was `if (size >
+  # ros_message->names.capacity) { return 0; }`, with no code path that
+  # ever grows the sequence to fit -- and a freshly-constructed message
+  # (e.g. `rcl_take_request_with_info()`'s own `create_from_py()` building
+  # an empty destination request before the real wire size is known, the
+  # same as build 28's per-string case) always starts this capacity at 0.
+  # So *any* non-empty unbounded sequence<string> failed to deserialize,
+  # unconditionally -- build 28's own per-element fix never even ran,
+  # since this outer check `return 0`'d before the loop containing it.
+  # Confirmed via byte-identical, correctly-formed wire data on both ends
+  # (hex-dumped) still failing `cdr_deserialize()`; a request built only
+  # from scalar fields (`lifecycle_msgs/ChangeState`) round-trips fine by
+  # contrast, isolating the bug to sequence-of-string specifically. Fixed
+  # by growing the destination with `rosidl_runtime_c__String__Sequence__
+  # fini()` + `__init(&seq, size)` (fini() is a safe no-op on an
+  # already-empty sequence, so this also correctly handles a reused,
+  # non-empty destination without leaking its old element buffers) --
+  # mirrors build 28's own realloc()-to-fit pattern, one level up. Scoped
+  # to sequence<string> only, matching build 28's own scope; an analogous
+  # gap exists for sequence-of-namespaced-type (nested message arrays) but
+  # growing that destination needs the *other* message package's own
+  # generated `__Sequence__init()`, which this generated file doesn't
+  # currently link against -- left as a known, documented follow-up rather
+  # than risking a new link-time bug. Verified live: a real rclpy service
+  # request carrying `names=['foo', 'bar', 'baz']` (three elements) is
+  # correctly received and deserialized end-to-end.
+  build_number: 29
 rosidl_typesupport_microxrcedds_cpp:
   # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
   build_number: 28
