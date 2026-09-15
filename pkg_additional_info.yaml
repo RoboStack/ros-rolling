@@ -347,7 +347,27 @@ rclpy:
   # code (i.e. after the zenoh-pico session-open resumable-handshake fix
   # -- see AGENTS.md's "THE CURRENT BLOCKER" section -- finally let
   # rmw_create_node() succeed at all).
-  build_number: 28
+  #
+  # 28 -> 29: added an `__init__.py` patch making `rclpy.spin(node)` usable
+  # inside a real pyjs/xeus-python kernel (JupyterLite): a literal blocking
+  # `while ... spin_once()` loop there would freeze the tab forever (no
+  # pthreads, no Asyncify -- nothing can yield to the browser event loop
+  # from inside one still-running synchronous call). Detects this exact
+  # context via a new `_emscripten_webloop_active()` helper (`sys.platform
+  # == 'emscripten'` AND `pyjs.webloop.WebLoop` is genuinely the active
+  # event loop -- `import pyjs.webloop` itself fails outside a real kernel
+  # bootstrap, which is what keeps the plain compiled browser demos, which
+  # never touch pyjs at all, on the unchanged native code path below) and,
+  # only then, schedules the same non-blocking `spin_once()` this function
+  # already uses as a background `asyncio` task instead of blocking --
+  # returning immediately, deliberately breaking from `spin()`'s documented
+  # "this function blocks" contract on this one platform, since a literal
+  # implementation of that contract is not just inconvenient but impossible
+  # here. Ported from this project's own downstream demo repo
+  # (ros2-emscripten-zenoh-demo), where the identical `spin_async()` pattern
+  # was already shipped as a plain notebook cell; this folds it into rclpy
+  # itself so `rclpy.spin(node)` "just works" without that extra cell.
+  build_number: 29
 rmf_battery:
   build_number: 26
 rmf_task:
@@ -502,7 +522,32 @@ rmw_zenoh_pico:
   # messages) after this fix, as a regression check -- this rebuild
   # doesn't need to be, and isn't, contingent on rerunning the full
   # investigation that led here.
-  build_number: 33
+  #
+  # 33 -> 34: fixed rmw_event.c's rmw_publisher_event_init()/
+  # rmw_subscription_event_init() to return RMW_RET_UNSUPPORTED instead of
+  # RMW_RET_INCORRECT_RMW_IMPLEMENTATION when support_event_type() finds no
+  # match -- which, since this RMW's own _support_event[] table is
+  # permanently empty upstream (gid_cache, needed for real QoS event
+  # matching, was never implemented -- see rmw_zenoh_pico_event.h's own
+  # "the current implement of rmw_zenoh_pico does not support event"
+  # comment), is *every* event type, always. rclpy's own event_handler.py
+  # already wraps default-callback construction in
+  # `except UnsupportedEventTypeError: pass`, but that C++ binding
+  # (event_handle.cpp) only maps RCL_RET_UNSUPPORTED to that exception --
+  # the wrong code this RMW returned instead surfaced as a raw RCLError,
+  # which is exactly why every demo in this project has to pass
+  # `event_callbacks=PublisherEventCallbacks(use_default_callbacks=False)`
+  # explicitly rather than just accepting the default. Does not add real
+  # QoS event/matching support (still no gid_cache, no wire-level
+  # notifications) -- just makes the *absence* of it fail the way rclpy
+  # already expects unsupported features to fail, so use_default_callbacks
+  # (the actual default) silently no-ops instead of raising. Confirmed
+  # this is the only thing support_event_type()'s -1 return path feeds
+  # into for these two functions (RMW_CHECK_TYPE_IDENTIFIERS_MATCH's own,
+  # separate use of RMW_RET_INCORRECT_RMW_IMPLEMENTATION a few lines below
+  # each is for a genuinely different failure -- a publisher/subscription
+  # from a different RMW implementation entirely -- and is untouched).
+  build_number: 34
 ros2cli:
   build_number: 26
 rosgraph_msgs:

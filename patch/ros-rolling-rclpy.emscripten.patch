@@ -89,3 +89,84 @@ index ce13f2d8..36af1fd9 100644
  
          self._context.track_node(self)
  
+diff --git a/rclpy/__init__.py b/rclpy/__init__.py
+index 6406063..4b3f463 100644
+--- a/rclpy/__init__.py
++++ b/rclpy/__init__.py
+@@ -40,6 +40,8 @@ all ROS nodes associated with the context), the :func:`shutdown` function should
+ This will invalidate all entities derived from the context.
+ """
+ 
++import asyncio
++import sys
+ from types import TracebackType
+ from typing import Any
+ from typing import List
+@@ -306,6 +308,32 @@ def spin_once(
+             executor.remove_node(node)
+ 
+ 
++def _emscripten_webloop_active() -> bool:
++    """
++    True if running on Emscripten with pyjs's own asyncio event loop
++    (``pyjs.webloop.WebLoop``) actually active as the current event loop --
++    i.e. genuinely inside a pyjs/xeus-python kernel (JupyterLite), not just
++    any Emscripten-target build. ``pyjs`` itself may be *present*
++    (importable) without the JS-interop dependencies a real kernel
++    bootstrap wires up (the ``pyjs_core``/``js`` bridge) actually being
++    available -- e.g. a plain embedded-CPython binary with no kernel around
++    it at all -- in which case ``import pyjs.webloop`` itself fails, which
++    is exactly the signal used here to fall back to the ordinary blocking
++    behavior below.
++    """
++    if sys.platform != 'emscripten':
++        return False
++    try:
++        import pyjs.webloop
++    except ImportError:
++        return False
++    try:
++        loop = asyncio.get_event_loop()
++    except RuntimeError:
++        return False
++    return isinstance(loop, pyjs.webloop.WebLoop)
++
++
+ def spin(node: 'Node', executor: Optional['Executor'] = None) -> None:
+     """
+     Execute work and block until the context associated with the executor is shutdown.
+@@ -314,10 +342,34 @@ def spin(node: 'Node', executor: Optional['Executor'] = None) -> None:
+ 
+     This function blocks.
+ 
++    On Emscripten, inside a real pyjs/xeus-python kernel such as JupyterLite
++    (see :func:`_emscripten_webloop_active`), this function does NOT block:
++    a wasm32 build with neither pthreads nor Asyncify has no way to yield to
++    the browser's event loop from inside a single still-running synchronous
++    call, so a literal blocking loop here would simply freeze the tab
++    forever rather than usefully "block". Instead, the same non-blocking
++    ``spin_once()`` used below is scheduled as a background task on the
++    kernel's own already-running event loop, and this function returns
++    immediately -- spinning continues for as long as the kernel keeps
++    running, which calling code should rely on instead of this function's
++    return.
++
+     :param node: A node to add to the executor to check for work.
+     :param executor: The executor to use, or the global executor if ``None``.
+     """
+     executor = get_global_executor() if executor is None else executor
++    if _emscripten_webloop_active():
++        executor.add_node(node)
++
++        async def _spin_forever() -> None:
++            try:
++                while executor.context.ok():
++                    executor.spin_once(timeout_sec=0.1)
++                    await asyncio.sleep(0.05)
++            finally:
++                executor.remove_node(node)
++        asyncio.get_event_loop().create_task(_spin_forever())
++        return
+     try:
+         executor.add_node(node)
+         while executor.context.ok():
