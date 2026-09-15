@@ -65,30 +65,6 @@ index bb72763..6c13dad 100644
 
  void
  
-diff --git a/rclpy/node.py b/rclpy/node.py
-index ce13f2d8..36af1fd9 100644
---- a/rclpy/node.py
-+++ b/rclpy/node.py
-@@ -206,7 +206,9 @@ class BaseNode(ABC):
- 
-         self._parameter_event_publisher: Optional[BasePublisher[ParameterEvent]] = \
-             self.create_publisher(ParameterEvent, '/parameter_events',
--                                  qos_profile_parameter_events)
-+                                  qos_profile_parameter_events,
-+                                  event_callbacks=PublisherEventCallbacks(
-+                                      use_default_callbacks=False))
- 
-         with self.handle:
-             self._parameter_overrides = self.handle.get_parameters(Parameter)
-@@ -236,7 +238,7 @@ class BaseNode(ABC):
-         if enable_logger_service:
-             self._logger_service = LoggingService(self)
- 
--        self._type_description_service = TypeDescriptionService(self)
-+        self._type_description_service = None
- 
-         self._context.track_node(self)
- 
 diff --git a/rclpy/__init__.py b/rclpy/__init__.py
 index 6406063..4b3f463 100644
 --- a/rclpy/__init__.py

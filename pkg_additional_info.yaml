@@ -367,7 +367,31 @@ rclpy:
   # (ros2-emscripten-zenoh-demo), where the identical `spin_async()` pattern
   # was already shipped as a plain notebook cell; this folds it into rclpy
   # itself so `rclpy.spin(node)` "just works" without that extra cell.
-  build_number: 29
+  #
+  # 29 -> 30: removed both rclpy/node.py workarounds added in build 28.
+  # Neither is needed anymore: (1) the `/parameter_events` publisher's
+  # `use_default_callbacks=False` was only ever needed because of the same
+  # rmw_event.c bug fixed in rmw_zenoh_pico build 34 (RMW_RET_UNSUPPORTED
+  # instead of RMW_RET_INCORRECT_RMW_IMPLEMENTATION) -- confirmed live with
+  # a real browser run: the internal publisher now uses rclpy's own
+  # unmodified default and no RCLError is raised. (2) `TypeDescriptionService`
+  # never actually hung at construction -- confirmed live: `Node()` with
+  # `self._type_description_service = TypeDescriptionService(self)`
+  # restored completes normally and the demo keeps publishing continuously
+  # afterward. A real, deeper gap does exist one level further in --
+  # calling the resulting `~/get_type_description` service as a client
+  # (`call_async()`) does reach the server (confirmed via the server's own
+  # "Failed to parse type hash" log firing for a deliberately-empty test
+  # request) but the client's future never resolves, so a caller waiting on
+  # a response really does hang forever. That's a general rclpy
+  # client-response-delivery gap on this platform (the exact same
+  # `_execute()`/`send_response()` path in rclpy's own `executors.py` any
+  # other service on this RMW would use, nothing TypeDescriptionService-
+  # specific about it), not something constructing the service itself
+  # triggers -- left as a documented, precise known limitation rather than
+  # papered over by not constructing the service at all. See
+  # ros2-emscripten-zenoh-demo's site for the current wording.
+  build_number: 30
 rmf_battery:
   build_number: 26
 rmf_task:
