@@ -302,7 +302,14 @@ rcl_interfaces:
   # package's note) so GetParameters.Request's `string[] names` field (an
   # unbounded sequence<string>, the message used to find and verify that
   # fix) is regenerated with the corrected deserialize code.
-  build_number: 27
+  #
+  # 27 -> 28: no patch change to this package itself -- forces a rebuild
+  # against rosidl_typesupport_microxrcedds_c's own build 30 (see that
+  # package's note) so GetParameters.Response's `ParameterValue[] values`
+  # field (an unbounded sequence<NamespacedType>, the message used to
+  # find and verify that fix) is regenerated with the corrected
+  # deserialize code.
+  build_number: 28
 rclc:
   # Bumped 25 -> 26: no patch change -- this package's own build 25 was
   # produced on 2026-09-12, in the window between vinca commit 69fa7de
@@ -785,7 +792,33 @@ rmw_zenoh_pico:
   # talker (purely to silence the then-unresolved spurious warning) is
   # removed again -- rclpy's ordinary, fully-default event callbacks work
   # correctly now, matched or not.
-  build_number: 37
+  #
+  # 37 -> 38: implemented rmw_service_server_is_available(), previously an
+  # unconditional RMW_RET_UNSUPPORTED stub -- hit directly while testing
+  # rclpy's Client class this session: client.service_is_ready()/
+  # wait_for_service() both raise RCLError instead of returning False.
+  # Reuses the exact same liveliness-discovery graph cache
+  # (zenoh_pico_graph_cache.c) PR #12 already built for QoS matching:
+  # local Clients now register themselves the same way local Publishers/
+  # Subscriptions do, and the liveliness sample handler -- previously only
+  # recognizing "MP"/"MS" entity-type codes and explicitly bailing out on
+  # anything else, including on the (incorrect) assumption that service/
+  # client liveliness keys "have fewer segments" -- also recognizes "SS"
+  # (service) tokens now and matches them against local Clients by
+  # topic_name/topic_type, incrementing/decrementing a plain
+  # available_services counter on the client's own ZenohPicoServiceData
+  # (clamped at 0) instead of running the Publisher/Subscription-specific
+  # MATCHED/QOS_INCOMPATIBLE event logic, which doesn't apply here.
+  # Confirmed empirically that service/client liveliness keys DO carry the
+  # same topic_info segments as publisher/subscription ones (both go
+  # through zenoh_pico_generate_topic_info()) -- the stale comment
+  # claiming otherwise was simply wrong, conflating "service/client" with
+  # "plain node" (a real, shorter liveliness key, since a bare Node has no
+  # topic_info at all). Verified live: a client created before any
+  # matching service exists correctly reports service_is_ready()=False;
+  # creating the matching service flips it to True within a single tick;
+  # destroying that service flips it back to False.
+  build_number: 38
 ros2cli:
   build_number: 26
 rosgraph_msgs:
@@ -862,7 +895,35 @@ rosidl_typesupport_microxrcedds_c:
   # than risking a new link-time bug. Verified live: a real rclpy service
   # request carrying `names=['foo', 'bar', 'baz']` (three elements) is
   # correctly received and deserialized end-to-end.
-  build_number: 29
+  #
+  # 29 -> 30: fixed the sequence-of-namespaced-type follow-up build 29's
+  # own note flagged: an unbounded sequence<NamespacedType> member (e.g.
+  # rcl_interfaces/GetParameters.Response's `ParameterValue[] values`, a
+  # nested-message array) has the exact same outer-capacity-never-grown
+  # bug build 29 fixed for sequence<string>, and for the same reason --
+  # `if (size > ros_message->values.capacity) { return 0; }`, always true
+  # for a freshly-constructed (capacity 0) destination. Growing it
+  # *properly* would call the other message package's own generated
+  # `<Type>__Sequence__init()` (so each new element is correctly
+  # default-constructed) -- not available here, since this generated file
+  # deliberately never links directly against sibling message packages
+  # beyond their struct layout, reaching their (de)serialize only
+  # indirectly through the generic message_type_support_callbacks_t
+  # v-table, which has no "construct a default instance" entry. Fixed
+  # instead with a plain zero-filled `calloc()` (sized via
+  # `sizeof(*ros_message->values.data)`, a compile-time property of the
+  # pointee type that needs no literal type name and works even though
+  # `data` is NULL) -- equivalent to a proper per-element `__init()` for
+  # the overwhelming majority of message types, whose fields all default
+  # to their natural zero value. A destination that's already
+  # partially populated and still too small falls back to the previous
+  # `return 0` instead of growing, since properly releasing its existing
+  # elements' own sub-allocations needs that same unavailable fini().
+  # Verified live: a real rclpy service response carrying two real
+  # `ParameterValue` entries (`type=PARAMETER_STRING`/`string_value=
+  # 'hello'` and `type=PARAMETER_INTEGER`/`integer_value=42`) is received
+  # and deserialized correctly end-to-end by the client.
+  build_number: 30
 rosidl_typesupport_microxrcedds_cpp:
   # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
   build_number: 28

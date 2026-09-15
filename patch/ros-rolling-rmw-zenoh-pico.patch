@@ -220,6 +220,25 @@ index 9ef8ddf..4c04b53 100644
    extern bool is_rmw_zenoh_pico_event_changed(DataEventManager *event_mgr, rmw_event_type_t type);
  
    extern bool event_condition_check_and_attach(DataEventManager *event_data,
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_service.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_service.h
+index f65088f..83301d3 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_service.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_service.h
+@@ -74,6 +74,14 @@ extern "C"
+     // Internal mutex.
+     z_owned_mutex_t mutex;
+ 
++    // Client only: count of currently-discovered remote services matching
++    // this client's topic_name/topic_type (kept up to date by
++    // zenoh_pico_graph_cache.c's liveliness discovery, the same
++    // infrastructure QoS event/matching already uses). Backs
++    // rmw_service_server_is_available(). Always 0 for a Service entity --
++    // nothing currently needs a service to know about its clients.
++    int available_services;
++
+   } ZenohPicoServiceData;
+ 
+   // common
 diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h
 index d05f8c6..d33d466 100644
 --- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h
@@ -263,10 +282,10 @@ index 8de2826..9022321 100644
  
 diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h
 new file mode 100644
-index 0000000..478ca03
+index 0000000..46b76a2
 --- /dev/null
 +++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,90 @@
 +/*
 + * Copyright(C) 2026 the ros2-emscripten-zenoh-demo project.
 + *
@@ -298,34 +317,41 @@ index 0000000..478ca03
 +{
 +#endif  // if defined(__cplusplus)
 +
-+  // One local publisher or subscription, registered with its session's graph
-+  // cache so the session-wide liveliness discovery subscriber can find it
-+  // when a same-topic remote peer is discovered (or lost), and update its
-+  // MATCHED / QOS_INCOMPATIBLE event counters accordingly. Owns none of the
-+  // pointed-to data -- topic_name/topic_type/qos/event_mgr all live inside
-+  // the ZenohPicoPubData/ZenohPicoSubData this entry was registered for, and
-+  // must outlive it (guaranteed: unregistered in the same
-+  // rmw_destroy_publisher()/rmw_destroy_subscription() call that frees it).
++  // One local publisher, subscription, or client, registered with its
++  // session's graph cache so the session-wide liveliness discovery
++  // subscriber can find it when a same-topic remote peer is discovered (or
++  // lost). For a Publisher/Subscription this updates its MATCHED /
++  // QOS_INCOMPATIBLE event counters; for a Client (matched against a
++  // remote Service) it updates the owning ZenohPicoServiceData's
++  // available_services count instead (backing
++  // rmw_service_server_is_available()) -- qos/event_mgr are unused in that
++  // case, just kept non-NULL for a uniform registration call. Owns none of
++  // the pointed-to data -- topic_name/topic_type/qos/event_mgr all live
++  // inside the ZenohPicoPubData/ZenohPicoSubData/ZenohPicoServiceData this
++  // entry was registered for, and must outlive it (guaranteed:
++  // unregistered in the same rmw_destroy_publisher()/
++  // rmw_destroy_subscription()/rmw_destroy_client() call that frees it).
 +  typedef struct _ZenohPicoGraphLocalEntity
 +  {
 +    struct _ZenohPicoGraphLocalEntity *next;
 +
-+    ZenohPicoEntityType type;  // Publisher or Subscription -- nothing else is registered here
++    ZenohPicoEntityType type;  // Publisher, Subscription, or Client
 +    const z_loaned_string_t *topic_name;
 +    const z_loaned_string_t *topic_type;
 +    rmw_qos_profile_t *qos;
 +    DataEventManager *event_mgr;
 +
 +    // Opaque identity used only to find this entry again on unregister --
-+    // always the owning ZenohPicoPubData*/ZenohPicoSubData*, never
-+    // dereferenced here.
++    // always the owning ZenohPicoPubData*/ZenohPicoSubData*/
++    // ZenohPicoServiceData*, never dereferenced here.
 +    void *owner;
 +  } ZenohPicoGraphLocalEntity;
 +
-+  // Registers a local publisher or subscription so remote liveliness
-+  // discovery can match against it. Safe to call multiple times per session
-+  // (once per local entity) -- the session-wide liveliness subscriber itself
-+  // is only actually declared once, on the first registration.
++  // Registers a local publisher, subscription, or client so remote
++  // liveliness discovery can match against it. Safe to call multiple times
++  // per session (once per local entity) -- the session-wide liveliness
++  // subscriber itself is only actually declared once, on the first
++  // registration.
 +  extern bool graph_cache_register_local(
 +    ZenohPicoSession *session,
 +    ZenohPicoEntityType type,
@@ -369,10 +395,39 @@ index f17bd1d..a6462eb 100644
  
    <depend>zenohpico</depend>
 diff --git a/rmw_zenoh_pico/src/rmw_client.c b/rmw_zenoh_pico/src/rmw_client.c
-index ee15681..83eae3d 100644
+index ee15681..3045252 100644
 --- a/rmw_zenoh_pico/src/rmw_client.c
 +++ b/rmw_zenoh_pico/src/rmw_client.c
-@@ -308,7 +308,21 @@ rmw_send_request(
+@@ -137,6 +137,20 @@ rmw_create_client(
+   if(!declaration_service_data(client_data))
+     goto error;
+ 
++  // register with the session-wide graph cache so remote liveliness
++  // discovery can match against this client (backs
++  // rmw_service_server_is_available()). Non-fatal if it fails -- the
++  // client itself is otherwise fully functional, is_available() will just
++  // always report false.
++  (void)graph_cache_register_local(
++    client_data->node->session,
++    Client,
++    z_loan(client_data->entity->topic_info->name),
++    z_loan(client_data->entity->topic_info->type),
++    &client_data->qos_profile,
++    &client_data->data_event_mgr,
++    client_data);
++
+   return rmw_client;
+ 
+   error:
+@@ -166,6 +180,7 @@ rmw_destroy_client(
+   ZenohPicoServiceData *client_data = (ZenohPicoServiceData *)client->data;
+ 
+   if(client_data != NULL){
++    graph_cache_unregister_local(client_data->node->session, client_data);
+     undeclaration_service_data(client_data);
+     zenoh_pico_destroy_service_data(client_data);
+     client->data = NULL;
+@@ -308,7 +323,21 @@ rmw_send_request(
    // set attachment value
    z_get_options_t options;
    z_get_options_default(&options);
@@ -395,6 +450,39 @@ index ee15681..83eae3d 100644
  
    z_owned_bytes_t attachment;
    if(_Z_IS_ERR(attachment_gen(&client_data->attachment, &attachment))){
+@@ -401,9 +430,27 @@ rmw_ret_t rmw_service_server_is_available(
+ {
+   RMW_ZENOH_FUNC_ENTRY(node);
+ 
+-  (void)node;
+-  (void)client;
+-  (void)is_available;
+-  RMW_ZENOH_LOG_INFO("function not implemented");
+-  return RMW_RET_UNSUPPORTED;
++  RMW_CHECK_ARGUMENT_FOR_NULL(node, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_ARGUMENT_FOR_NULL(client, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_ARGUMENT_FOR_NULL(is_available, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
++    node->implementation_identifier,
++    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
++  RMW_CHECK_TYPE_IDENTIFIERS_MATCH(
++    client->implementation_identifier,
++    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
++
++  ZenohPicoServiceData * client_data = (ZenohPicoServiceData *)client->data;
++  RMW_CHECK_FOR_NULL_WITH_MSG(
++    client_data,
++    "Unable to retrieve client_data from client.",
++    RMW_RET_INVALID_ARGUMENT);
++
++  // Backed by the same liveliness-discovery graph cache QoS event/matching
++  // already uses (zenoh_pico_graph_cache.c) -- available_services is kept
++  // up to date as matching "SS" (service) liveliness tokens are discovered
++  // or lost. See graph_cache_register_local()'s call in rmw_create_client().
++  *is_available = client_data->available_services > 0;
++
++  return RMW_RET_OK;
+ }
 diff --git a/rmw_zenoh_pico/src/rmw_event.c b/rmw_zenoh_pico/src/rmw_event.c
 index 66b6528..40cefce 100644
 --- a/rmw_zenoh_pico/src/rmw_event.c
@@ -738,6 +826,19 @@ index 4faa566..cfc0054 100644
  }
  
  rmw_ret_t
+diff --git a/rmw_zenoh_pico/src/rmw_service.c b/rmw_zenoh_pico/src/rmw_service.c
+index 852fb95..24d31e5 100644
+--- a/rmw_zenoh_pico/src/rmw_service.c
++++ b/rmw_zenoh_pico/src/rmw_service.c
+@@ -134,6 +134,8 @@ ZenohPicoServiceData * zenoh_pico_generate_service_data(
+   z_slice_copy_from_buf(&data->attachment.gid, _gid, sizeof(_gid));
+   data->attachment.sequence_num = 0;
+ 
++  data->available_services = 0;
++
+   return data;
+ 
+ error:
 diff --git a/rmw_zenoh_pico/src/rmw_subscription.c b/rmw_zenoh_pico/src/rmw_subscription.c
 index 78c7c08..4c79383 100644
 --- a/rmw_zenoh_pico/src/rmw_subscription.c
@@ -975,10 +1076,10 @@ index 3e3f027..6984719 100644
  #define XXH_IMPLEMENTATION      /* access definitions */
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_graph_cache.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_graph_cache.c
 new file mode 100644
-index 0000000..81e503b
+index 0000000..a3dac20
 --- /dev/null
 +++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_graph_cache.c
-@@ -0,0 +1,404 @@
+@@ -0,0 +1,439 @@
 +/*
 + * Copyright(C) 2026 the ros2-emscripten-zenoh-demo project.
 + *
@@ -1196,6 +1297,22 @@ index 0000000..81e503b
 +  }
 +}
 +
++// rmw_service_server_is_available() only cares about existence, not QoS
++// compatibility -- unlike update_match_events() (Publisher<->Subscription),
++// there's no MATCHED/INCOMPATIBLE event pair here, just a live count of
++// currently-discovered matching services. Clamped at 0: a DELETE for a
++// service this client never actually saw a matching PUT for (e.g. it
++// existed before this client's own liveliness subscriber was declared, and
++// this session never got the "history" PUT replay for some reason) must
++// never take the count negative.
++static void update_client_availability(ZenohPicoServiceData *client_data, bool is_put)
++{
++  client_data->available_services += is_put ? 1 : -1;
++  if (client_data->available_services < 0) {
++    client_data->available_services = 0;
++  }
++}
++
 +static void graph_cache_process_sample(ZenohPicoSession *session,
 +					const char *key_str, size_t key_len,
 +					bool is_put)
@@ -1210,8 +1327,14 @@ index 0000000..81e503b
 +  char *segments[MIN_TOPIC_ENTITY_SEGMENTS];
 +  size_t segment_count = split_segments(buf, segments, MIN_TOPIC_ENTITY_SEGMENTS);
 +  if (segment_count < MIN_TOPIC_ENTITY_SEGMENTS) {
-+    // Not a topic-bearing entity (a plain node, or a service/client, whose
-+    // liveliness key has fewer segments) -- nothing to match here.
++    // Not a topic-bearing entity -- a plain node's liveliness key has no
++    // topic_info segments at all (generate_liveliness() only appends them
++    // `if (entity->topic_info != NULL)`, which a plain Node never has).
++    // Service and Client entities DO carry topic_info (the service name/
++    // type, same as a topic) and so reach the entity_type dispatch below
++    // just like Publisher/Subscription -- confirmed via
++    // zenoh_pico_generate_service_entity()'s own call to
++    // zenoh_pico_generate_topic_info().
 +    return;
 +  }
 +  if (strcmp(segments[0], ADMIN_SPACE_PREFIX) != 0) {
@@ -1224,8 +1347,13 @@ index 0000000..81e503b
 +    remote_type = Publisher;
 +  } else if (strcmp(entity_type, "MS") == 0) {
 +    remote_type = Subscription;
++  } else if (strcmp(entity_type, "SS") == 0) {
++    remote_type = Service;
 +  } else {
-+    // A service/client/node liveliness token -- also not matched here.
++    // A client/node liveliness token -- also not matched here. Nothing
++    // currently needs a service or client to discover remote *clients*
++    // (only rmw_service_server_is_available(), client-side only, needs
++    // this at all), so "SC" is deliberately left unhandled, same as "NN".
 +    return;
 +  }
 +
@@ -1239,12 +1367,16 @@ index 0000000..81e503b
 +
 +  for (ZenohPicoGraphLocalEntity *local = session->graph_local_entities;
 +       local != NULL; local = local->next) {
-+    // Only Publisher<->Subscription pairs can ever match -- a local
-+    // publisher only cares about remote subscriptions, and vice versa.
-+    bool complementary =
++    // Publisher<->Subscription and Client<->Service are the only pairs
++    // that can ever match -- a local publisher only cares about remote
++    // subscriptions (and vice versa), and a local client only cares about
++    // remote services (nothing currently needs the reverse).
++    bool pubsub_pair =
 +      (local->type == Publisher && remote_type == Subscription) ||
 +      (local->type == Subscription && remote_type == Publisher);
-+    if (!complementary) {
++    bool client_service_pair =
++      local->type == Client && remote_type == Service;
++    if (!pubsub_pair && !client_service_pair) {
 +      continue;
 +    }
 +
@@ -1259,7 +1391,11 @@ index 0000000..81e503b
 +      continue;
 +    }
 +
-+    update_match_events(local, &remote_qos, is_put);
++    if (client_service_pair) {
++      update_client_availability((ZenohPicoServiceData *)local->owner, is_put);
++    } else {
++      update_match_events(local, &remote_qos, is_put);
++    }
 +  }
 +
 +  z_mutex_unlock(z_loan_mut(session->graph_lock));
