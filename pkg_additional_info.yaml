@@ -391,6 +391,40 @@ rclpy:
   # triggers -- left as a documented, precise known limitation rather than
   # papered over by not constructing the service at all. See
   # ros2-emscripten-zenoh-demo's site for the current wording.
+  #
+  # RESOLVED (confirmed 2026-09-16, no rclpy code change needed): re-tested
+  # this exact scenario -- a client calling this same node's own
+  # `~/get_type_description` with a deliberately-empty type_hash -- against
+  # the currently-shipped rmw_zenoh_pico (build 37). The future now resolves
+  # cleanly: `GetTypeDescription_Response(successful=False, failure_reason=
+  # 'Failed to parse type hash', ...)`. Root cause was in rmw_zenoh_pico's
+  # own rmw_client.c: rmw_send_request()'s attachment_sequence_num_inc() is
+  # a post-increment (returns the OLD value, bumps the field after), but the
+  # code used to read the *already-bumped* field for the sequence_id handed
+  # back to the caller -- permanently one behind what attachment_gen() then
+  # embedded on the wire. rclpy's Client.call_async() keys its pending-
+  # request dict by that sequence_id, so every reply's echoed sequence
+  # number looked up a request that was never registered -- a plain
+  # KeyError, silently swallowed by executors.py's `except KeyError: pass`,
+  # so the future never resolved. This predates the QoS-matching work in
+  # builds 34-37 and was already fixed by the time build 37 shipped; this
+  # note was simply never updated to say so. A *separate*, more
+  # far-reaching bug was found investigating this: rosidl_typesupport_
+  # microxrcedds_c's generated cdr_deserialize() for any *unbounded*
+  # sequence field (e.g. `string[] names` in rcl_interfaces/GetParameters.
+  # Request) always fails on a freshly-received (zero-capacity) message --
+  # msg__type_support_c.c.em's sequence-of-string/sequence-of-namespaced-
+  # type deserialize branches do `if (size > capacity) return 0;` with no
+  # code path that ever grows the destination sequence to fit, so any
+  # unbounded array member is fundamentally undeserializable via this
+  # typesupport backend today. Confirmed via byte-identical, correctly-
+  # formed wire data (verified with a hex dump on both ends) still failing
+  # cdr_deserialize; a request/response using only scalar fields (tested
+  # with lifecycle_msgs/ChangeState) round-trips perfectly. Not yet fixed --
+  # this is a rosidl_typesupport_microxrcedds codegen-template bug, not an
+  # rmw_zenoh_pico one, and affects any message with an unbounded sequence
+  # (e.g. the real `rcl_interfaces/GetParameters` parameter-service call,
+  # not just this synthetic test).
   build_number: 30
 rmf_battery:
   build_number: 26
