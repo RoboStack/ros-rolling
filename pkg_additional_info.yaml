@@ -674,56 +674,78 @@ rmw_zenoh_pico:
   # sub_rmw_zenoh_pico_event_current()), and rclpy's default
   # incompatible-QoS callback logs a real warning instead of crashing.
   #
-  # Two known gaps found during this same verification, both left
-  # unresolved here (neither is in the new graph-cache matching/counting
-  # logic itself, which was directly verified correct -- see above):
+  # 36 -> 37: root-caused and fixed the two gaps build 36 left open (both
+  # turned out to share ONE real, previously-unknown cause -- a genuine
+  # bug 4 in this file's own rmw_wait.c, not an rclpy/rcl-side limitation
+  # as build 36 had assumed):
   #
-  #   A. rclpy-level: its own async event-handler dispatch path
-  #      (executors.py's coroutine-driven Waitable execute(), used for any
-  #      *default* QoS event callback) crashes with `AttributeError:
-  #      'Condition' object has no attribute '_lock'` (or, depending on
-  #      timing, `'_WorkTracker' object has no attribute
-  #      '_num_work_executing'`) the first time a real MATCHED/
-  #      incompatible event reaches it on this non-pthreads wasm build --
-  #      a threading.Condition/_WorkTracker incompatibility with this
-  #      project's per-tick top-level-call re-entry model, the same
-  #      general class of issue as the already-documented
-  #      asyncio-state-across-calls fragility (see demo_env_build's own
-  #      xeus_python_shell-defensive-event-loop.patch). Out of scope here
-  #      since it lives in rclpy itself, not this RMW. Workaround: the
-  #      same `event_callbacks=PublisherEventCallbacks(
-  #      use_default_callbacks=False)` / SubscriptionEventCallbacks(...)
-  #      pattern this project's own site-packages-rclpy/node.py patch
-  #      already used for a different gap (see rclpy build 28/30 history).
+  # Bug 4 -- rmw_wait.c treated `events->events[i]` as if it were already
+  # a `DataEventManager*` (the same value `rmw_event->data` holds). It
+  # isn't: rcl's own rcl_wait_set_add_event() (rcl/src/rcl/wait.c)
+  # explicitly overwrites that array slot with the `rmw_event_t*` handle
+  # itself, one line after its own SET_ADD_RMW() macro had written
+  # `rmw_handle->data` there --
+  #   wait_set->impl->rmw_events.events[current_index] = rmw_handle;
+  # -- and every other rmw implementation agrees this is the real
+  # contract: rmw_fastrtps_shared_cpp's own rmw_wait.cpp does
+  # `static_cast<rmw_event_t *>(events->events[i])` and only reads
+  # `->data` after that cast (confirmed directly against both repos' own
+  # "rolling" branch sources). Casting the wrong thing to
+  # `DataEventManager*` reinterprets an unrelated `rmw_event_t`'s bytes
+  # (implementation_identifier/data/event_type) as
+  # total_count/current_count/changed/etc; a real pointer's bytes almost
+  # never happen to zero out the `changed` bool, so every registered
+  # event looked permanently "changed" from the moment it was created,
+  # regardless of anything graph_cache.c ever did. This is exactly what
+  # build 36 partially diagnosed as "gap B" (a DataEventManager address
+  # that matched nothing this patch ever initialized) without yet finding
+  # the real cause -- confirmed here by instrumenting every real
+  # DataEventManager ever constructed and showing rmw_wait.c was reading
+  # from a stable, valid, but *completely different* address the whole
+  # time. Fixed in both `_check_and_attach_condition()` and rmw_wait()'s
+  # own detach pass: `(DataEventManager *)((rmw_event_t *)events->events[i])->data`
+  # instead of casting `events->events[i]` directly.
   #
-  #   B. rmw-level, pre-existing, not newly introduced: even with gap A's
-  #      workaround applied, a plain publisher with no matching peer at
-  #      all (this project's own chatter_rclpy talker, or any Node's
-  #      automatic /parameter_events publisher) can still spuriously log
-  #      rclpy's default "New subscription discovered ... requesting
-  #      incompatible QoS" warning. Root-caused as far as: the graph
-  #      cache's own update_match_events() is confirmed NOT the source
-  #      (instrumented directly -- never called for these topics, since
-  #      nothing ever discovers a real complementary peer for them); the
-  #      DataEventManager pointer event_condition_check() reports as
-  #      "changed" does not match any pointer this patch's own
-  #      data_callback_init() ever initialized, and the specific
-  #      combination reported (a publisher-only manager with
-  #      SUBSCRIPTION_MATCHED "changed") cannot come from this patch's own
-  #      logic at all -- pointing at a stale/uninitialized entry
-  #      somewhere in the rcl/rmw wait-set event-array plumbing rather
-  #      than anything graph-cache-specific. Newly reachable rather than
-  #      newly introduced, same as bugs 1-3 above (no event Waitable was
-  #      ever real enough to dispatch through this path before this
-  #      patch). Harmless in practice: rmw_take_event() reports
-  #      total_count=0 and last_policy_kind=RMW_QOS_POLICY_INVALID for
-  #      these spurious wakeups (real incompatible discoveries still
-  #      report real, nonzero counts and real policy kinds -- see the
-  #      qos_mismatch verification above), so nothing is lost except log
-  #      noise; the same use_default_callbacks=False workaround as gap A
-  #      silences it. Left for a future session to actually track down in
-  #      rcl's own wait-set construction.
-  build_number: 36
+  # This single fix also resolved build 36's "gap A" (the rclpy
+  # `_WorkTracker`/threading.Condition crash in executors.py's async
+  # event-dispatch path): that crash was a downstream symptom, not a
+  # separate bug -- an event that never legitimately quiesces (because
+  # `changed` was being read from garbage that happened to look
+  # permanently true) kept re-triggering rclpy's coroutine dispatch for
+  # the same handler far more aggressively than any real event ever
+  # would, which is what actually corrupted `_WorkTracker`'s state.
+  # Verified live: 300+ spin_once() ticks with two real publisher/
+  # subscription pairs and rclpy's *default* (unmodified,
+  # use_default_callbacks left at its default True) event callbacks
+  # active throughout -- zero crashes, zero spurious warnings.
+  #
+  # One more real bug found and fixed alongside it while verifying: even
+  # after the events[]->data fix, a publisher/subscription with more than
+  # one registered rmw_event_t sharing the same DataEventManager (e.g.
+  # the default OFFERED_QOS_INCOMPATIBLE handler on an entity whose
+  # MATCHED status genuinely changes) had every sibling handle reported
+  # "ready" whenever *any* type on that shared manager changed --
+  # event_condition_check() checks per-manager, not per-specific-type, by
+  # design (it has to, since a manager can back several handles). But
+  # rmw_take_event() then unconditionally reported "taken" for whatever
+  # specific type the caller asked about, without checking whether *that
+  # type's own* `changed` flag was actually set -- so a real MATCHED
+  # change caused a spurious, single-shot OFFERED_QOS_INCOMPATIBLE
+  # "New subscription discovered ... requesting incompatible QoS,
+  # Last incompatible policy: INVALID" callback fire alongside the real
+  # one. Fixed by gating rmw_take_event() on its own event type's
+  # `changed` flag before the switch, returning `*taken = false`
+  # otherwise -- standard rmw_take_event() semantics (report nothing new
+  # when there's nothing new), matching what every other rmw
+  # implementation already does. Verified: the same 300+-tick run above
+  # produced zero spurious callback fires of any kind.
+  #
+  # Net effect: the `PublisherEventCallbacks(use_default_callbacks=False)`
+  # workaround build 36 needed on this project's own chatter_rclpy
+  # talker (purely to silence the then-unresolved spurious warning) is
+  # removed again -- rclpy's ordinary, fully-default event callbacks work
+  # correctly now, matched or not.
+  build_number: 37
 ros2cli:
   build_number: 26
 rosgraph_msgs:

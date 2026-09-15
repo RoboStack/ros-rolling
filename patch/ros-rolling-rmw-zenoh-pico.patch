@@ -396,7 +396,7 @@ index ee15681..83eae3d 100644
    z_owned_bytes_t attachment;
    if(_Z_IS_ERR(attachment_gen(&client_data->attachment, &attachment))){
 diff --git a/rmw_zenoh_pico/src/rmw_event.c b/rmw_zenoh_pico/src/rmw_event.c
-index 66b6528..2f24669 100644
+index 66b6528..40cefce 100644
 --- a/rmw_zenoh_pico/src/rmw_event.c
 +++ b/rmw_zenoh_pico/src/rmw_event.c
 @@ -17,12 +17,28 @@
@@ -586,7 +586,36 @@ index 66b6528..2f24669 100644
      }
      data_callback->user_data = user_data;
      data_callback->callback  = callback;
-@@ -371,6 +469,15 @@ rmw_take_event(const rmw_event_t * event_handle,
+@@ -365,12 +463,44 @@ rmw_take_event(const rmw_event_t * event_handle,
+     "Publisher implementation identifier not from this implementation",
+     return RMW_RET_INCORRECT_RMW_IMPLEMENTATION);
+ 
++  // event_condition_check() (used by rmw_wait() to decide whether a
++  // wait-set entry is "ready") checks whether *any* of this shared
++  // DataEventManager's event types changed, not specifically the one
++  // `event_handle` here represents -- a publisher/subscription with more
++  // than one registered rmw_event_t (e.g. the default incompatible-QoS
++  // handler alongside a real MATCHED status change) had every sibling
++  // handle spuriously reported "ready" whenever *any* of them changed.
++  // rmw_take_event() used to compound that by never checking its own
++  // type's `changed` flag either, so a spurious wakeup for -- say --
++  // OFFERED_QOS_INCOMPATIBLE would still unconditionally report
++  // total_count=0/last_policy_kind=RMW_QOS_POLICY_INVALID with
++  // *taken=true, firing rclpy's default incompatible-QoS callback for an
++  // incident that never happened. Gate on this event's own `changed`
++  // flag first: a genuine change still reports normally below (and the
++  // switch cases each clear `changed` once taken); nothing to report
++  // otherwise.
++  z_mutex_lock(z_loan_mut(event_mgr->mutex));
++  bool has_changed = st->changed;
++  z_mutex_unlock(z_loan_mut(event_mgr->mutex));
++  if (!has_changed) {
++    return RMW_RET_OK;
++  }
++
+   switch (event_type) {
+   case RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE:
+   {
      rmw_requested_qos_incompatible_event_status_t *ei = (rmw_requested_qos_incompatible_event_status_t *)event_info;
      ei->total_count = st->total_count;
      ei->total_count_change = st->total_count_change;
@@ -602,7 +631,7 @@ index 66b6528..2f24669 100644
      st->changed = false;
      *taken = true;
      return RMW_RET_OK;
-@@ -381,6 +488,7 @@ rmw_take_event(const rmw_event_t * event_handle,
+@@ -381,6 +511,7 @@ rmw_take_event(const rmw_event_t * event_handle,
      rmw_requested_qos_incompatible_event_status_t *ei = (rmw_requested_qos_incompatible_event_status_t *)event_info;
      ei->total_count = st->total_count;
      ei->total_count_change = st->total_count_change;
@@ -766,10 +795,38 @@ index 78c7c08..4c79383 100644
  
  rmw_ret_t
 diff --git a/rmw_zenoh_pico/src/rmw_wait.c b/rmw_zenoh_pico/src/rmw_wait.c
-index 1302caa..fd6903a 100644
+index 1302caa..f6a54b2 100644
 --- a/rmw_zenoh_pico/src/rmw_wait.c
 +++ b/rmw_zenoh_pico/src/rmw_wait.c
-@@ -137,10 +137,65 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -57,8 +57,26 @@ static bool _check_and_attach_condition(const rmw_subscriptions_t * const subscr
+   }
+ 
+   if(events) {
++    // Upstream bug: `events->events[i]` here is NOT a DataEventManager* --
++    // rcl's own rcl_wait_set_add_event() (rcl/src/rcl/wait.c) explicitly
++    // stores the `rmw_event_t*` handle itself at this index (overwriting
++    // the `rmw_handle->data` value its own SET_ADD_RMW() macro had just
++    // written one line earlier), and every other rmw implementation
++    // agrees this is the real contract -- e.g. rmw_fastrtps's own
++    // rmw_wait.cpp does `static_cast<rmw_event_t *>(events->events[i])`
++    // before ever touching `->data`. This file used to skip that
++    // dereference and cast `events->events[i]` directly to
++    // DataEventManager*, silently reinterpreting an unrelated
++    // rmw_event_t's bytes (implementation_identifier/data/event_type) as
++    // a DataEventManager -- current_count/changed/etc. all landing on
++    // whatever garbage happened to overlap, which is how a bare pointer's
++    // bytes usually happen to look "changed=true" and never quiesce.
++    // Confirmed empirically: instrumenting every real DataEventManager
++    // ever constructed (data_callback_init()'s callers) showed this
++    // path was reading from an address that matched none of them.
+     for (size_t i = 0; i < events->event_count; ++i) {
+-      DataEventManager *event_mgr = (DataEventManager *)events->events[i];
++      rmw_event_t *rmw_event = (rmw_event_t *)events->events[i];
++      DataEventManager *event_mgr = (rmw_event != NULL) ? (DataEventManager *)rmw_event->data : NULL;
+       if (event_mgr == NULL) {
+         continue;
+       }
+@@ -137,10 +155,65 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      "waitset data struct is null",
      return RMW_RET_ERROR);
  
@@ -835,7 +892,7 @@ index 1302caa..fd6903a 100644
      z_loaned_mutex_t *lock = z_loan_mut(wait_set_data->condition_mutex);
      z_loaned_condvar_t *cv = z_loan_mut(wait_set_data->condition_variable);
  
-@@ -167,6 +222,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -167,6 +240,7 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
      wait_set_data->triggered = false;
  
      z_mutex_unlock(lock);
@@ -843,7 +900,7 @@ index 1302caa..fd6903a 100644
    }
  
    bool wait_result = false;
-@@ -187,17 +243,32 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+@@ -187,17 +261,36 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
    }
  
    if(events) {
@@ -862,7 +919,10 @@ index 1302caa..fd6903a 100644
 +    // QOS_INCOMPATIBLE events are genuinely supported. Matches the
 +    // subscriptions/services/clients loops just below: record readiness
 +    // in `wait_result` and null out an entry rcl should treat as not
-+    // ready, instead of returning early.
++    // ready, instead of returning early. Also fixed here: `events->events[i]`
++    // is an `rmw_event_t*` (see the identical fix and full rationale in
++    // _check_and_attach_condition() above), not a DataEventManager*
++    // directly -- go through `->data` to get the real manager.
      for (size_t i = 0; i < events->event_count; ++i) {
 -      for (size_t i = 0; i < events->event_count; ++i) {
 -	DataEventManager *event_mgr = (DataEventManager *)events->events[i];
@@ -874,7 +934,8 @@ index 1302caa..fd6903a 100644
 -	  // RMW_ZENOH_LOG_INFO("found attach event");
 -	  return true;
 -	}
-+      DataEventManager *event_mgr = (DataEventManager *)events->events[i];
++      rmw_event_t *rmw_event = (rmw_event_t *)events->events[i];
++      DataEventManager *event_mgr = (rmw_event != NULL) ? (DataEventManager *)rmw_event->data : NULL;
 +      if (event_mgr == NULL) {
 +	continue;
 +      }
