@@ -57,7 +57,7 @@ git = "*"
 # site-packages during cross-compilation -- ament_cmake_core's own CMake
 # configure step needs `import ament_package` there, which nothing
 # previously made visible to the native python that has to run it.
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "e64aa1b9a2786f774fef715b519c30db231bbce1" }
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "b3f6215a41d5e2c810d453e3c1b9b01fe33d606f" }
 
 [tasks]
 generate-recipes = { cmd = "vinca -m", depends-on = ["remove-recipes"] }
