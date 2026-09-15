@@ -184,6 +184,55 @@ index f17bd1d..a6462eb 100644
    <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>
  
    <depend>zenohpico</depend>
+diff --git a/rmw_zenoh_pico/src/rmw_client.c b/rmw_zenoh_pico/src/rmw_client.c
+index ee15681..83eae3d 100644
+--- a/rmw_zenoh_pico/src/rmw_client.c
++++ b/rmw_zenoh_pico/src/rmw_client.c
+@@ -308,7 +308,21 @@ rmw_send_request(
+   // set attachment value
+   z_get_options_t options;
+   z_get_options_default(&options);
+-  *sequence_id = attachment_sequence_num_inc(&client_data->attachment);
++  // attachment_sequence_num_inc() is a post-increment: it returns the
++  // OLD value and only then bumps client_data->attachment.sequence_num.
++  // attachment_gen() below always serializes the struct's CURRENT
++  // (already-bumped) field -- so the *sequence_id handed back to the
++  // caller here used to be permanently one behind whatever sequence
++  // number actually went out on the wire (and therefore whatever the
++  // eventual reply's echoed request_id.sequence_number reports). rclpy's
++  // own Client.call_async() keys its pending-request dict by this
++  // *sequence_id, so every reply's sequence number looked up a request
++  // that was never registered -- a plain KeyError, silently swallowed by
++  // executors.py's `except KeyError: pass`, so the future the caller is
++  // waiting on never resolves. Bump first, then read the field back, so
++  // *sequence_id is the exact value attachment_gen() is about to embed.
++  (void)attachment_sequence_num_inc(&client_data->attachment);
++  *sequence_id = (int64_t)client_data->attachment.sequence_num;
+ 
+   z_owned_bytes_t attachment;
+   if(_Z_IS_ERR(attachment_gen(&client_data->attachment, &attachment))){
+diff --git a/rmw_zenoh_pico/src/rmw_event.c b/rmw_zenoh_pico/src/rmw_event.c
+index 66b6528..82642bf 100644
+--- a/rmw_zenoh_pico/src/rmw_event.c
++++ b/rmw_zenoh_pico/src/rmw_event.c
+@@ -240,7 +240,7 @@ rmw_publisher_event_init(
+ 
+   if(support_event_type(event_type) < 0){
+     RMW_SET_ERROR_MSG("Publisher implementation identifier not from this implementation");
+-    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
++    return RMW_RET_UNSUPPORTED;
+   }
+ 
+   ZenohPicoPubData *pub_data = (ZenohPicoPubData *)publisher->data;
+@@ -271,7 +271,7 @@ rmw_subscription_event_init(
+ 
+   if(support_event_type(event_type) < 0){
+     RMW_SET_ERROR_MSG("Publisher implementation identifier not from this implementation");
+-    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
++    return RMW_RET_UNSUPPORTED;
+   }
+ 
+   ZenohPicoSubData *pub_data = (ZenohPicoSubData *)subscription->data;
 diff --git a/rmw_zenoh_pico/src/rmw_init.c b/rmw_zenoh_pico/src/rmw_init.c
 index 2695094..fca09f1 100644
 --- a/rmw_zenoh_pico/src/rmw_init.c
@@ -412,25 +461,3 @@ index f54ac92..baf0d6c 100644
  
    session->enable_session = true;
  
-diff --git a/rmw_zenoh_pico/src/rmw_event.c b/rmw_zenoh_pico/src/rmw_event.c
-index 66b6528..82642bf 100644
---- a/rmw_zenoh_pico/src/rmw_event.c
-+++ b/rmw_zenoh_pico/src/rmw_event.c
-@@ -240,7 +240,7 @@ rmw_publisher_event_init(
- 
-   if(support_event_type(event_type) < 0){
-     RMW_SET_ERROR_MSG("Publisher implementation identifier not from this implementation");
--    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
-+    return RMW_RET_UNSUPPORTED;
-   }
- 
-   ZenohPicoPubData *pub_data = (ZenohPicoPubData *)publisher->data;
-@@ -271,7 +271,7 @@ rmw_subscription_event_init(
- 
-   if(support_event_type(event_type) < 0){
-     RMW_SET_ERROR_MSG("Publisher implementation identifier not from this implementation");
--    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
-+    return RMW_RET_UNSUPPORTED;
-   }
- 
-   ZenohPicoSubData *pub_data = (ZenohPicoSubData *)subscription->data;

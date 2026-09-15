@@ -571,7 +571,31 @@ rmw_zenoh_pico:
   # separate use of RMW_RET_INCORRECT_RMW_IMPLEMENTATION a few lines below
   # each is for a genuinely different failure -- a publisher/subscription
   # from a different RMW implementation entirely -- and is untouched).
-  build_number: 34
+  #
+  # 34 -> 35: fixed rmw_send_request()'s sequence-number bug --
+  # attachment_sequence_num_inc() is a post-increment (returns the OLD
+  # value, then bumps client_data->attachment.sequence_num), but the very
+  # next call, attachment_gen(), always serializes the struct's CURRENT
+  # (already-bumped) field onto the wire. The *sequence_id handed back to
+  # rcl/rclpy was therefore always one behind whatever sequence number
+  # actually went out in the request -- and therefore one behind whatever
+  # the eventual reply's echoed request_id.sequence_number reports.
+  # rclpy's Client.call_async() keys its pending-request dict by
+  # *sequence_id, so every single reply's sequence number looked up a
+  # request that was never registered: a plain KeyError, silently
+  # swallowed by executors.py's `except KeyError: pass`, so the caller's
+  # future never resolves -- confirmed live, root-caused by adding
+  # temporary diagnostics at every step of the request/response path
+  # (send, wait-set attach, deserialize, sequence numbers on both ends)
+  # until the exact mismatch (sent seq=0, echoed-back seq=1) was directly
+  # observed. This is completely general -- every rclpy service client on
+  # this RMW was affected, not just this project's TypeDescriptionService
+  # investigation that found it. Fix: read *sequence_id back from the
+  # struct field *after* incrementing, so it matches exactly what
+  # attachment_gen() is about to embed. Verified live end-to-end: a
+  # client's future now resolves with the real deserialized response.
+  # Upstream PR: https://github.com/esol-community/rmw_zenoh_pico/pull/11
+  build_number: 35
 ros2cli:
   build_number: 26
 rosgraph_msgs:
