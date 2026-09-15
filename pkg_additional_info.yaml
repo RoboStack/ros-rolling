@@ -595,7 +595,135 @@ rmw_zenoh_pico:
   # attachment_gen() is about to embed. Verified live end-to-end: a
   # client's future now resolves with the real deserialized response.
   # Upstream PR: https://github.com/esol-community/rmw_zenoh_pico/pull/11
-  build_number: 35
+  #
+  # 35 -> 36: real QoS event/matching support. Every publisher/subscription
+  # already declared its own liveliness token (name/type/QoS encoded into
+  # the key -- zenoh_pico_liveliness.c's generate_liveliness()/
+  # qos_to_keyexpr()); nothing ever subscribed to *other* peers' tokens to
+  # discover them ("the gid_cache is not implemented", the upstream code's
+  # own comment). New src/zenoh_pico/zenoh_pico_graph_cache.c adds that
+  # other half: one session-wide liveliness subscriber under the same
+  # "@ros2_lv" admin space, decoding each discovered publisher's/
+  # subscription's topic+QoS and matching it against this session's own
+  # local entities on the same topic (reliability/durability compatibility
+  # only -- deadline/lifespan/liveliness deliberately out of scope).
+  # Registered from rmw_create_publisher()/rmw_create_subscription(),
+  # unregistered on destroy. Drives the existing (already-correct, just
+  # previously unreachable) rmw_take_event()/EventStatus machinery in
+  # rmw_event.c for RMW_EVENT_{REQUESTED,OFFERED}_QOS_INCOMPATIBLE and
+  # RMW_EVENT_{SUBSCRIPTION,PUBLICATION}_MATCHED, and implements
+  # rmw_publisher_count_matched_subscriptions()/
+  # rmw_subscription_count_matched_publishers() (previously
+  # RMW_RET_UNSUPPORTED stubs) via a new
+  # get_rmw_zenoh_pico_event_current_count() accessor.
+  #
+  # Along the way, found and fixed three real, previously-dormant upstream
+  # bugs this feature is the first thing to ever actually exercise (all
+  # three were unreachable while _support_event[] was empty/degenerate,
+  # per the build-34 and earlier history above):
+  #   1. rmw_event.c's support_event_type() read `#ifndef EVENT_TABLE_SIZE`
+  #      around its lookup loop -- but that macro is unconditionally
+  #      defined by the very header the file includes, so the condition
+  #      was always false and the loop was preprocessed out entirely.
+  #      support_event_type() therefore always returned -1 (every event
+  #      type "unsupported"), silently no-op'ing every
+  #      add_rmw_zenoh_pico_event_total()/_current()/take_event_status()
+  #      call project-wide, for every event type, not just the new ones.
+  #      Same bug, same fix, in event_condition_check() further down
+  #      (used by rmw_wait()'s event-ready gating).
+  #   2. rmw_wait.c's second events-handling loop (the "detach" pass) was
+  #      a nested `for` loop shadowing its own index variable -- a stray
+  #      duplicate of the identical loop header -- whose body ended with
+  #      `return true;`. rmw_wait() returns `rmw_ret_t`, not `bool`: `true`
+  #      is 1, which is RMW_RET_ERROR here, so the first ready event made
+  #      the whole call fail ("Error from rmw_wait(): 1 error not set", no
+  #      message ever set to go with it). Dormant for the same reason as
+  #      bug 1 (no event was ever real enough to reach "ready"). Fixed to
+  #      match the subscriptions/services/clients loops right below it:
+  #      record readiness in `wait_result`, null out entries that aren't
+  #      ready, no early return.
+  #   3. rmw_event.c's data_callback_init()/data_callback_set() zeroed a
+  #      DataEventManager's event_status with `sizeof(EventStatus)` (one
+  #      entry) instead of `sizeof(data_callback->event_status)` (the
+  #      whole EVENT_TABLE_SIZE-entry array) -- only slot 0 ever got
+  #      zeroed. Harmless while the two previously-enabled event types
+  #      were both pure lifetime total_count-only incident counters (a
+  #      stray nonzero start was hard to notice); real once current_count
+  #      needed a genuine zero start for
+  #      rmw_publisher_count_matched_subscriptions()/
+  #      rmw_subscription_count_matched_publishers() to mean anything.
+  #
+  # Also added EventStatus.last_policy_kind (a real rmw_qos_policy_kind_t,
+  # set by the graph cache's update_match_events() before an incompatible
+  # event goes live, defaulted to RMW_QOS_POLICY_INVALID otherwise) and
+  # wired it into rmw_take_event()'s two incompatible-QoS cases: this
+  # field used to be left unset entirely, and rclpy's own default
+  # incompatible-QoS callback (event_handler.py's
+  # _default_incompatible_qos_callback -> qos.py's
+  # qos_policy_name_from_kind()) reads it unconditionally once such an
+  # event is taken, raising ValueError on whatever uninitialized garbage
+  # happened to be there instead of a real value.
+  #
+  # Verified live end-to-end (two local publisher/subscription pairs,
+  # deliberately QoS-compatible and QoS-incompatible, matched via this
+  # session's own liveliness self-discovery over the real zenohd/WebSocket
+  # transport): rmw_publisher_count_matched_subscriptions()/
+  # rmw_subscription_count_matched_publishers() correctly report 1 once a
+  # complementary peer is discovered, correctly drop back to 0 once that
+  # peer is destroyed (the current_count decrement path,
+  # sub_rmw_zenoh_pico_event_current()), and rclpy's default
+  # incompatible-QoS callback logs a real warning instead of crashing.
+  #
+  # Two known gaps found during this same verification, both left
+  # unresolved here (neither is in the new graph-cache matching/counting
+  # logic itself, which was directly verified correct -- see above):
+  #
+  #   A. rclpy-level: its own async event-handler dispatch path
+  #      (executors.py's coroutine-driven Waitable execute(), used for any
+  #      *default* QoS event callback) crashes with `AttributeError:
+  #      'Condition' object has no attribute '_lock'` (or, depending on
+  #      timing, `'_WorkTracker' object has no attribute
+  #      '_num_work_executing'`) the first time a real MATCHED/
+  #      incompatible event reaches it on this non-pthreads wasm build --
+  #      a threading.Condition/_WorkTracker incompatibility with this
+  #      project's per-tick top-level-call re-entry model, the same
+  #      general class of issue as the already-documented
+  #      asyncio-state-across-calls fragility (see demo_env_build's own
+  #      xeus_python_shell-defensive-event-loop.patch). Out of scope here
+  #      since it lives in rclpy itself, not this RMW. Workaround: the
+  #      same `event_callbacks=PublisherEventCallbacks(
+  #      use_default_callbacks=False)` / SubscriptionEventCallbacks(...)
+  #      pattern this project's own site-packages-rclpy/node.py patch
+  #      already used for a different gap (see rclpy build 28/30 history).
+  #
+  #   B. rmw-level, pre-existing, not newly introduced: even with gap A's
+  #      workaround applied, a plain publisher with no matching peer at
+  #      all (this project's own chatter_rclpy talker, or any Node's
+  #      automatic /parameter_events publisher) can still spuriously log
+  #      rclpy's default "New subscription discovered ... requesting
+  #      incompatible QoS" warning. Root-caused as far as: the graph
+  #      cache's own update_match_events() is confirmed NOT the source
+  #      (instrumented directly -- never called for these topics, since
+  #      nothing ever discovers a real complementary peer for them); the
+  #      DataEventManager pointer event_condition_check() reports as
+  #      "changed" does not match any pointer this patch's own
+  #      data_callback_init() ever initialized, and the specific
+  #      combination reported (a publisher-only manager with
+  #      SUBSCRIPTION_MATCHED "changed") cannot come from this patch's own
+  #      logic at all -- pointing at a stale/uninitialized entry
+  #      somewhere in the rcl/rmw wait-set event-array plumbing rather
+  #      than anything graph-cache-specific. Newly reachable rather than
+  #      newly introduced, same as bugs 1-3 above (no event Waitable was
+  #      ever real enough to dispatch through this path before this
+  #      patch). Harmless in practice: rmw_take_event() reports
+  #      total_count=0 and last_policy_kind=RMW_QOS_POLICY_INVALID for
+  #      these spurious wakeups (real incompatible discoveries still
+  #      report real, nonzero counts and real policy kinds -- see the
+  #      qos_mismatch verification above), so nothing is lost except log
+  #      noise; the same use_default_callbacks=False workaround as gap A
+  #      silences it. Left for a future session to actually track down in
+  #      rcl's own wait-set construction.
+  build_number: 36
 ros2cli:
   build_number: 26
 rosgraph_msgs:

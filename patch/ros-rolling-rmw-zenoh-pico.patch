@@ -1,5 +1,5 @@
 diff --git a/rmw_zenoh_pico/CMakeLists.txt b/rmw_zenoh_pico/CMakeLists.txt
-index 1038b63..0d30f93 100644
+index 1038b63..251bf7f 100644
 --- a/rmw_zenoh_pico/CMakeLists.txt
 +++ b/rmw_zenoh_pico/CMakeLists.txt
 @@ -22,13 +22,75 @@ project(rmw_zenoh_pico
@@ -79,7 +79,15 @@ index 1038b63..0d30f93 100644
  # Build options
  option(BUILD_DOCUMENTATION              "Use doxygen to create product documentation" OFF)
  
-@@ -147,6 +209,47 @@ target_link_libraries(${PROJECT_NAME}
+@@ -109,6 +171,7 @@ set(SRCS
+   src/zenoh_pico/zenoh_pico_data.c
+   src/zenoh_pico/zenoh_pico_entity.c
+   src/zenoh_pico/zenoh_pico_gid.c
++  src/zenoh_pico/zenoh_pico_graph_cache.c
+   src/zenoh_pico/zenoh_pico_liveliness.c
+   src/zenoh_pico/zenoh_pico_messageType.c
+   src/zenoh_pico/zenoh_pico_nodeInfo.c
+@@ -147,6 +210,47 @@ target_link_libraries(${PROJECT_NAME}
    microcdr
  )
  
@@ -128,7 +136,7 @@ index 1038b63..0d30f93 100644
  find_package(rosidl_typesupport_microxrcedds_c)
  if(rosidl_typesupport_microxrcedds_c_FOUND)
 diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
-index 7cc5e97..5721f75 100644
+index 7cc5e97..604733e 100644
 --- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
 +++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico.h
 @@ -56,6 +56,13 @@
@@ -145,6 +153,93 @@ index 7cc5e97..5721f75 100644
  #include <zenoh-pico/utils/result.h>
  
  // debug print
+@@ -77,6 +84,7 @@ extern int target_print(const char *fmt, ...);
+ #include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_data.h>
+ #include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_entity.h>
+ #include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_gid.h>
++#include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h>
+ #include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_liveliness.h>
+ #include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_nodeInfo.h>
+ #include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_string.h>
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_event.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_event.h
+index 9ef8ddf..4c04b53 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_event.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_event.h
+@@ -29,16 +29,18 @@ extern "C"
+ {
+ #endif  // if defined(__cplusplus)
+ 
+-  // Note :
+-  // the current implement of rmw_zenoh_pico does not support event.
+-  // because, the gid_cache is not implemented on rmw_zenoh_pico.
+-  //
++  // Note:
++  // QoS event/matching support -- see rmw_zenoh_pico_graph_cache.h. Only
++  // the two events a real discovered-peer QoS comparison can actually
++  // drive are enabled: MESSAGE_LOST and the INCOMPATIBLE_TYPE pair need
++  // per-sample/per-type-hash tracking this project doesn't implement, and
++  // remain genuinely unsupported.
+   static rmw_event_type_t _support_event[] = {
+-    // RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE,
+-    // RMW_EVENT_OFFERED_QOS_INCOMPATIBLE,
++    RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE,
++    RMW_EVENT_OFFERED_QOS_INCOMPATIBLE,
+     // RMW_EVENT_MESSAGE_LOST,
+-    // RMW_EVENT_SUBSCRIPTION_MATCHED,
+-    // RMW_EVENT_PUBLICATION_MATCHED,
++    RMW_EVENT_SUBSCRIPTION_MATCHED,
++    RMW_EVENT_PUBLICATION_MATCHED,
+     // RMW_EVENT_SUBSCRIPTION_INCOMPATIBLE_TYPE,
+     // RMW_EVENT_PUBLISHER_INCOMPATIBLE_TYPE,
+   };
+@@ -51,6 +53,16 @@ extern "C"
+     size_t current_count;
+     size_t current_count_change;
+     bool changed;
++    // Only meaningful for RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE /
++    // RMW_EVENT_OFFERED_QOS_INCOMPATIBLE -- which policy caused the most
++    // recent incompatibility (rmw_*_qos_incompatible_event_status_t's own
++    // documented field). rclpy's own default incompatible-QoS callback
++    // (event_handler.py's _default_incompatible_qos_callback) reads this
++    // unconditionally once such an event is taken, so it has to be a real
++    // rmw_qos_policy_kind_t value, never left at its zero-initialized
++    // default (0 is not a valid rmw_qos_policy_kind_t -- see
++    // qos_policy_kind.h, every value there is a nonzero bit flag).
++    rmw_qos_policy_kind_t last_policy_kind;
+   } EventStatus;
+ 
+   typedef struct _DataEventManager {
+@@ -75,7 +87,10 @@ extern "C"
+   } DataEventManager;
+ 
+   extern void add_rmw_zenoh_pico_event_total(DataEventManager *event_mgr, rmw_event_type_t type, bool change);
++  extern void set_rmw_zenoh_pico_event_last_policy_kind(DataEventManager *event_mgr, rmw_event_type_t type, rmw_qos_policy_kind_t policy_kind);
+   extern void add_rmw_zenoh_pico_event_current(DataEventManager *event_mgr, rmw_event_type_t type, bool change);
++  extern void sub_rmw_zenoh_pico_event_current(DataEventManager *event_mgr, rmw_event_type_t type, bool change);
++  extern size_t get_rmw_zenoh_pico_event_current_count(DataEventManager *event_mgr, rmw_event_type_t type);
+   extern bool is_rmw_zenoh_pico_event_changed(DataEventManager *event_mgr, rmw_event_type_t type);
+ 
+   extern bool event_condition_check_and_attach(DataEventManager *event_data,
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h
+index d05f8c6..d33d466 100644
+--- a/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/rmw_zenoh_pico_session.h
+@@ -44,6 +44,15 @@ extern "C"
+     // graph infomation
+     rmw_guard_condition_t graph_guard_condition;
+ 
++    // QoS matching: session-wide liveliness discovery subscriber (declared
++    // once, lazily, on the first local publisher/subscription registered --
++    // see rmw_zenoh_pico_graph_cache.h) plus the list of this session's own
++    // local publishers/subscriptions it matches remote discoveries against.
++    z_owned_subscriber_t graph_liveliness_sub;
++    bool graph_liveliness_sub_active;
++    struct _ZenohPicoGraphLocalEntity *graph_local_entities;
++    z_owned_mutex_t graph_lock;
++
+   } ZenohPicoSession;
+ 
+   extern ZenohPicoSession *zenoh_pico_generate_session(const z_loaned_config_t *config,
 diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
 index 8de2826..9022321 100644
 --- a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_condition.h
@@ -166,6 +261,95 @@ index 8de2826..9022321 100644
  #include <rmw_zenoh_pico/rmw_zenoh_pico_rosMessage.h>
  #include <rmw_zenoh_pico/rmw_zenoh_pico_wait.h>
  
+diff --git a/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h
+new file mode 100644
+index 0000000..478ca03
+--- /dev/null
++++ b/rmw_zenoh_pico/include/rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h
+@@ -0,0 +1,83 @@
++/*
++ * Copyright(C) 2026 the ros2-emscripten-zenoh-demo project.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef RMW_ZENOH_PICO_GRAPH_CACHE_H
++#define RMW_ZENOH_PICO_GRAPH_CACHE_H
++
++#include <rmw/rmw.h>
++#include <zenoh-pico.h>
++
++#include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_entity.h>
++#include <rmw_zenoh_pico/rmw_zenoh_pico_session.h>
++#include <rmw_zenoh_pico/rmw_zenoh_pico_event.h>
++
++#if defined(__cplusplus)
++extern "C"
++{
++#endif  // if defined(__cplusplus)
++
++  // One local publisher or subscription, registered with its session's graph
++  // cache so the session-wide liveliness discovery subscriber can find it
++  // when a same-topic remote peer is discovered (or lost), and update its
++  // MATCHED / QOS_INCOMPATIBLE event counters accordingly. Owns none of the
++  // pointed-to data -- topic_name/topic_type/qos/event_mgr all live inside
++  // the ZenohPicoPubData/ZenohPicoSubData this entry was registered for, and
++  // must outlive it (guaranteed: unregistered in the same
++  // rmw_destroy_publisher()/rmw_destroy_subscription() call that frees it).
++  typedef struct _ZenohPicoGraphLocalEntity
++  {
++    struct _ZenohPicoGraphLocalEntity *next;
++
++    ZenohPicoEntityType type;  // Publisher or Subscription -- nothing else is registered here
++    const z_loaned_string_t *topic_name;
++    const z_loaned_string_t *topic_type;
++    rmw_qos_profile_t *qos;
++    DataEventManager *event_mgr;
++
++    // Opaque identity used only to find this entry again on unregister --
++    // always the owning ZenohPicoPubData*/ZenohPicoSubData*, never
++    // dereferenced here.
++    void *owner;
++  } ZenohPicoGraphLocalEntity;
++
++  // Registers a local publisher or subscription so remote liveliness
++  // discovery can match against it. Safe to call multiple times per session
++  // (once per local entity) -- the session-wide liveliness subscriber itself
++  // is only actually declared once, on the first registration.
++  extern bool graph_cache_register_local(
++    ZenohPicoSession *session,
++    ZenohPicoEntityType type,
++    const z_loaned_string_t *topic_name,
++    const z_loaned_string_t *topic_type,
++    rmw_qos_profile_t *qos,
++    DataEventManager *event_mgr,
++    void *owner);
++
++  // Unregisters a previously-registered local entity (matched by the same
++  // `owner` pointer passed to graph_cache_register_local()). No-op if not
++  // found (e.g. registration itself failed).
++  extern void graph_cache_unregister_local(ZenohPicoSession *session, void *owner);
++
++  // Tears down the session-wide liveliness discovery subscriber and frees
++  // every remaining registered local entity. Called from
++  // zenoh_pico_destroy_session().
++  extern void graph_cache_session_destroy(ZenohPicoSession *session);
++
++#if defined(__cplusplus)
++}
++#endif  // if defined(__cplusplus)
++
++#endif
 diff --git a/rmw_zenoh_pico/package.xml b/rmw_zenoh_pico/package.xml
 index f17bd1d..a6462eb 100644
 --- a/rmw_zenoh_pico/package.xml
@@ -212,10 +396,135 @@ index ee15681..83eae3d 100644
    z_owned_bytes_t attachment;
    if(_Z_IS_ERR(attachment_gen(&client_data->attachment, &attachment))){
 diff --git a/rmw_zenoh_pico/src/rmw_event.c b/rmw_zenoh_pico/src/rmw_event.c
-index 66b6528..82642bf 100644
+index 66b6528..2f24669 100644
 --- a/rmw_zenoh_pico/src/rmw_event.c
 +++ b/rmw_zenoh_pico/src/rmw_event.c
-@@ -240,7 +240,7 @@ rmw_publisher_event_init(
+@@ -17,12 +17,28 @@
+ 
+ static int support_event_type(rmw_event_type_t type)
+ {
+-#ifndef EVENT_TABLE_SIZE
++  // Upstream bug: this used to read `#ifndef EVENT_TABLE_SIZE` -- but that
++  // macro (see rmw_zenoh_pico_event.h) is unconditionally defined by the
++  // very header this file includes, so the #ifndef is always false and the
++  // lookup loop below was preprocessed out entirely, unconditionally,
++  // forever. support_event_type() therefore always fell straight through
++  // to `return -1`, for every event type, no matter what `_support_event[]`
++  // actually listed. Silently dormant until now: rmw_publisher_event_init()/
++  // rmw_subscription_event_init() failing "unsupported" is non-fatal
++  // (rclpy's own create_event_handlers() catches and ignores it), so no
++  // publisher/subscriber construction ever visibly broke -- it just meant
++  // every event's total_count/current_count bookkeeping in
++  // add_rmw_zenoh_pico_event_total()/_current()/take_event_status() (and,
++  // new in this patch, get_rmw_zenoh_pico_event_current_count()) was
++  // *always* silently skipped, project-wide, regardless of _support_event[]
++  // contents. First surfaced while testing the QoS event/matching feature
++  // added alongside this fix (see rmw_zenoh_pico_graph_cache.h) -- a real
++  // discovered-peer match updated nothing because take_event_status()
++  // could never find a live slot to update.
+   for(size_t index = 0; index < EVENT_TABLE_SIZE; index++){
+     if(_support_event[index] == type)
+       return index;
+   }
+-#endif
+   return -1;
+ }
+ 
+@@ -54,12 +70,23 @@ void add_rmw_zenoh_pico_event_total(DataEventManager *event_mgr, rmw_event_type_
+   return;
+ }
+ 
++void set_rmw_zenoh_pico_event_last_policy_kind(DataEventManager *event_mgr, rmw_event_type_t type, rmw_qos_policy_kind_t policy_kind)
++{
++  z_mutex_lock(z_loan_mut(event_mgr->mutex));
++
++  EventStatus *status = take_event_status(event_mgr, type);
++  if(status != NULL){
++    status->last_policy_kind = policy_kind;
++  }
++
++  z_mutex_unlock(z_loan_mut(event_mgr->mutex));
++}
++
+ void add_rmw_zenoh_pico_event_current(DataEventManager *event_mgr, rmw_event_type_t type, bool change)
+ {
+ 
+   z_mutex_lock(z_loan_mut(event_mgr->mutex));
+ 
+-  int index = support_event_type(type);
+   EventStatus *status = take_event_status(event_mgr, type);
+   if(status != NULL){
+     status->current_count += 1;
+@@ -73,6 +100,47 @@ void add_rmw_zenoh_pico_event_current(DataEventManager *event_mgr, rmw_event_typ
+   return;
+ }
+ 
++// Counterpart to add_rmw_zenoh_pico_event_current() for event types whose
++// current_count can genuinely decrease (RMW_EVENT_*_MATCHED: how many
++// peers are matched *right now*, as opposed to the monotonic total_count
++// lifetime counter -- see rmw_matched_status_t's own documented
++// semantics). Floors at 0 rather than underflowing.
++void sub_rmw_zenoh_pico_event_current(DataEventManager *event_mgr, rmw_event_type_t type, bool change)
++{
++
++  z_mutex_lock(z_loan_mut(event_mgr->mutex));
++
++  EventStatus *status = take_event_status(event_mgr, type);
++  if(status != NULL && status->current_count > 0){
++    status->current_count -= 1;
++    if(change)
++      status->current_count_change += 1;
++    status->changed = true;
++  }
++
++  z_mutex_unlock(z_loan_mut(event_mgr->mutex));
++
++  return;
++}
++
++// Reads back an event's live current_count (e.g. RMW_EVENT_*_MATCHED) without
++// consuming/clearing its "changed" flag -- used by
++// rmw_publisher_count_matched_subscriptions() / rmw_subscription_count_matched_publishers(),
++// which report a live snapshot rather than a one-shot event.
++size_t get_rmw_zenoh_pico_event_current_count(DataEventManager *event_mgr, rmw_event_type_t type)
++{
++  z_mutex_lock(z_loan_mut(event_mgr->mutex));
++
++  size_t count = 0;
++  EventStatus *status = take_event_status(event_mgr, type);
++  if(status != NULL)
++    count = status->current_count;
++
++  z_mutex_unlock(z_loan_mut(event_mgr->mutex));
++
++  return count;
++}
++
+ bool is_rmw_zenoh_pico_event_changed(DataEventManager *event_mgr, rmw_event_type_t type)
+ {
+   z_mutex_lock(z_loan_mut(event_mgr->mutex));
+@@ -93,14 +161,18 @@ bool is_rmw_zenoh_pico_event_changed(DataEventManager *event_mgr, rmw_event_type
+ 
+ static bool event_condition_check(DataEventManager *event_mgr)
+ {
+-#ifndef EVENT_TABLE_SIZE
++  // Same broken `#ifndef EVENT_TABLE_SIZE` upstream bug as
++  // support_event_type() above -- always false, so this loop was always
++  // skipped and event_condition_check() always returned false. Meant
++  // rmw_wait() could never be woken by a genuine event-status change
++  // reaching event_condition_check_and_attach()/
++  // event_condition_detach_and_queue_is_empty() through this path.
+   for(size_t index = 0; index < EVENT_TABLE_SIZE; index++){
+     rmw_event_type_t type = _support_event[index];
+ 
+     if(is_rmw_zenoh_pico_event_changed(event_mgr, type))
+       return true;
+   }
+-#endif
+ 
+   return false;
+ }
+@@ -240,7 +312,7 @@ rmw_publisher_event_init(
  
    if(support_event_type(event_type) < 0){
      RMW_SET_ERROR_MSG("Publisher implementation identifier not from this implementation");
@@ -224,7 +533,7 @@ index 66b6528..82642bf 100644
    }
  
    ZenohPicoPubData *pub_data = (ZenohPicoPubData *)publisher->data;
-@@ -271,7 +271,7 @@ rmw_subscription_event_init(
+@@ -271,7 +343,7 @@ rmw_subscription_event_init(
  
    if(support_event_type(event_type) < 0){
      RMW_SET_ERROR_MSG("Publisher implementation identifier not from this implementation");
@@ -233,6 +542,74 @@ index 66b6528..82642bf 100644
    }
  
    ZenohPicoSubData *pub_data = (ZenohPicoSubData *)subscription->data;
+@@ -295,7 +367,33 @@ void data_callback_init(DataEventManager *data_callback)
+   data_callback->callback = NULL;
+   data_callback->user_data = NULL;
+   data_callback->unread_count = 0;
+-  memset(data_callback->event_status, 0, sizeof(EventStatus));
++  // sizeof(EventStatus) (one entry) used to be passed here instead of
++  // sizeof(data_callback->event_status) (the whole EVENT_TABLE_SIZE-entry
++  // array) -- only event_status[0] (REQUESTED_QOS_INCOMPATIBLE) ever got
++  // zeroed; every other slot kept whatever garbage was already in this
++  // struct's memory (ZenohPicoPubData/ZenohPicoSubData are heap-allocated
++  // via ZenohPicoDataGenerate() without a full memset, unlike
++  // ZenohPicoSession). Dormant while only 2 event types were ever enabled
++  // (both plain lifetime total_count-only incident counters, so a stray
++  // nonzero start was hard to notice); real for the 4 QoS-matching event
++  // types added alongside the graph cache (see
++  // rmw_zenoh_pico_graph_cache.h) -- current_count read back by
++  // rmw_publisher_count_matched_subscriptions()/
++  // rmw_subscription_count_matched_publishers() needs a real zero start.
++  memset(data_callback->event_status, 0, sizeof(data_callback->event_status));
++  // A zeroed last_policy_kind is not a valid rmw_qos_policy_kind_t (every
++  // real value in qos_policy_kind.h is a nonzero bit flag) -- an
++  // REQUESTED/OFFERED_QOS_INCOMPATIBLE event that fires before
++  // update_match_events() ever sets a real policy kind for it (e.g. this
++  // node's own automatic /parameter_events publisher, which the graph
++  // cache never touches since nothing in this project subscribes to it)
++  // would otherwise hand rclpy's default incompatible-QoS callback a raw
++  // 0, which qos_policy_name_from_kind() rejects with a ValueError.
++  // RMW_QOS_POLICY_INVALID is qos_policy_kind.h's own designated "no
++  // specific policy" value -- a safe, real default.
++  for (size_t index = 0; index < EVENT_TABLE_SIZE; index++) {
++    data_callback->event_status[index].last_policy_kind = RMW_QOS_POLICY_INVALID;
++  }
+ }
+ 
+ void data_callback_set(DataEventManager *data_callback,
+@@ -311,7 +409,7 @@ void data_callback_set(DataEventManager *data_callback,
+       data_callback->callback(data_callback->user_data,
+ 			      data_callback->unread_count);
+       data_callback->unread_count = 0;
+-      memset(data_callback->event_status, 0, sizeof(EventStatus));
++      memset(data_callback->event_status, 0, sizeof(data_callback->event_status));
+     }
+     data_callback->user_data = user_data;
+     data_callback->callback  = callback;
+@@ -371,6 +469,15 @@ rmw_take_event(const rmw_event_t * event_handle,
+     rmw_requested_qos_incompatible_event_status_t *ei = (rmw_requested_qos_incompatible_event_status_t *)event_info;
+     ei->total_count = st->total_count;
+     ei->total_count_change = st->total_count_change;
++    // last_policy_kind used to be left unset here -- rclpy's own default
++    // incompatible-QoS callback (event_handler.py's
++    // _default_incompatible_qos_callback -> qos.py's
++    // qos_policy_kind_from_kind()) reads it unconditionally once this
++    // event is taken, and raised ValueError on whatever uninitialized
++    // stack/heap garbage happened to be there instead of a real
++    // rmw_qos_policy_kind_t value. See update_match_events()
++    // (zenoh_pico_graph_cache.h) for where this gets set.
++    ei->last_policy_kind = st->last_policy_kind;
+     st->changed = false;
+     *taken = true;
+     return RMW_RET_OK;
+@@ -381,6 +488,7 @@ rmw_take_event(const rmw_event_t * event_handle,
+     rmw_requested_qos_incompatible_event_status_t *ei = (rmw_requested_qos_incompatible_event_status_t *)event_info;
+     ei->total_count = st->total_count;
+     ei->total_count_change = st->total_count_change;
++    ei->last_policy_kind = st->last_policy_kind;
+     st->changed = false;
+     *taken = true;
+     return RMW_RET_OK;
 diff --git a/rmw_zenoh_pico/src/rmw_init.c b/rmw_zenoh_pico/src/rmw_init.c
 index 2695094..fca09f1 100644
 --- a/rmw_zenoh_pico/src/rmw_init.c
@@ -279,8 +656,117 @@ index 92604b2..32d2f67 100644
  
  void z_log_prefix(const char *prefix, const char *func_name, const char *fmt, ...) {
    static char tstamp[64];
+diff --git a/rmw_zenoh_pico/src/rmw_publisher.c b/rmw_zenoh_pico/src/rmw_publisher.c
+index 4faa566..cfc0054 100644
+--- a/rmw_zenoh_pico/src/rmw_publisher.c
++++ b/rmw_zenoh_pico/src/rmw_publisher.c
+@@ -327,6 +327,19 @@ rmw_create_publisher(
+   if(!declaration_publisher_data(pub_data))
+     goto error;
+ 
++  // register with the session-wide graph cache so remote liveliness
++  // discovery can match against this publisher (QoS event/matching
++  // support). Non-fatal if it fails -- the publisher itself is otherwise
++  // fully functional, it just won't report MATCHED/QOS_INCOMPATIBLE events.
++  (void)graph_cache_register_local(
++    pub_data->node->session,
++    Publisher,
++    z_loan(pub_data->entity->topic_info->name),
++    z_loan(pub_data->entity->topic_info->type),
++    &pub_data->adapted_qos_profile,
++    &pub_data->data_event_mgr,
++    pub_data);
++
+   return rmw_publisher;
+ 
+ error:
+@@ -356,6 +369,7 @@ rmw_destroy_publisher(
+   ZenohPicoPubData *pub_data = (ZenohPicoPubData *)publisher->data;
+ 
+   if(pub_data != NULL){
++    graph_cache_unregister_local(pub_data->node->session, pub_data);
+     undeclaration_publisher_data(pub_data);
+     zenoh_pico_destroy_publisher_data(pub_data);
+     publisher->data = NULL;
+@@ -376,10 +390,16 @@ rmw_publisher_count_matched_subscriptions(
+ {
+   RMW_ZENOH_FUNC_ENTRY(publisher);
+ 
+-  (void)publisher;
+-  (void)subscription_count;
+-  RMW_ZENOH_LOG_INFO("Function not available");
+-  return RMW_RET_UNSUPPORTED;
++  RMW_CHECK_ARGUMENT_FOR_NULL(publisher, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_ARGUMENT_FOR_NULL(publisher->data, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_ARGUMENT_FOR_NULL(subscription_count, RMW_RET_INVALID_ARGUMENT);
++
++  ZenohPicoPubData *pub_data = (ZenohPicoPubData *)publisher->data;
++
++  *subscription_count = get_rmw_zenoh_pico_event_current_count(
++    &pub_data->data_event_mgr, RMW_EVENT_PUBLICATION_MATCHED);
++
++  return RMW_RET_OK;
+ }
+ 
+ rmw_ret_t
+diff --git a/rmw_zenoh_pico/src/rmw_subscription.c b/rmw_zenoh_pico/src/rmw_subscription.c
+index 78c7c08..4c79383 100644
+--- a/rmw_zenoh_pico/src/rmw_subscription.c
++++ b/rmw_zenoh_pico/src/rmw_subscription.c
+@@ -395,6 +395,20 @@ rmw_create_subscription(
+   if(!declaration_subscription_data(sub_data))
+     goto error;
+ 
++  // register with the session-wide graph cache so remote liveliness
++  // discovery can match against this subscription (QoS event/matching
++  // support). Non-fatal if it fails -- the subscription itself is
++  // otherwise fully functional, it just won't report MATCHED/QOS_INCOMPATIBLE
++  // events.
++  (void)graph_cache_register_local(
++    sub_data->node->session,
++    Subscription,
++    z_loan(sub_data->entity->topic_info->name),
++    z_loan(sub_data->entity->topic_info->type),
++    &sub_data->adapted_qos_profile,
++    &sub_data->data_event_mgr,
++    sub_data);
++
+   return rmw_subscription;
+ 
+ error:
+@@ -423,6 +437,7 @@ rmw_destroy_subscription(
+   ZenohPicoSubData *sub_data = (ZenohPicoSubData *)subscription->data;
+ 
+   if(sub_data != NULL){
++    graph_cache_unregister_local(sub_data->node->session, sub_data);
+     undeclaration_subscription_data(sub_data);
+     zenoh_pico_destroy_subscription_data(sub_data);
+     subscription->data = NULL;
+@@ -442,11 +457,17 @@ rmw_subscription_count_matched_publishers(
+   size_t * publisher_count)
+ {
+   RMW_ZENOH_FUNC_ENTRY(subscription);
+-  (void)subscription;
+-  (void)publisher_count;
+-  RMW_ZENOH_LOG_INFO(
+-    "Function not available");
+-  return RMW_RET_UNSUPPORTED;
++
++  RMW_CHECK_ARGUMENT_FOR_NULL(subscription, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_ARGUMENT_FOR_NULL(subscription->data, RMW_RET_INVALID_ARGUMENT);
++  RMW_CHECK_ARGUMENT_FOR_NULL(publisher_count, RMW_RET_INVALID_ARGUMENT);
++
++  ZenohPicoSubData *sub_data = (ZenohPicoSubData *)subscription->data;
++
++  *publisher_count = get_rmw_zenoh_pico_event_current_count(
++    &sub_data->data_event_mgr, RMW_EVENT_SUBSCRIPTION_MATCHED);
++
++  return RMW_RET_OK;
+ }
+ 
+ rmw_ret_t
 diff --git a/rmw_zenoh_pico/src/rmw_wait.c b/rmw_zenoh_pico/src/rmw_wait.c
-index 1302caa..294b642 100644
+index 1302caa..fd6903a 100644
 --- a/rmw_zenoh_pico/src/rmw_wait.c
 +++ b/rmw_zenoh_pico/src/rmw_wait.c
 @@ -137,10 +137,65 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
@@ -357,6 +843,49 @@ index 1302caa..294b642 100644
    }
  
    bool wait_result = false;
+@@ -187,17 +243,32 @@ rmw_wait(rmw_subscriptions_t * subscriptions,
+   }
+ 
+   if(events) {
++    // Upstream bug: this used to be a nested `for` loop shadowing its own
++    // index variable (a copy-paste duplicate of the identical loop header,
++    // never actually reached -- see below), whose body ended with
++    // `return true;` even though rmw_wait() returns `rmw_ret_t`, not
++    // `bool` -- `true` is 1, which is RMW_RET_ERROR here, so the very
++    // first ready event made the whole call fail with the unhelpful
++    // "Error from rmw_wait(): 1 error not set" (no message was ever set
++    // to go with that code). Dormant as long as `events->event_count` was
++    // always 0: rmw_publisher_event_init()/rmw_subscription_event_init()
++    // used to always fail "unsupported" (see support_event_type()'s own
++    // fixed #ifndef bug), so rclpy never successfully registered a real
++    // event handle into any wait set to begin with. Real now that MATCHED/
++    // QOS_INCOMPATIBLE events are genuinely supported. Matches the
++    // subscriptions/services/clients loops just below: record readiness
++    // in `wait_result` and null out an entry rcl should treat as not
++    // ready, instead of returning early.
+     for (size_t i = 0; i < events->event_count; ++i) {
+-      for (size_t i = 0; i < events->event_count; ++i) {
+-	DataEventManager *event_mgr = (DataEventManager *)events->events[i];
+-	if (event_mgr == NULL) {
+-	  continue;
+-	}
+-
+-	if(event_condition_detach_and_queue_is_empty(event_mgr)) {
+-	  // RMW_ZENOH_LOG_INFO("found attach event");
+-	  return true;
+-	}
++      DataEventManager *event_mgr = (DataEventManager *)events->events[i];
++      if (event_mgr == NULL) {
++	continue;
++      }
++
++      if(event_condition_detach_and_queue_is_empty(event_mgr)) {
++	events->events[i] = NULL;
++      }else{
++	wait_result = true;
+       }
+     }
+   }
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
 index 0101c23..6dae0db 100644
 --- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_condition.c
@@ -383,11 +912,421 @@ index 3e3f027..6984719 100644
  
  #define XXH_STATIC_LINKING_ONLY /* access advanced declarations */
  #define XXH_IMPLEMENTATION      /* access definitions */
+diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_graph_cache.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_graph_cache.c
+new file mode 100644
+index 0000000..81e503b
+--- /dev/null
++++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_graph_cache.c
+@@ -0,0 +1,404 @@
++/*
++ * Copyright(C) 2026 the ros2-emscripten-zenoh-demo project.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * QoS event/matching support. rmw_zenoh_pico already declares a real
++ * liveliness token for every publisher/subscription it creates, with the
++ * full topic name/type/QoS encoded into the key (see
++ * zenoh_pico_liveliness.c's generate_liveliness()/qos_to_keyexpr()) -- but
++ * nothing ever subscribed to *other* peers' liveliness tokens to discover
++ * them, which is the "gid_cache is not implemented" this file's own header
++ * comment used to describe. This adds that other half: one session-wide
++ * liveliness subscriber under the same "@ros2_lv" admin space every peer
++ * already announces into, decoding each discovered publisher/subscription's
++ * topic and QoS and matching it against this session's own local
++ * publishers/subscriptions on the same topic.
++ */
++
++#include <stdlib.h>
++#include <string.h>
++
++#include <rmw_zenoh_pico/rmw_zenoh_pico.h>
++#include <rmw_zenoh_pico/zenoh_pico/rmw_zenoh_pico_graph_cache.h>
++
++// A plain macro (not the z_view_keyexpr_from_substr()-facing char array
++// below) so it can still be concatenated with an adjacent string literal
++// at compile time (e.g. ADMIN_SPACE_PREFIX_LIT "/**") -- a `const char[]`
++// identifier can't be: string-literal concatenation is a preprocessor/
++// lexer-level operation on adjacent literal tokens, not something that
++// works on a variable's runtime value.
++#define ADMIN_SPACE_PREFIX_LIT "@ros2_lv"
++static const char ADMIN_SPACE_PREFIX[] = ADMIN_SPACE_PREFIX_LIT;
++// Segment index (0-based, after splitting the whole key on '/') of the
++// two-letter entity-type code -- see conv_entity_type() in
++// zenoh_pico_liveliness.c for the exact values ("MP" publisher, "MS"
++// subscription, "NN" node, "SS" service, "SC" client) and
++// generate_liveliness() for why it's always this position.
++#define ENTITY_TYPE_SEGMENT_INDEX 5
++#define TOPIC_NAME_SEGMENT_INDEX  9
++#define TOPIC_TYPE_SEGMENT_INDEX  10
++#define TOPIC_QOS_SEGMENT_INDEX   12
++#define MIN_TOPIC_ENTITY_SEGMENTS 13
++
++// ---------------------------------------------------------------- parsing
++
++// Splits `key` (a NUL-terminated, mutable copy of a liveliness sample's key
++// expression) in place on '/', filling `out[]` with a pointer to the start
++// of each segment (each also left NUL-terminated, since the '/' bytes
++// themselves get overwritten). Returns the segment count found, capped at
++// `max_segments`.
++static size_t split_segments(char *key, char **out, size_t max_segments)
++{
++  size_t count = 0;
++  char *p = key;
++
++  out[count++] = p;
++  while (*p != '\0' && count < max_segments) {
++    if (*p == '/') {
++      *p = '\0';
++      out[count++] = p + 1;
++    }
++    p++;
++  }
++
++  return count;
++}
++
++// SLASH_REPLACEMENT ('%') -> '/', in place -- mirrors
++// zenoh_pico_liveliness.c's own (file-local, not exported) demangle_name(),
++// which generate_liveliness() uses to escape a real '/' inside a name
++// (e.g. a namespaced topic) before splicing it into the liveliness key as
++// one segment. Duplicated here rather than exported from that file for one
++// caller.
++static void demangle_segment(char *s)
++{
++  for (; *s != '\0'; s++) {
++    if (*s == '%') {
++      *s = '/';
++    }
++  }
++}
++
++// Reverse of qos_to_keyexpr() (zenoh_pico_liveliness.c): that function
++// always emits these 11 QoS fields in this fixed order, joined by a plain
++// field separator (either ':' or ',' -- deliberately treated the same way
++// here, since the *order* of values is what carries meaning, not which
++// separator character happened to be used at each position) with a
++// zero-valued field written as an empty token instead of "0".
++static void qos_from_segment(const char *qos_segment, rmw_qos_profile_t *out)
++{
++  memset(out, 0, sizeof(*out));
++
++  char buf[64];
++  memset(buf, 0, sizeof(buf));
++  strncpy(buf, qos_segment, sizeof(buf) - 1);
++
++  long values[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
++  size_t idx = 0;
++  char *tok_start = buf;
++  char *p = buf;
++
++  while (idx < 11) {
++    if (*p == ':' || *p == ',' || *p == '\0') {
++      char saved = *p;
++      *p = '\0';
++      values[idx++] = (tok_start[0] != '\0') ? strtol(tok_start, NULL, 10) : 0;
++      if (saved == '\0') {
++	break;
++      }
++      tok_start = p + 1;
++    }
++    p++;
++  }
++
++  out->reliability                    = (rmw_qos_reliability_policy_t)values[0];
++  out->durability                     = (rmw_qos_durability_policy_t)values[1];
++  out->history                        = (rmw_qos_history_policy_t)values[2];
++  out->depth                          = (size_t)values[3];
++  out->deadline.sec                   = (uint64_t)values[4];
++  out->deadline.nsec                  = (uint64_t)values[5];
++  out->lifespan.sec                   = (uint64_t)values[6];
++  out->lifespan.nsec                  = (uint64_t)values[7];
++  out->liveliness                     = (rmw_qos_liveliness_policy_t)values[8];
++  out->liveliness_lease_duration.sec  = (uint64_t)values[9];
++  out->liveliness_lease_duration.nsec = (uint64_t)values[10];
++}
++
++// ------------------------------------------------------------ compatibility
++
++// Standard ROS 2 / DDS offered-vs-requested QoS compatibility rules for the
++// two policies real applications actually rely on for QoS matching in
++// practice. SYSTEM_DEFAULT on either side is treated as "no constraint"
++// here -- a documented simplification; a fully rigorous check would first
++// resolve SYSTEM_DEFAULT to whatever the middleware's actual default is.
++// deadline/lifespan/liveliness compatibility is intentionally not checked:
++// narrower in scope than a complete DDS-compatible implementation, but
++// covers the two policies (reliability, durability) that dominate
++// real-world QoS mismatches.
++static bool qos_reliability_compatible(rmw_qos_reliability_policy_t offered,
++					rmw_qos_reliability_policy_t requested)
++{
++  return !(requested == RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
++	   offered == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
++}
++
++static bool qos_durability_compatible(rmw_qos_durability_policy_t offered,
++				       rmw_qos_durability_policy_t requested)
++{
++  return !(requested == RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL &&
++	   offered == RMW_QOS_POLICY_DURABILITY_VOLATILE);
++}
++
++// pub_qos is always the offered (publisher-side) profile and sub_qos is
++// always the requested (subscription-side) profile, regardless of which
++// side is the local entity being matched.
++static bool qos_compatible(rmw_qos_profile_t *pub_qos, rmw_qos_profile_t *sub_qos)
++{
++  return qos_reliability_compatible(pub_qos->reliability, sub_qos->reliability) &&
++	 qos_durability_compatible(pub_qos->durability, sub_qos->durability);
++}
++
++// ------------------------------------------------------------- matching
++
++static void update_match_events(ZenohPicoGraphLocalEntity *local,
++				  rmw_qos_profile_t *remote_qos,
++				  bool is_put)
++{
++  rmw_qos_profile_t *pub_qos = (local->type == Publisher) ? local->qos : remote_qos;
++  rmw_qos_profile_t *sub_qos = (local->type == Publisher) ? remote_qos : local->qos;
++  bool reliability_ok = qos_reliability_compatible(pub_qos->reliability, sub_qos->reliability);
++  bool durability_ok = qos_durability_compatible(pub_qos->durability, sub_qos->durability);
++  bool compatible = reliability_ok && durability_ok;
++
++  rmw_event_type_t matched_event = (local->type == Publisher)
++    ? RMW_EVENT_PUBLICATION_MATCHED : RMW_EVENT_SUBSCRIPTION_MATCHED;
++  rmw_event_type_t incompatible_event = (local->type == Publisher)
++    ? RMW_EVENT_OFFERED_QOS_INCOMPATIBLE : RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE;
++
++  if (compatible) {
++    if (is_put) {
++      // A newly-discovered compatible peer is both a new lifetime match
++      // (total_count) and one more currently-live match (current_count).
++      add_rmw_zenoh_pico_event_total(local->event_mgr, matched_event, true);
++      add_rmw_zenoh_pico_event_current(local->event_mgr, matched_event, true);
++    } else {
++      // A previously-compatible peer going away is one fewer live match --
++      // total_count (the lifetime count) never decreases, matching
++      // rmw_matched_status_t's own documented semantics.
++      sub_rmw_zenoh_pico_event_current(local->event_mgr, matched_event, true);
++    }
++  } else if (is_put) {
++    // rmw_qos_incompatible_event_status_t has no current_count at all --
++    // it's a pure lifetime incident counter (see rmw/events_statuses/
++    // incompatible_qos.h), so nothing to do on a DELETE here either way.
++    // last_policy_kind must be set before the event's total_count/changed
++    // flag goes live (add_rmw_zenoh_pico_event_total() below) -- a reader
++    // that wakes up on `changed` should never see a stale/unset value.
++    // Reliability is checked first above, so if it's the one that failed,
++    // report it; otherwise durability must be the culprit (compatible is
++    // only false here because at least one of the two failed).
++    set_rmw_zenoh_pico_event_last_policy_kind(
++      local->event_mgr, incompatible_event,
++      !reliability_ok ? RMW_QOS_POLICY_RELIABILITY : RMW_QOS_POLICY_DURABILITY);
++    add_rmw_zenoh_pico_event_total(local->event_mgr, incompatible_event, true);
++  }
++}
++
++static void graph_cache_process_sample(ZenohPicoSession *session,
++					const char *key_str, size_t key_len,
++					bool is_put)
++{
++  char buf[RMW_ZENOH_PICO_MAX_LINENESS_LEN];
++  if (key_len >= sizeof(buf)) {
++    key_len = sizeof(buf) - 1;
++  }
++  memcpy(buf, key_str, key_len);
++  buf[key_len] = '\0';
++
++  char *segments[MIN_TOPIC_ENTITY_SEGMENTS];
++  size_t segment_count = split_segments(buf, segments, MIN_TOPIC_ENTITY_SEGMENTS);
++  if (segment_count < MIN_TOPIC_ENTITY_SEGMENTS) {
++    // Not a topic-bearing entity (a plain node, or a service/client, whose
++    // liveliness key has fewer segments) -- nothing to match here.
++    return;
++  }
++  if (strcmp(segments[0], ADMIN_SPACE_PREFIX) != 0) {
++    return;
++  }
++
++  const char *entity_type = segments[ENTITY_TYPE_SEGMENT_INDEX];
++  ZenohPicoEntityType remote_type;
++  if (strcmp(entity_type, "MP") == 0) {
++    remote_type = Publisher;
++  } else if (strcmp(entity_type, "MS") == 0) {
++    remote_type = Subscription;
++  } else {
++    // A service/client/node liveliness token -- also not matched here.
++    return;
++  }
++
++  demangle_segment(segments[TOPIC_NAME_SEGMENT_INDEX]);
++  demangle_segment(segments[TOPIC_TYPE_SEGMENT_INDEX]);
++
++  rmw_qos_profile_t remote_qos;
++  qos_from_segment(segments[TOPIC_QOS_SEGMENT_INDEX], &remote_qos);
++
++  z_mutex_lock(z_loan_mut(session->graph_lock));
++
++  for (ZenohPicoGraphLocalEntity *local = session->graph_local_entities;
++       local != NULL; local = local->next) {
++    // Only Publisher<->Subscription pairs can ever match -- a local
++    // publisher only cares about remote subscriptions, and vice versa.
++    bool complementary =
++      (local->type == Publisher && remote_type == Subscription) ||
++      (local->type == Subscription && remote_type == Publisher);
++    if (!complementary) {
++      continue;
++    }
++
++    if (z_string_len(local->topic_name) != strlen(segments[TOPIC_NAME_SEGMENT_INDEX]) ||
++	strncmp(z_string_data(local->topic_name), segments[TOPIC_NAME_SEGMENT_INDEX],
++		z_string_len(local->topic_name)) != 0) {
++      continue;
++    }
++    if (z_string_len(local->topic_type) != strlen(segments[TOPIC_TYPE_SEGMENT_INDEX]) ||
++	strncmp(z_string_data(local->topic_type), segments[TOPIC_TYPE_SEGMENT_INDEX],
++		z_string_len(local->topic_type)) != 0) {
++      continue;
++    }
++
++    update_match_events(local, &remote_qos, is_put);
++  }
++
++  z_mutex_unlock(z_loan_mut(session->graph_lock));
++}
++
++static void graph_liveliness_sample_handler(z_loaned_sample_t *sample, void *ctx)
++{
++  ZenohPicoSession *session = (ZenohPicoSession *)ctx;
++  if (session == NULL) {
++    return;
++  }
++
++  z_view_string_t keystr;
++  z_keyexpr_as_view_string(z_sample_keyexpr(sample), &keystr);
++  const z_loaned_string_t *loaned = z_loan(keystr);
++
++  bool is_put = (z_sample_kind(sample) == Z_SAMPLE_KIND_PUT);
++  graph_cache_process_sample(session, z_string_data(loaned), z_string_len(loaned), is_put);
++}
++
++// ----------------------------------------------------------- registration
++
++bool graph_cache_register_local(
++  ZenohPicoSession *session,
++  ZenohPicoEntityType type,
++  const z_loaned_string_t *topic_name,
++  const z_loaned_string_t *topic_type,
++  rmw_qos_profile_t *qos,
++  DataEventManager *event_mgr,
++  void *owner)
++{
++  RMW_CHECK_ARGUMENT_FOR_NULL(session, false);
++  RMW_CHECK_ARGUMENT_FOR_NULL(owner, false);
++
++  ZenohPicoGraphLocalEntity *entry = (ZenohPicoGraphLocalEntity *)
++    malloc(sizeof(ZenohPicoGraphLocalEntity));
++  RMW_CHECK_FOR_NULL_WITH_MSG(
++    entry, "failed to allocate ZenohPicoGraphLocalEntity", return false);
++
++  entry->type = type;
++  entry->topic_name = topic_name;
++  entry->topic_type = topic_type;
++  entry->qos = qos;
++  entry->event_mgr = event_mgr;
++  entry->owner = owner;
++
++  if (!session->graph_liveliness_sub_active) {
++    // Lazily declared on the first local publisher/subscription, once the
++    // session is definitely already open (both rmw_create_publisher() and
++    // rmw_create_subscription() only reach here after their own liveliness
++    // token declared successfully, which itself requires an open session).
++    z_view_keyexpr_t ke;
++    z_view_keyexpr_from_substr(&ke, ADMIN_SPACE_PREFIX_LIT "/**", strlen(ADMIN_SPACE_PREFIX_LIT "/**"));
++
++    z_liveliness_subscriber_options_t options;
++    z_liveliness_subscriber_options_default(&options);
++    options.history = true;  // see already-declared peers, not just future changes
++
++    z_owned_closure_sample_t callback;
++    z_closure(&callback, graph_liveliness_sample_handler, 0, (void *)session);
++
++    if (_Z_IS_ERR(z_liveliness_declare_subscriber(
++	  z_loan(session->session), &session->graph_liveliness_sub,
++	  z_loan(ke), z_move(callback), &options))) {
++      RMW_ZENOH_LOG_INFO("Unable to declare graph liveliness subscriber -- "
++			  "QoS matching/events will not see remote peers.");
++      // Not fatal: the local entity itself still gets created and works
++      // for pub/sub as normal, it just never sees any matches.
++    } else {
++      session->graph_liveliness_sub_active = true;
++    }
++  }
++
++  z_mutex_lock(z_loan_mut(session->graph_lock));
++  entry->next = session->graph_local_entities;
++  session->graph_local_entities = entry;
++  z_mutex_unlock(z_loan_mut(session->graph_lock));
++
++  return true;
++}
++
++void graph_cache_unregister_local(ZenohPicoSession *session, void *owner)
++{
++  if (session == NULL || owner == NULL) {
++    return;
++  }
++
++  z_mutex_lock(z_loan_mut(session->graph_lock));
++
++  ZenohPicoGraphLocalEntity **prev = &session->graph_local_entities;
++  ZenohPicoGraphLocalEntity *cur = session->graph_local_entities;
++  while (cur != NULL) {
++    if (cur->owner == owner) {
++      *prev = cur->next;
++      free(cur);
++      break;
++    }
++    prev = &cur->next;
++    cur = cur->next;
++  }
++
++  z_mutex_unlock(z_loan_mut(session->graph_lock));
++}
++
++void graph_cache_session_destroy(ZenohPicoSession *session)
++{
++  if (session == NULL) {
++    return;
++  }
++
++  if (session->graph_liveliness_sub_active) {
++    z_undeclare_subscriber(z_move(session->graph_liveliness_sub));
++    session->graph_liveliness_sub_active = false;
++  }
++
++  ZenohPicoGraphLocalEntity *cur = session->graph_local_entities;
++  while (cur != NULL) {
++    ZenohPicoGraphLocalEntity *next = cur->next;
++    free(cur);
++    cur = next;
++  }
++  session->graph_local_entities = NULL;
++}
 diff --git a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
-index f54ac92..baf0d6c 100644
+index f54ac92..b202e9d 100644
 --- a/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
 +++ b/rmw_zenoh_pico/src/zenoh_pico/zenoh_pico_session.c
-@@ -43,7 +43,21 @@ ZenohPicoSession *zenoh_pico_generate_session(const z_loaned_config_t *config,
+@@ -43,10 +43,28 @@ ZenohPicoSession *zenoh_pico_generate_session(const z_loaned_config_t *config,
    }
  
    session->graph_guard_condition.implementation_identifier = rmw_get_implementation_identifier();
@@ -410,7 +1349,24 @@ index f54ac92..baf0d6c 100644
  
    session->enable_session = false;
  
-@@ -89,11 +103,33 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
++  z_mutex_init(&session->graph_lock);
++  session->graph_liveliness_sub_active = false;
++  session->graph_local_entities = NULL;
++
+   ZenohPicoDataRefClone(session);
+ 
+   return session;
+@@ -68,6 +86,9 @@ bool zenoh_pico_destroy_session(ZenohPicoSession *session)
+ 
+     zenoh_pico_destroy_guard_condition_data((ZenohPicoGuardConditionData *)session->graph_guard_condition.data);
+ 
++    graph_cache_session_destroy(session);
++    z_drop(z_move(session->graph_lock));
++
+     z_drop(z_move(session->config));
+     z_drop(z_move(session->enclave));
+     z_drop(z_move(session->session));
+@@ -89,11 +110,33 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
  
    RMW_ZENOH_LOG_DEBUG("Opening session...");
  
@@ -446,7 +1402,7 @@ index f54ac92..baf0d6c 100644
    if (_Z_IS_ERR(zp_start_read_task(z_loan_mut(session->session), NULL))
        || _Z_IS_ERR(zp_start_lease_task(z_loan_mut(session->session), NULL))) {
      RMW_ZENOH_LOG_ERROR("Unable to start read and lease tasks");
-@@ -101,6 +137,14 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
+@@ -101,6 +144,14 @@ rmw_ret_t session_connect(ZenohPicoSession *session)
      z_drop(z_move(session->session));
      return RMW_RET_ERROR;
    }
