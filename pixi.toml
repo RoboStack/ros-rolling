@@ -52,7 +52,12 @@ git = "*"
 # unresolved upstream Emscripten/Binaryen limitation) and fixes an
 # EMCC_CFLAGS override that was clobbering the toolchain's own
 # -fwasm-exceptions default instead of appending to it.
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "f6c8903111918141129c9ef8d90f2ea482f26d6c" }
+# Re-pinned 2026-09-15 to Tobias-Fischer/vinca@58c1574, which exports
+# PYTHONPATH pointing $BUILD_PREFIX's native python at $PREFIX's
+# site-packages during cross-compilation -- ament_cmake_core's own CMake
+# configure step needs `import ament_package` there, which nothing
+# previously made visible to the native python that has to run it.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "58c15741961841a0ab376536d9984987dc11e61f" }
 
 [tasks]
 generate-recipes = { cmd = "vinca -m", depends-on = ["remove-recipes"] }

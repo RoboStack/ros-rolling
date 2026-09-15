@@ -1,24 +1,5 @@
 ament_package:
   add_host: ['importlib_resources']
-ament_cmake_core:
-  # ament_cmake_core's CMake configure step runs cmake/package_templates/
-  # templates_2_cmake.py using $BUILD_PREFIX's own (native) python -- the
-  # only python that can actually execute during cross-compilation -- and
-  # that script does `from ament_package.templates import ...`. ament_package
-  # is otherwise only ever declared as a `host` dependency (installed into
-  # the emscripten-wasm32 target env), so $BUILD_PREFIX's native python has
-  # no way to import it: confirmed via a real from-scratch build failing
-  # configure with "ModuleNotFoundError: No module named 'ament_package'".
-  # ros2-ament-package is pure Python (no compiled extension), so the exact
-  # same wasm32-built package this repo already produces works fine once
-  # mirrored into the native build_platform channel -- the identical
-  # mechanism pixi.toml's sync-native-bootstrap-mirror task already
-  # provides for ros2-rosidl-default-generators/ros2-rosidl-core-generators
-  # (see that task's own comment); this just needs the actual `build:`
-  # dependency declared too, which nothing does for ament_cmake_core today.
-  add_build:
-    - if: emscripten
-      then: ["ros2-ament-package"]
 # These four packages carry an extra "if target_platform=='emscripten-wasm32':
 # add ros2-rosidl-default-generators" *build* (native, build_platform) dependency
 # that most other message packages (action_msgs, std_msgs, etc, which build fine)
