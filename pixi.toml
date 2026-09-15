@@ -52,12 +52,20 @@ git = "*"
 # unresolved upstream Emscripten/Binaryen limitation) and fixes an
 # EMCC_CFLAGS override that was clobbering the toolchain's own
 # -fwasm-exceptions default instead of appending to it.
-# Re-pinned 2026-09-15 to Tobias-Fischer/vinca@58c1574, which exports
-# PYTHONPATH pointing $BUILD_PREFIX's native python at $PREFIX's
-# site-packages during cross-compilation -- ament_cmake_core's own CMake
-# configure step needs `import ament_package` there, which nothing
-# previously made visible to the native python that has to run it.
-vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "b3f6215a41d5e2c810d453e3c1b9b01fe33d606f" }
+# Re-pinned 2026-09-15 to Tobias-Fischer/vinca@55cb379, fixing the first
+# genuine from-scratch closure rebuild this pipeline has ever done in CI
+# (every prior CI run hit a warm ros-rolling-emscripten-output cache and
+# never really exercised this path). Two issues, found in that order:
+# (1) ament_cmake_core's own CMake configure step needs `import
+# ament_package` using $BUILD_PREFIX's native python, which nothing
+# previously made visible there -- fixed by exporting PYTHONPATH at
+# $PREFIX's site-packages during cross-compilation. (2) the deeper root
+# cause: build_ament_python.sh.in's pip install never passed through
+# emscripten-forge-recipes' own PIP_ARGS="--prefix=$PREFIX ...", so
+# ros2-ament-package itself was landing in $BUILD_PREFIX/venv's private
+# site-packages on Linux instead of $PREFIX -- nothing declaring it as a
+# host: dependency (ament_cmake_core included) could find it at all.
+vinca = { git = "https://github.com/Tobias-Fischer/vinca.git", rev = "55cb3792e48f1c191a36956b93684b30008bdae7" }
 
 [tasks]
 generate-recipes = { cmd = "vinca -m", depends-on = ["remove-recipes"] }
