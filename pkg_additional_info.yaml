@@ -923,7 +923,36 @@ rosidl_typesupport_microxrcedds_c:
   # `ParameterValue` entries (`type=PARAMETER_STRING`/`string_value=
   # 'hello'` and `type=PARAMETER_INTEGER`/`integer_value=42`) is received
   # and deserialized correctly end-to-end by the client.
-  build_number: 30
+  #
+  # THROWAWAY diagnostic build number, temporary -- do not ship. Testing a
+  # third sibling bug in this same deserialize function, more severe than
+  # the previous two: an unbounded sequence<BasicType> (e.g. `float64[]`)
+  # calls ucdr_deserialize_sequence_<T>() with the destination's current
+  # (often 0) capacity -- but unlike the outer-capacity checks fixed in
+  # builds 29/30 (which safely `return 0`/bail before touching the
+  # buffer), THIS call's own internal capacity check
+  # (ucdr_deserialize_sequence_header(), micro-CDR's sequence.c) only sets
+  # an out-of-band error flag and does NOT stop the very next step -- an
+  # unconditional ucdr_deserialize_endian_array_<T>() call
+  # (UCDR_DESERIALIZE_ARRAY_BYTE_N, micro-CDR's array.c) that
+  # memcpy()s/writes the FULL incoming length into the undersized
+  # destination regardless. This is a genuine heap buffer overflow, the
+  # exact same bug class as build 28's original string-content fix, just
+  # for numeric sequences instead of strings.
+  #
+  # 30 -> 31: fixed it, peek-then-grow just like build 28's string fix --
+  # a plain realloc() to `incoming_size * sizeof(element)` before calling
+  # the real deserialize. Simpler than the string/namespaced-type fixes:
+  # a BasicType element is a bare scalar with no sub-allocations of its
+  # own, and the real deserialize call fully overwrites every element up
+  # to the new size anyway, so there's no "fresh destination only"
+  # restriction here -- realloc() alone is correct for every case,
+  # including a reused, already-populated destination. Verified live: a
+  # real rclpy publisher/subscriber pair exchanging a
+  # `std_msgs/Float64MultiArray` with a 20-element `float64[] data` field
+  # (destination starting at capacity 0) delivers all 20 values correctly,
+  # no crash, no corruption.
+  build_number: 31
 rosidl_typesupport_microxrcedds_cpp:
   # Also needed target_include_directories() wrapped in $<BUILD_INTERFACE:...>.
   build_number: 28
@@ -946,7 +975,13 @@ std_msgs:
   # -- std_msgs is fixed first here because it's what this project's own
   # browser_test.html demo actually exercises (a plain std_msgs/String
   # chatter topic).
-  build_number: 27
+  #
+  # 27 -> 28: no patch change to this package itself -- forces a rebuild
+  # against rosidl_typesupport_microxrcedds_c's own build 31 (see that
+  # package's note) so Float64MultiArray's unbounded `float64[] data`
+  # field (the message used to find and verify that fix) is regenerated
+  # with the corrected deserialize code.
+  build_number: 28
 test_msgs:
   build_number: 26
 type_description_interfaces:
