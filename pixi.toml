@@ -55,11 +55,17 @@ cmd = "rattler-build build --recipe-dir ./recipes -m ./conda_build_config.yaml -
 depends-on = ["generate-recipes"]
 description = "Build all packages, from the ./recipes dir. This will skip already existing packages, so it can be used to build only a subset of packages by first removing the recipes of the packages you want to rebuild (see `pixi remove-recipes`)."
 
+[tasks.build-up-to]
+cmd = "rattler-build build --recipe-dir ./recipes --up-to {{ PACKAGE }} -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --skip-existing"
+depends-on = ["generate-recipes"]
+args = [{ arg = "PACKAGE" }]
+description = "Build the dependency chain up to a package, from the ./recipes dir. Pass the package name as a positional argument with the `ros2-` prefix, e.g. `pixi run build-up-to ros2-nav2-smac-planner`."
+
 [tasks.remove-recipes]
 cmd = "rm -rf recipes_only_patch; rm -rf recipes; mkdir recipes"
 description = "Remove all generated recipes, before regenerating them."
 
 [tasks.build-one]
 cmd = "cp ./patch/{{ PACKAGE }}.*patch ./recipes/{{ PACKAGE }}/patch/; rattler-build build --recipe ./recipes/{{ PACKAGE }}/recipe.yaml -m ./conda_build_config.yaml -c https://prefix.dev/robostack-rolling -c https://prefix.dev/conda-forge --channel-priority disabled"
-args = [{ arg = "PACKAGE", default = "ros-rolling-ros-workspace" }]
-description = "Build a single package, from the ./recipes dir. Add the `ros-rolling-` prefix to the package name, e.g. `pixi build-one --package ros-rolling-ros-workspace`"
+args = [{ arg = "PACKAGE", default = "ros2-ros-workspace" }]
+description = "Build a single package, from the ./recipes dir. Add the `ros2-` prefix to the package name, e.g. `pixi run build-one ros2-ros-workspace`."
