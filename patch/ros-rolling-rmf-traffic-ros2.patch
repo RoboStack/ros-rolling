@@ -1,0 +1,39 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9bfd3b5..a05ec3e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -180,6 +180,7 @@ add_library(rmf_traffic_ros2 SHARED ${core_lib_srcs})
+ target_link_libraries(rmf_traffic_ros2
+   PUBLIC
+     rmf_traffic::rmf_traffic
++    Eigen3::Eigen
+     nlohmann_json::nlohmann_json
+     ${rmf_traffic_msgs_LIBRARIES}
+     ${rmf_site_map_msgs_LIBRARIES}
+diff --git a/cmake/FindLibUUID.cmake b/cmake/FindLibUUID.cmake
+index 9bd1663..f1bccd7 100644
+--- a/cmake/FindLibUUID.cmake
++++ b/cmake/FindLibUUID.cmake
+@@ -42,6 +42,22 @@ They may be set by end users to point at LibUUID components.
+ #]=======================================================================]
+ 
+ #-----------------------------------------------------------------------------
++if(APPLE)
++  # macOS provides uuid_generate() etc. and uuid/uuid.h directly via the SDK's
++  # default system search paths (libSystem) -- there is no standalone
++  # libuuid.dylib to link, and no extra include dir is needed (adding the SDK's
++  # own usr/include explicitly confuses libc++'s header self-checks). Just
++  # declare an empty INTERFACE target so callers' target_link_libraries still
++  # resolves.
++  set(LibUUID_FOUND TRUE)
++  set(LIBUUID_FOUND TRUE)
++  set(LibUUID_INCLUDE_DIRS "")
++  set(LibUUID_LIBRARIES "")
++  if(NOT TARGET LibUUID::LibUUID)
++    add_library(LibUUID::LibUUID INTERFACE IMPORTED)
++  endif()
++  return()
++endif()
+ if(CYGWIN)
+   # Note: on current version of Cygwin, linking to libuuid.dll.a doesn't
+   #       import the right symbols sometimes. Fix this by linking directly

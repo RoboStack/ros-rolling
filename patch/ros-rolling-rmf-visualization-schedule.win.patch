@@ -1,0 +1,52 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e2fe859f..6ea64723 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+ # RoboStack/ros-lyrical#41's fix), which still provides io_service.
+ add_compile_definitions(ASIO_STANDALONE)
+ 
++if(MSVC)
++  # MSVC doesn't update __cplusplus to reflect the actual C++ standard
++  # in use unless told to, so websocketpp's __cplusplus >= 201103L
++  # feature-detection in common/cpp11.hpp always fails, falling back
++  # to boost::is_same -- which recent Boost versions no longer provide
++  # (C2039/C2873 in websocketpp/common/type_traits.hpp).
++  add_compile_options(/Zc:__cplusplus)
++
++  # M_PI_2 et al. are non-standard extensions MSVC only defines when
++  # this is set (used in test/SubmitTrajectory.cpp).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ # Default to C++17
+ if(NOT CMAKE_CXX_STANDARD)
+   set(CMAKE_CXX_STANDARD 17)
+@@ -53,6 +66,14 @@ endif()
+ file(GLOB_RECURSE core_lib_srcs "src/rmf_visualization_schedule/*.cpp")
+ add_library(rmf_visualization_schedule SHARED ${core_lib_srcs})
+ 
++if(MSVC)
++  # No explicit dllexport annotations anywhere in this small target
++  # (2 source files), so without this MSVC produces the .dll but no
++  # import .lib, and schedule_visualizer fails with LNK1181.
++  set_target_properties(rmf_visualization_schedule PROPERTIES
++    WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
++
+ target_link_libraries(rmf_visualization_schedule
+   PUBLIC
+     rmf_traffic::rmf_traffic
+diff --git a/src/ScheduleVisualizer.cpp b/src/ScheduleVisualizer.cpp
+index 961c512b..7a7bc2f9 100644
+--- a/src/ScheduleVisualizer.cpp
++++ b/src/ScheduleVisualizer.cpp
+@@ -107,7 +107,7 @@ ScheduleVisualizer::ScheduleVisualizer(
+     "Setting parameter port to %d", port
+   );
+ 
+-  uint retained_history_count = this->declare_parameter(
++  unsigned int retained_history_count = this->declare_parameter(
+     "retained_history_count", 0);
+   RCLCPP_INFO(
+     this->get_logger(),

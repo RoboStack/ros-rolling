@@ -1,0 +1,221 @@
+diff --git a/motion_planning_tasks/utils/CMakeLists.txt b/motion_planning_tasks/utils/CMakeLists.txt
+index 436145dc..82ad0bfd 100644
+--- a/motion_planning_tasks/utils/CMakeLists.txt
++++ b/motion_planning_tasks/utils/CMakeLists.txt
+@@ -6,6 +6,16 @@ set(SOURCES
+ 	icon.cpp
+ )
+ add_library(${MOVEIT_LIB_NAME} SHARED ${SOURCES})
++if(WIN32)
++  # FlatMergeProxyModel/TreeMergeProxyModel are linked directly by
++  # motion_planning_tasks_rviz_plugin, so they need an import .lib on
++  # Windows. WINDOWS_EXPORT_ALL_SYMBOLS covers their plain member
++  # functions; the classes are also explicitly annotated with
++  # MOTION_PLANNING_TASKS_UTILS_EXPORT to cover the MOC-generated
++  # staticMetaObject static data member, which auto-export doesn't reach.
++  set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++  target_compile_definitions(${MOVEIT_LIB_NAME} PRIVATE MOTION_PLANNING_TASKS_UTILS_BUILDING_DLL)
++endif()
+ 
+ target_link_libraries(${MOVEIT_LIB_NAME}
+ 	${QT_LIBRARIES}
+ 
+diff --git a/motion_planning_tasks/utils/flat_merge_proxy_model.h b/motion_planning_tasks/utils/flat_merge_proxy_model.h
+index feced7e4..ba7a0e19 100644
+--- a/motion_planning_tasks/utils/flat_merge_proxy_model.h
++++ b/motion_planning_tasks/utils/flat_merge_proxy_model.h
+@@ -39,6 +39,21 @@
+ #include <QAbstractItemModel>
+ #include <QStringList>
+ 
++// Qt's MOC-generated staticMetaObject is a static data member, which
++// CMake's WINDOWS_EXPORT_ALL_SYMBOLS (used for this library's plain
++// functions) does not auto-export -- an explicit dllexport/dllimport
++// is needed on the whole class to also cover its vtable and Qt
++// metaobject machinery.
++#ifdef _WIN32
++#ifdef MOTION_PLANNING_TASKS_UTILS_BUILDING_DLL
++#define MOTION_PLANNING_TASKS_UTILS_EXPORT __declspec(dllexport)
++#else
++#define MOTION_PLANNING_TASKS_UTILS_EXPORT __declspec(dllimport)
++#endif
++#else
++#define MOTION_PLANNING_TASKS_UTILS_EXPORT
++#endif
++
+ namespace moveit_rviz_plugin {
+ namespace utils {
+ 
+@@ -49,7 +64,7 @@ class FlatMergeProxyModelPrivate;
+  *  Removing top-level items will remove the whole embedded model if all top-level items from
+  *  this model are to be removed. Otherwise, removal is forwarded to the embedded model.
+  */
+-class FlatMergeProxyModel : public QAbstractItemModel
++class MOTION_PLANNING_TASKS_UTILS_EXPORT FlatMergeProxyModel : public QAbstractItemModel
+ {
+ 	Q_OBJECT
+ 	Q_DECLARE_PRIVATE(FlatMergeProxyModel)
+ 
+diff --git a/motion_planning_tasks/utils/tree_merge_proxy_model.h b/motion_planning_tasks/utils/tree_merge_proxy_model.h
+index df43128b..72087ea0 100644
+--- a/motion_planning_tasks/utils/tree_merge_proxy_model.h
++++ b/motion_planning_tasks/utils/tree_merge_proxy_model.h
+@@ -39,6 +39,21 @@
+ #include <QAbstractItemModel>
+ #include <QStringList>
+ 
++// Qt's MOC-generated staticMetaObject is a static data member, which
++// CMake's WINDOWS_EXPORT_ALL_SYMBOLS (used for this library's plain
++// functions) does not auto-export -- an explicit dllexport/dllimport
++// is needed on the whole class to also cover its vtable and Qt
++// metaobject machinery.
++#ifdef _WIN32
++#ifdef MOTION_PLANNING_TASKS_UTILS_BUILDING_DLL
++#define MOTION_PLANNING_TASKS_UTILS_EXPORT __declspec(dllexport)
++#else
++#define MOTION_PLANNING_TASKS_UTILS_EXPORT __declspec(dllimport)
++#endif
++#else
++#define MOTION_PLANNING_TASKS_UTILS_EXPORT
++#endif
++
+ namespace moveit_rviz_plugin {
+ namespace utils {
+ 
+@@ -48,7 +63,7 @@ class TreeMergeProxyModelPrivate;
+  *  Each embedded model becomes a top-level item (with a given name)
+  *  and all the model's top-level items will appear as its children.
+  */
+-class TreeMergeProxyModel : public QAbstractItemModel
++class MOTION_PLANNING_TASKS_UTILS_EXPORT TreeMergeProxyModel : public QAbstractItemModel
+ {
+ 	Q_OBJECT
+ 	Q_DECLARE_PRIVATE(TreeMergeProxyModel)
+ 
+diff --git a/motion_planning_tasks/properties/CMakeLists.txt b/motion_planning_tasks/properties/CMakeLists.txt
+index 8296b9ea..98c81c39 100644
+--- a/motion_planning_tasks/properties/CMakeLists.txt
++++ b/motion_planning_tasks/properties/CMakeLists.txt
+@@ -9,6 +9,12 @@ find_package(libyaml_vendor REQUIRED)
+ find_package(yaml REQUIRED)
+ 
+ add_library(${MOVEIT_LIB_NAME} SHARED ${SOURCES})
++if(WIN32)
++  # Linked directly by motion_planning_tasks_rviz_plugin, so it needs
++  # an import .lib on Windows -- same missing-dllexport-symbols issue
++  # already fixed for motion_planning_tasks_utils.
++  set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++endif()
+ 
+ target_link_libraries(${MOVEIT_LIB_NAME}
+ 	${QT_LIBRARIES} yaml
+ 
+diff --git a/visualization_tools/CMakeLists.txt b/visualization_tools/CMakeLists.txt
+index bde4d614..a1971ed4 100644
+--- a/visualization_tools/CMakeLists.txt
++++ b/visualization_tools/CMakeLists.txt
+@@ -18,6 +18,16 @@ add_library(${MOVEIT_LIB_NAME} SHARED
+ 	src/task_solution_visualization.cpp
+ )
+ set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES VERSION "${${PROJECT_NAME}_VERSION}")
++if(WIN32)
++  # Linked directly by motion_planning_tasks_rviz_plugin, so it needs
++  # an import .lib on Windows -- same missing-dllexport-symbols issue
++  # already fixed for motion_planning_tasks_utils/_properties. The
++  # MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT annotations on its Q_OBJECT
++  # classes cover their MOC-generated staticMetaObject data members,
++  # which WINDOWS_EXPORT_ALL_SYMBOLS's function-only auto-export misses.
++  set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++  target_compile_definitions(${MOVEIT_LIB_NAME} PRIVATE MOVEIT_TASK_VISUALIZATION_TOOLS_BUILDING_DLL)
++endif()
+ target_link_libraries(${MOVEIT_LIB_NAME}
+ 	${QT_LIBRARIES}
+ 	rviz_ogre_vendor::OgreMain
+ 
+diff --git a/visualization_tools/include/moveit/visualization_tools/marker_visualization.h b/visualization_tools/include/moveit/visualization_tools/marker_visualization.h
+index 1b3fcebe..e2da81f1 100644
+--- a/visualization_tools/include/moveit/visualization_tools/marker_visualization.h
++++ b/visualization_tools/include/moveit/visualization_tools/marker_visualization.h
+@@ -95,7 +95,22 @@ private:
+  *  The class remembers which MarkerVisualization instances are currently hosted
+  *  and provides the user interaction to toggle marker visibility by namespace.
+  */
+-class MarkerVisualizationProperty : public rviz_common::properties::BoolProperty
++// Qt's MOC-generated staticMetaObject is a static data member, which
++// CMake's WINDOWS_EXPORT_ALL_SYMBOLS (used for this library's plain
++// functions) does not auto-export -- an explicit dllexport/dllimport
++// is needed on the whole class to also cover its vtable and Qt
++// metaobject machinery.
++#ifdef _WIN32
++#ifdef MOVEIT_TASK_VISUALIZATION_TOOLS_BUILDING_DLL
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT __declspec(dllexport)
++#else
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT __declspec(dllimport)
++#endif
++#else
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT
++#endif
++
++class MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT MarkerVisualizationProperty : public rviz_common::properties::BoolProperty
+ {
+ 	Q_OBJECT
+ 
+ 
+diff --git a/visualization_tools/include/moveit/visualization_tools/task_solution_panel.h b/visualization_tools/include/moveit/visualization_tools/task_solution_panel.h
+index 4e6e31ee..db7b77a5 100644
+--- a/visualization_tools/include/moveit/visualization_tools/task_solution_panel.h
++++ b/visualization_tools/include/moveit/visualization_tools/task_solution_panel.h
+@@ -47,7 +47,22 @@
+ #include <QPushButton>
+ 
+ namespace moveit_rviz_plugin {
+-class TaskSolutionPanel : public rviz_common::Panel
++// Qt's MOC-generated staticMetaObject is a static data member, which
++// CMake's WINDOWS_EXPORT_ALL_SYMBOLS (used for this library's plain
++// functions) does not auto-export -- an explicit dllexport/dllimport
++// is needed on the whole class to also cover its vtable and Qt
++// metaobject machinery.
++#ifdef _WIN32
++#ifdef MOVEIT_TASK_VISUALIZATION_TOOLS_BUILDING_DLL
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT __declspec(dllexport)
++#else
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT __declspec(dllimport)
++#endif
++#else
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT
++#endif
++
++class MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT TaskSolutionPanel : public rviz_common::Panel
+ {
+ 	Q_OBJECT
+ 
+ 
+diff --git a/visualization_tools/include/moveit/visualization_tools/task_solution_visualization.h b/visualization_tools/include/moveit/visualization_tools/task_solution_visualization.h
+index c1a666b7..5265f27f 100644
+--- a/visualization_tools/include/moveit/visualization_tools/task_solution_visualization.h
++++ b/visualization_tools/include/moveit/visualization_tools/task_solution_visualization.h
+@@ -90,7 +90,22 @@ MOVEIT_CLASS_FORWARD(DisplaySolution);
+ 
+ class TaskSolutionPanel;
+ class MarkerVisualizationProperty;
+-class TaskSolutionVisualization : public QObject
++// Qt's MOC-generated staticMetaObject is a static data member, which
++// CMake's WINDOWS_EXPORT_ALL_SYMBOLS (used for this library's plain
++// functions) does not auto-export -- an explicit dllexport/dllimport
++// is needed on the whole class to also cover its vtable and Qt
++// metaobject machinery.
++#ifdef _WIN32
++#ifdef MOVEIT_TASK_VISUALIZATION_TOOLS_BUILDING_DLL
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT __declspec(dllexport)
++#else
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT __declspec(dllimport)
++#endif
++#else
++#define MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT
++#endif
++
++class MOVEIT_TASK_VISUALIZATION_TOOLS_EXPORT TaskSolutionVisualization : public QObject
+ {
+ 	Q_OBJECT
+ 
+ 
