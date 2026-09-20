@@ -192,6 +192,14 @@ jobs:
         # the stale cached mutex package so it rebuilds fresh with the new
         # constraint.
         rm -rf ${{ matrix.folder_cache }}/ros2-distro-mutex* ${{ matrix.folder_cache }}/ros-rolling-distro-mutex* 2>/dev/null || true
+        # The whole gz-*-vendor/ros-gz family was skip-existing'd against stale
+        # cached builds that predate the ffmpeg 9 / libopenvino-tensorflow-lite-
+        # frontend pins (e.g. ros2-gz-common-vendor still had ffmpeg>=9.0.2 baked
+        # in from an earlier resolve, which needs lite-frontend 2026.3.1 -- now
+        # excluded by the mutex's <2026.3.1 upper bound). Evict the whole family
+        # so it rebuilds fresh against the current constraints, matching the
+        # same technique jazzy already uses for its own gz-vendor/ros-gz stack.
+        rm -rf ${{ matrix.folder_cache }}/ros2-gz-*vendor* ${{ matrix.folder_cache }}/ros-rolling-gz-*vendor* ${{ matrix.folder_cache }}/ros2-ros-gz* ${{ matrix.folder_cache }}/ros-rolling-ros-gz* ${{ matrix.folder_cache }}/ros2-gz-ros2-control* ${{ matrix.folder_cache }}/ros-rolling-gz-ros2-control* 2>/dev/null || true
         mkdir -p ${{ matrix.folder_cache }}
         pixi run rattler-index fs ${{ matrix.folder_cache }}/.. --force
 
