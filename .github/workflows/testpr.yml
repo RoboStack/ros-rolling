@@ -200,6 +200,14 @@ jobs:
         # so it rebuilds fresh against the current constraints, matching the
         # same technique jazzy already uses for its own gz-vendor/ros-gz stack.
         rm -rf ${{ matrix.folder_cache }}/ros2-gz-*vendor* ${{ matrix.folder_cache }}/ros-rolling-gz-*vendor* ${{ matrix.folder_cache }}/ros2-ros-gz* ${{ matrix.folder_cache }}/ros-rolling-ros-gz* ${{ matrix.folder_cache }}/ros2-gz-ros2-control* ${{ matrix.folder_cache }}/ros-rolling-gz-ros2-control* 2>/dev/null || true
+        # Corrupt win-64 cache entry, likely truncated by one of this PR's several
+        # win-64 job cancellations mid-build (same pattern as jazzy's nav2_msgs
+        # fix): ros2-mavros-extras's CMake configure fails with "Could not find a
+        # package configuration file provided by mavros" even though
+        # skip-existing found a matching ros2-mavros package -- its .conda
+        # archive exists but is missing its installed CMake config files. Evict
+        # the whole mavros family so it rebuilds cleanly.
+        rm -rf ${{ matrix.folder_cache }}/ros2-mavros* ${{ matrix.folder_cache }}/ros-rolling-mavros* 2>/dev/null || true
         mkdir -p ${{ matrix.folder_cache }}
         pixi run rattler-index fs ${{ matrix.folder_cache }}/.. --force
 
