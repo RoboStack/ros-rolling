@@ -11,12 +11,15 @@ platforms = [
   { platform = "linux-aarch64", glibc = "2.17" },
   "win-64",
 ]
+preview = true
 
 [dependencies]
 python = ">=3.14.0,<3.15"
 # Include the latest rattler-build fixes w.r.t. to patches handling
 # rattler-build regression, pinning to 0.57
-rattler-build = "<0.58.0"
+# rattler-build = "<0.58.0"
+# Test a source build of rattler-build of PR: https://github.com/prefix-dev/rattler-build/pull/2796
+rattler-build = { git = "https://github.com/baszalmstra/rattler-build", branch = "fix/topological-sort-plain-run-deps" }
 cmake = "<4.0"
 setuptools = "<82.0"
 rattler-index = ">=0.27.16"
@@ -29,7 +32,7 @@ git = "*"
 
 [pypi-dependencies]
 # This is typically the latest commit on main branch
-vinca = { git = "https://github.com/RoboStack/vinca.git", rev = "34316c7f195b359fb9cd4bfd2ae8fd83cb559dff" }
+vinca = { git = "https://github.com/RoboStack/vinca.git" }
 # Uncomment this line to work with a local vinca for faster iteration, but remember to comment it back
 # (and regenerate the pixi.lock) once you push the modified commit to the repo
 # vinca = { path = "../vinca", editable = true }
