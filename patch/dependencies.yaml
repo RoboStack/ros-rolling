@@ -5,9 +5,7 @@ foxglove_bridge:
 ros_ign_interfaces:
   add_host: ["ros-rolling-rcl-interfaces"]
 cartographer_ros:
-  # Drop the ros2-cartographer dummy dep (vinca doesn't dedupe it against the direct conda-forge dep below); ceres-solver pinned to cpu since RoboStack disables CUDA.
-  remove_host: ["ros2-cartographer"]
-  remove_run: ["ros2-cartographer"]
+  # ceres-solver pinned to cpu since RoboStack disables CUDA.
   add_host: ["cartographer 2.*", "libboost-devel", "ceres-solver * cpu*", "ros2-pcl-conversions"]
   add_run: ["ros2-pcl-conversions"]
 libyaml_vendor:
