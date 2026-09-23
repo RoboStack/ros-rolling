@@ -1436,9 +1436,9 @@ examples_rclpy_pointcloud_publisher:
   url: https://github.com/ros2-gbp/examples-release.git
   version: 0.22.0
 examples_tf2_py:
-  tag: release/rolling/examples_tf2_py/0.46.3-1
+  tag: release/rolling/examples_tf2_py/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 executive_smach:
   tag: release/rolling/executive_smach/3.0.3-3
   url: https://github.com/ros2-gbp/executive_smach-release.git
@@ -1704,9 +1704,9 @@ geometric_shapes:
   url: https://github.com/ros2-gbp/geometric_shapes-release.git
   version: 2.3.4
 geometry2:
-  tag: release/rolling/geometry2/0.46.3-1
+  tag: release/rolling/geometry2/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 geometry_msgs:
   tag: release/rolling/geometry_msgs/5.10.1-1
   url: https://github.com/ros2-gbp/common_interfaces-release.git
@@ -5652,57 +5652,57 @@ test_msgs:
   url: https://github.com/ros2-gbp/rcl_interfaces-release.git
   version: 2.5.1
 tf2:
-  tag: release/rolling/tf2/0.46.3-1
+  tag: release/rolling/tf2/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_2d:
   tag: release/rolling/tf2_2d/1.6.2-1
   url: https://github.com/ros2-gbp/tf2_2d-release.git
   version: 1.6.2
 tf2_bullet:
-  tag: release/rolling/tf2_bullet/0.46.3-1
+  tag: release/rolling/tf2_bullet/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_eigen:
-  tag: release/rolling/tf2_eigen/0.46.3-1
+  tag: release/rolling/tf2_eigen/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_eigen_kdl:
-  tag: release/rolling/tf2_eigen_kdl/0.46.3-1
+  tag: release/rolling/tf2_eigen_kdl/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_geometry_msgs:
-  tag: release/rolling/tf2_geometry_msgs/0.46.3-1
+  tag: release/rolling/tf2_geometry_msgs/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_kdl:
-  tag: release/rolling/tf2_kdl/0.46.3-1
+  tag: release/rolling/tf2_kdl/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_msgs:
-  tag: release/rolling/tf2_msgs/0.46.3-1
+  tag: release/rolling/tf2_msgs/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_py:
-  tag: release/rolling/tf2_py/0.46.3-1
+  tag: release/rolling/tf2_py/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_ros:
-  tag: release/rolling/tf2_ros/0.46.3-1
+  tag: release/rolling/tf2_ros/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_ros_py:
-  tag: release/rolling/tf2_ros_py/0.46.3-1
+  tag: release/rolling/tf2_ros_py/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_sensor_msgs:
-  tag: release/rolling/tf2_sensor_msgs/0.46.3-1
+  tag: release/rolling/tf2_sensor_msgs/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_tools:
-  tag: release/rolling/tf2_tools/0.46.3-1
+  tag: release/rolling/tf2_tools/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_web_republisher:
   tag: release/rolling/tf2_web_republisher/1.0.0-2
   url: https://github.com/ros2-gbp/tf2_web_republisher-release.git
