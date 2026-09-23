@@ -1,0 +1,18 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index aee2f26a..eb358c39 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -12,6 +12,12 @@ add_library(${PROJECT_NAME} SHARED
+   src/ros_msg_typecasters.cpp
+   src/initializer.cpp
+ )
++# The rclcpp pybind11 module (below) links against this library directly,
++# so it needs an import .lib on Windows for the plain py_binding_tools::
++# namespace functions (init/add_node/shutdown) -- this SHARED library has
++# no dllexport annotations on them, so without this MSVC's .lib ends up
++# missing those specific symbols.
++set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+ target_include_directories(${PROJECT_NAME}
+   PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+ 

@@ -1,0 +1,168 @@
+diff --git a/include/rmf_task/Event.hpp b/include/rmf_task/Event.hpp
+index 82a3e60..5771d9a 100644
+--- a/include/rmf_task/Event.hpp
++++ b/include/rmf_task/Event.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__EVENT_HPP
+ #define RMF_TASK__EVENT_HPP
+ 
++#include <cstdint>
+ #include <rmf_task/Log.hpp>
+ #include <rmf_task/VersionedString.hpp>
+ 
+diff --git a/include/rmf_task/Log.hpp b/include/rmf_task/Log.hpp
+index f046442..f62062d 100644
+--- a/include/rmf_task/Log.hpp
++++ b/include/rmf_task/Log.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__LOG_HPP
+ #define RMF_TASK__LOG_HPP
+ 
++#include <cstdint>
+ #include <rmf_utils/impl_ptr.hpp>
+ 
+ #include <functional>
+diff --git a/include/rmf_task/Payload.hpp b/include/rmf_task/Payload.hpp
+index 084da6a..f6448f7 100644
+--- a/include/rmf_task/Payload.hpp
++++ b/include/rmf_task/Payload.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__PAYLOAD_HPP
+ #define RMF_TASK__PAYLOAD_HPP
+ 
++#include <cstdint>
+ #include <rmf_utils/impl_ptr.hpp>
+ 
+ #include <string>
+diff --git a/include/rmf_task/Phase.hpp b/include/rmf_task/Phase.hpp
+index 666ca1b..cf024b6 100644
+--- a/include/rmf_task/Phase.hpp
++++ b/include/rmf_task/Phase.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__PHASE_HPP
+ #define RMF_TASK__PHASE_HPP
+ 
++#include <cstdint>
+ #include <rmf_task/Event.hpp>
+ #include <rmf_task/Header.hpp>
+ 
+diff --git a/include/rmf_task/Task.hpp b/include/rmf_task/Task.hpp
+index 6c5f419..3b8d83d 100644
+--- a/include/rmf_task/Task.hpp
++++ b/include/rmf_task/Task.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__TASK_HPP
+ #define RMF_TASK__TASK_HPP
+ 
++#include <cstdint>
+ #include <rmf_task/Header.hpp>
+ #include <rmf_task/Phase.hpp>
+ #include <rmf_task/detail/Backup.hpp>
+diff --git a/include/rmf_task/TaskPlanner.hpp b/include/rmf_task/TaskPlanner.hpp
+index 14488f6..ec5dd10 100644
+--- a/include/rmf_task/TaskPlanner.hpp
++++ b/include/rmf_task/TaskPlanner.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__AGV__TASKPLANNER_HPP
+ #define RMF_TASK__AGV__TASKPLANNER_HPP
+ 
++#include <cstdint>
+ #include <rmf_task/Request.hpp>
+ #include <rmf_task/RequestFactory.hpp>
+ #include <rmf_task/CostCalculator.hpp>
+diff --git a/include/rmf_task/detail/Backup.hpp b/include/rmf_task/detail/Backup.hpp
+index 5a9ad72..c68e959 100644
+--- a/include/rmf_task/detail/Backup.hpp
++++ b/include/rmf_task/detail/Backup.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__DETAIL__BACKUP_HPP
+ #define RMF_TASK__DETAIL__BACKUP_HPP
+ 
++#include <cstdint>
+ #include <rmf_utils/impl_ptr.hpp>
+ 
+ #include <cstddef>
+diff --git a/include/rmf_task/events/SimpleEventState.hpp b/include/rmf_task/events/SimpleEventState.hpp
+index c90d528..1496e2a 100644
+--- a/include/rmf_task/events/SimpleEventState.hpp
++++ b/include/rmf_task/events/SimpleEventState.hpp
+@@ -18,6 +18,7 @@
+ #ifndef RMF_TASK__EVENTS__SIMPLEEVENTSTATE_HPP
+ #define RMF_TASK__EVENTS__SIMPLEEVENTSTATE_HPP
+ 
++#include <cstdint>
+ #include <rmf_task/Event.hpp>
+ 
+ namespace rmf_task {
+diff --git a/src/rmf_task/BackupFileManager.cpp b/src/rmf_task/BackupFileManager.cpp
+index 7afa25d..992489b 100644
+--- a/src/rmf_task/BackupFileManager.cpp
++++ b/src/rmf_task/BackupFileManager.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include <filesystem>
+ #include <iostream>
+ #include <fstream>
+diff --git a/src/rmf_task/Event.cpp b/src/rmf_task/Event.cpp
+index 2cb42b8..b5ac0ca 100644
+--- a/src/rmf_task/Event.cpp
++++ b/src/rmf_task/Event.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include <rmf_task/Event.hpp>
+ 
+ namespace rmf_task {
+diff --git a/src/rmf_task/Log.cpp b/src/rmf_task/Log.cpp
+index 48c5883..84707a7 100644
+--- a/src/rmf_task/Log.cpp
++++ b/src/rmf_task/Log.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include <rmf_task/Log.hpp>
+ 
+ #include <optional>
+diff --git a/src/rmf_task/Payload.cpp b/src/rmf_task/Payload.cpp
+index 8d031ce..8413f1e 100644
+--- a/src/rmf_task/Payload.cpp
++++ b/src/rmf_task/Payload.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include <unordered_map>
+ #include <unordered_set>
+ #include <sstream>
+diff --git a/src/rmf_task/detail/Backup.cpp b/src/rmf_task/detail/Backup.cpp
+index f353157..9f0e66b 100644
+--- a/src/rmf_task/detail/Backup.cpp
++++ b/src/rmf_task/detail/Backup.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include <rmf_task/detail/Backup.hpp>
+ 
+ namespace rmf_task {
+diff --git a/src/rmf_task/events/SimpleEventState.cpp b/src/rmf_task/events/SimpleEventState.cpp
+index 1af9d68..0bc4bab 100644
+--- a/src/rmf_task/events/SimpleEventState.cpp
++++ b/src/rmf_task/events/SimpleEventState.cpp
+@@ -15,6 +15,7 @@
+  *
+ */
+ 
++#include <cstdint>
+ #include <rmf_task/events/SimpleEventState.hpp>
+ 
+ namespace rmf_task {
