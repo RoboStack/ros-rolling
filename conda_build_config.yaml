@@ -819,6 +819,8 @@ lol_html:
   - 3.0.1
 ls_hpack:
   - 2.3.5
+lua:
+  - 5.4
 lwtnn:
   - '2.14'
 lz4_c:
