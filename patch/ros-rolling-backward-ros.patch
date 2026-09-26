@@ -24,7 +24,7 @@ diff --git a/cmake/BackwardConfigAment.cmake b/cmake/BackwardConfigAment.cmake
 index 273a51a..d52dd05 100644
 --- a/cmake/BackwardConfigAment.cmake
 +++ b/cmake/BackwardConfigAment.cmake
-@@ -24,5 +24,24 @@ foreach(lib ${backward_ros_forced_LIBRARIES})
+@@ -24,5 +24,25 @@ foreach(lib ${backward_ros_forced_LIBRARIES})
          set(backward_ros_full_path_LIBRARIES "${backward_ros_full_path_LIBRARIES} ${lib}")
      endif()
  endforeach()
@@ -45,10 +45,11 @@ index 273a51a..d52dd05 100644
 +    set(backward_ros_link_flags "-Wl,--no-as-needed ${backward_ros_full_path_LIBRARIES} -Wl,--as-needed")
 +endif()
 +SET(CMAKE_EXE_LINKER_FLAGS "${backward_ros_link_flags} ${CMAKE_EXE_LINKER_FLAGS}")
-+# Libraries too: a component or plugin dlopen'ed by a host that does not link
++# Shared libraries too: a component dlopen'ed by a host that does not link
 +# libbackward (e.g. component_container) then pulls it in and installs the handler.
++# MODULE targets (Python extensions) are left alone so importing them does not
++# replace the interpreter's own crash handling.
 +SET(CMAKE_SHARED_LINKER_FLAGS "${backward_ros_link_flags} ${CMAKE_SHARED_LINKER_FLAGS}")
-+SET(CMAKE_MODULE_LINKER_FLAGS "${backward_ros_link_flags} ${CMAKE_MODULE_LINKER_FLAGS}")
  
 diff --git a/package.xml b/package.xml
 index 88c1304..f7832d8 100644
