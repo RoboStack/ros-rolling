@@ -236,3 +236,11 @@ ros2cli:
   build_number: 26
 rosidl_cli:
   build_number: 26
+rosidl_core_generators:
+  build_number: 26
+rosidl_default_generators:
+  build_number: 26
+rosidl_generator_py:
+  build_number: 26
+std_msgs:
+  build_number: 26
