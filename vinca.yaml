@@ -229,7 +229,14 @@ packages_select_by_deps:
       - plotjuggler-ros
       - pointcloud-to-laserscan
       - rplidar_ros
+      - rqt_bag
+      - rqt_controller_manager
+      - rqt_ction
+      - rqt_image_view
+      - rqt_joint_trajectory_controller
       - rqt_mocap4r2_control
+      - rqt_publisher
+      - rqt_reconfigure
       - rqt_tf_tree
       - rslidar_sdk
       - rviz_satellite
