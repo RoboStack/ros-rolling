@@ -405,8 +405,8 @@ packages_select_by_deps:
       - ouster_ros  # conda-forge's Windows PCL package doesn't expose pcl_io.lib by the plain name ouster_ros's CMake links against (LNK1181)
       - rclc_examples  # MSVC C2055 on rcl_timer_t in callback signatures; root cause unresolved, already excluded on humble too
       - rosgraph_monitor
+      - rqt_action
       - rqt_bag
-      - rqt_ction
       - rqt_image_view
       - rqt_joint_trajectory_controller
       - rqt_mocap4r2_control
