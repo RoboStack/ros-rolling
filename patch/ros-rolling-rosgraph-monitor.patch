@@ -10,3 +10,20 @@ index 757fb41..a2e3d89 100644
  #include <functional>
  #include <string>
  #include <utility>
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 39e863d..7f12f8b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -21,7 +21,11 @@ endif()
+ 
+ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+   add_compile_options(-Wall -Wextra -Wpedantic -Werror=switch)
+-  add_link_options("-Wl,--no-undefined")
++  # --no-undefined is a GNU ld long option; Apple's ld doesn't understand it
++  # even though Clang matches this branch on macOS too.
++  if(NOT APPLE)
++    add_link_options("-Wl,--no-undefined")
++  endif()
+ endif()
+ 
+ find_package(ament_cmake REQUIRED)

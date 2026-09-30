@@ -1,0 +1,17 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d13488c..ea62844 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,6 +3,12 @@ project(pointcloud_to_laserscan)
+ 
+ find_package(ament_cmake REQUIRED)
+ 
++if(MSVC)
++  # M_PI et al. are non-standard extensions MSVC only defines when this
++  # is set (pointcloud_to_laserscan_node.cpp uses M_PI unconditionally).
++  add_compile_definitions(_USE_MATH_DEFINES)
++endif()
++
+ find_package(laser_geometry REQUIRED)
+ find_package(message_filters REQUIRED)
+ find_package(rclcpp REQUIRED)

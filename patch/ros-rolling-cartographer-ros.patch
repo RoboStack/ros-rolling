@@ -425,8 +425,21 @@ index eaa8422..1a37b59 100644
  #include <regex>
  #include <string>
  
+diff --git a/src/node.cpp b/src/node.cpp
+index 813ae4b..48ef1d5 100644
+--- a/src/node.cpp
++++ b/src/node.cpp
+@@ -96,7 +96,7 @@ Node::Node(
+     : node_options_(node_options)
+ {
+   node_ = node;
+-  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_) ;
++  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*node_) ;
+   map_builder_bridge_.reset(new cartographer_ros::MapBuilderBridge(node_options_, std::move(map_builder), tf_buffer.get()));
+ 
+   absl::MutexLock lock(&mutex_);
 diff --git a/src/node_main.cpp b/src/node_main.cpp
-index f403be0..bdf33b8 100644
+index f403be0..f1f074d 100644
 --- a/src/node_main.cpp
 +++ b/src/node_main.cpp
 @@ -20,6 +20,7 @@
@@ -437,6 +450,15 @@ index f403be0..bdf33b8 100644
  #include "tf2_ros/transform_listener.h"
  
  DEFINE_bool(collect_metrics, false,
+@@ -55,7 +56,7 @@ void Run() {
+       std::make_shared<tf2_ros::Buffer>(
+         cartographer_node->get_clock(),
+         tf2::durationFromSec(kTfBufferCacheTimeInSeconds),
+-        cartographer_node);
++        *cartographer_node);
+ 
+   std::shared_ptr<tf2_ros::TransformListener> tf_listener =
+       std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
 diff --git a/src/occupancy_grid_node_main.cpp b/src/occupancy_grid_node_main.cpp
 index 282b890..6139979 100644
 --- a/src/occupancy_grid_node_main.cpp
@@ -457,7 +479,7 @@ index 282b890..6139979 100644
    std::string last_frame_id_;
    rclcpp::Time last_timestamp_;
 diff --git a/src/offline_node.cpp b/src/offline_node.cpp
-index 94df3b0..4b3f60e 100644
+index 94df3b0..cd45ac0 100644
 --- a/src/offline_node.cpp
 +++ b/src/offline_node.cpp
 @@ -31,7 +31,11 @@
@@ -472,6 +494,24 @@ index 94df3b0..4b3f60e 100644
  #include "rclcpp/exceptions.hpp"
  #include <regex>
  #include <string>
+@@ -148,7 +152,7 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory,
+       std::make_shared<tf2_ros::Buffer>(
+         cartographer_offline_node->get_clock(),
+         tf2::durationFromSec(10),
+-        cartographer_offline_node);
++        *cartographer_offline_node);
+ 
+   std::vector<geometry_msgs::msg::TransformStamped> urdf_transforms;
+ 
+@@ -178,7 +182,7 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory,
+       cartographer_offline_node->create_publisher<tf2_msgs::msg::TFMessage>(
+           kTfTopic, kLatestOnlyPublisherQueueSize);
+ 
+-  ::tf2_ros::StaticTransformBroadcaster static_tf_broadcaster(cartographer_offline_node);
++  ::tf2_ros::StaticTransformBroadcaster static_tf_broadcaster(*cartographer_offline_node);
+ 
+   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_publisher =
+       cartographer_offline_node->create_publisher<rosgraph_msgs::msg::Clock>(
 diff --git a/src/ros_log_sink.cpp b/src/ros_log_sink.cpp
 index 1396381..ba050f3 100644
 --- a/src/ros_log_sink.cpp

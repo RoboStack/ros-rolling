@@ -1436,9 +1436,9 @@ examples_rclpy_pointcloud_publisher:
   url: https://github.com/ros2-gbp/examples-release.git
   version: 0.22.0
 examples_tf2_py:
-  tag: release/rolling/examples_tf2_py/0.46.3-1
+  tag: release/rolling/examples_tf2_py/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 executive_smach:
   tag: release/rolling/executive_smach/3.0.3-3
   url: https://github.com/ros2-gbp/executive_smach-release.git
@@ -1704,9 +1704,9 @@ geometric_shapes:
   url: https://github.com/ros2-gbp/geometric_shapes-release.git
   version: 2.3.4
 geometry2:
-  tag: release/rolling/geometry2/0.46.3-1
+  tag: release/rolling/geometry2/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 geometry_msgs:
   tag: release/rolling/geometry_msgs/5.10.1-1
   url: https://github.com/ros2-gbp/common_interfaces-release.git
@@ -4452,57 +4452,65 @@ rmw_zenoh_cpp:
   url: https://github.com/ros2-gbp/rmw_zenoh-release.git
   version: 0.12.0
 roboplan:
-  tag: release/rolling/roboplan/0.6.1-1
+  tag: release/rolling/roboplan/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_cartesian_planning:
-  tag: release/rolling/roboplan_cartesian_planning/0.6.1-1
+  tag: release/rolling/roboplan_cartesian_planning/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
+roboplan_common:
+  tag: release/rolling/roboplan_common/0.7.0-1
+  url: https://github.com/ros2-gbp/roboplan-release.git
+  version: 0.7.0
+roboplan_core:
+  tag: release/rolling/roboplan_core/0.7.0-1
+  url: https://github.com/ros2-gbp/roboplan-release.git
+  version: 0.7.0
 roboplan_example_models:
-  tag: release/rolling/roboplan_example_models/0.6.1-1
+  tag: release/rolling/roboplan_example_models/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_examples:
-  tag: release/rolling/roboplan_examples/0.6.1-1
+  tag: release/rolling/roboplan_examples/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_oink:
-  tag: release/rolling/roboplan_oink/0.6.1-1
+  tag: release/rolling/roboplan_oink/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_ros_cpp:
-  tag: release/rolling/roboplan_ros_cpp/0.6.1-1
+  tag: release/rolling/roboplan_ros_cpp/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_ros_examples:
-  tag: release/rolling/roboplan_ros_examples/0.6.1-1
+  tag: release/rolling/roboplan_ros_examples/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_ros_franka:
-  tag: release/rolling/roboplan_ros_franka/0.6.1-1
+  tag: release/rolling/roboplan_ros_franka/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_ros_py:
-  tag: release/rolling/roboplan_ros_py/0.6.1-1
+  tag: release/rolling/roboplan_ros_py/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_ros_visualization:
-  tag: release/rolling/roboplan_ros_visualization/0.6.1-1
+  tag: release/rolling/roboplan_ros_visualization/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan_ros-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_rrt:
-  tag: release/rolling/roboplan_rrt/0.6.1-1
+  tag: release/rolling/roboplan_rrt/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_simple_ik:
-  tag: release/rolling/roboplan_simple_ik/0.6.1-1
+  tag: release/rolling/roboplan_simple_ik/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 roboplan_toppra:
-  tag: release/rolling/roboplan_toppra/0.6.1-1
+  tag: release/rolling/roboplan_toppra/0.7.0-1
   url: https://github.com/ros2-gbp/roboplan-release.git
-  version: 0.6.1
+  version: 0.7.0
 robot_arm_demo:
   tag: release/rolling/robot_arm_demo/0.1.0-1
   url: https://github.com/ros2-gbp/rosidl_buffer_backends_tutorials-release.git
@@ -5652,57 +5660,57 @@ test_msgs:
   url: https://github.com/ros2-gbp/rcl_interfaces-release.git
   version: 2.5.1
 tf2:
-  tag: release/rolling/tf2/0.46.3-1
+  tag: release/rolling/tf2/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_2d:
   tag: release/rolling/tf2_2d/1.6.2-1
   url: https://github.com/ros2-gbp/tf2_2d-release.git
   version: 1.6.2
 tf2_bullet:
-  tag: release/rolling/tf2_bullet/0.46.3-1
+  tag: release/rolling/tf2_bullet/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_eigen:
-  tag: release/rolling/tf2_eigen/0.46.3-1
+  tag: release/rolling/tf2_eigen/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_eigen_kdl:
-  tag: release/rolling/tf2_eigen_kdl/0.46.3-1
+  tag: release/rolling/tf2_eigen_kdl/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_geometry_msgs:
-  tag: release/rolling/tf2_geometry_msgs/0.46.3-1
+  tag: release/rolling/tf2_geometry_msgs/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_kdl:
-  tag: release/rolling/tf2_kdl/0.46.3-1
+  tag: release/rolling/tf2_kdl/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_msgs:
-  tag: release/rolling/tf2_msgs/0.46.3-1
+  tag: release/rolling/tf2_msgs/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_py:
-  tag: release/rolling/tf2_py/0.46.3-1
+  tag: release/rolling/tf2_py/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_ros:
-  tag: release/rolling/tf2_ros/0.46.3-1
+  tag: release/rolling/tf2_ros/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_ros_py:
-  tag: release/rolling/tf2_ros_py/0.46.3-1
+  tag: release/rolling/tf2_ros_py/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_sensor_msgs:
-  tag: release/rolling/tf2_sensor_msgs/0.46.3-1
+  tag: release/rolling/tf2_sensor_msgs/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_tools:
-  tag: release/rolling/tf2_tools/0.46.3-1
+  tag: release/rolling/tf2_tools/0.46.4-1
   url: https://github.com/ros2-gbp/geometry2-release.git
-  version: 0.46.3
+  version: 0.46.4
 tf2_web_republisher:
   tag: release/rolling/tf2_web_republisher/1.0.0-2
   url: https://github.com/ros2-gbp/tf2_web_republisher-release.git

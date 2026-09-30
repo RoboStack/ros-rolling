@@ -1,0 +1,17 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f430f9d1..fcebc62e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,7 +20,11 @@ find_package(ament_cmake REQUIRED)
+ if(WIN32 OR APPLE OR ANDROID OR BSD)
+   set(DISABLED_DEFAULT ON)
+ else()
+-  set(DISABLED_DEFAULT OFF)
++  # conda-forge doesn't package liblttng-ctl (only lttng-ust), so disable
++  # lttng support unconditionally rather than just on
++  # WIN32/APPLE/ANDROID/BSD -- see RoboStack/ros-jazzy's own lttngpy patch
++  # for the same fix.
++  set(DISABLED_DEFAULT ON)
+ endif()
+ option(
+   LTTNGPY_DISABLED
