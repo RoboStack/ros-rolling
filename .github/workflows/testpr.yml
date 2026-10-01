@@ -191,7 +191,7 @@ jobs:
           EXTRA_BUILD_ARGS="--no-build-id"
         fi
         # --channel-priority disabled: resolvo would otherwise refuse a just-built local package once any other-channel build of the same name exists.
-        pixi run rattler-build build --recipe-dir recipes --target-platform ${{ matrix.platform }} -m ./conda_build_config.yaml -c conda-forge -c robostack-rolling --skip-existing --channel-priority disabled $EXTRA_BUILD_ARGS 2>&1 | tee rattler-build.log
+        pixi run rattler-build build --recipe-dir recipes --target-platform ${{ matrix.platform }} -m ./conda_build_config.yaml -c https://prefix.dev/conda-forge -c https://prefix.dev/robostack-rolling --skip-existing --channel-priority disabled $EXTRA_BUILD_ARGS 2>&1 | tee rattler-build.log
         build_status=${PIPESTATUS[0]}
         echo "exit-code=${build_status}" >> "$GITHUB_OUTPUT"
         exit "$build_status"
