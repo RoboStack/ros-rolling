@@ -208,9 +208,30 @@ rqt_plot:
 rqt_py_common:
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30
+rviz2:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_common:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_default_plugins:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_imu_plugin:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
 rviz_rendering:
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30
 rviz_rendering_tests:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_satellite:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_visual_testing_framework:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+turtlesim:
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30
