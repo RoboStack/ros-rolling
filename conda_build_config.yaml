@@ -819,8 +819,6 @@ lol_html:
   - 3.0.1
 ls_hpack:
   - 2.3.5
-lua:
-  - 5.4
 lwtnn:
   - '2.14'
 lz4_c:
@@ -1013,7 +1011,12 @@ qt:
 qt_main:
   - 5.15
 qt6_main:
-  - '6'
+  - 6.11
+  # conda-forge published sip 6.16.1 on 2026-09-08, which broke ABI targeting for
+  # packages like qt_gui_cpp_sip that build against PyQt-sip's fixed ABI v12
+  # (hit this on humble/jazzy first; rolling also builds qt_gui_cpp via
+  # pyqt6/sip so it's equally exposed). Pin back to the last known-good line
+  # until upstream fixes it.
 qtkeychain:
   - '0.17'
 rav1e:
@@ -1173,10 +1176,14 @@ libzenohc:
   - 1.10.1
 libzenohcxx:
   - 1.10.1
-  # conda-forge published sip 6.16.1 on 2026-09-08, which broke ABI targeting for
-  # packages like qt_gui_cpp_sip that build against PyQt-sip's fixed ABI v12
-  # (hit this on humble/jazzy first; rolling also builds qt_gui_cpp via
-  # pyqt6/sip so it's equally exposed). Pin back to the last known-good line
-  # until upstream fixes it.
+  # cartographer was built with lua 5.4.8, otherwise it pulls in 5.5 which leads to conflicts
+lua:
+  - 5.4
+  # conda-forge's newest pyqt6 (6.11.0) still requires qt6-main <6.12, so
+  # packages built against the newly released qt6-main 6.12 can't be installed
+  # together with python_qt_binding (pyqt6). Pin both to 6.11 until pyqt6 is
+  # rebuilt for qt6-main 6.12.
+pyqt6:
+  - 6.11
 sip:
   - 6.15

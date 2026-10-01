@@ -46,8 +46,6 @@ gz_dartsim_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 gz_fuel_tools_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
-gz_gui_vendor:
-  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 gz_math_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 gz_msgs_vendor:
@@ -63,8 +61,6 @@ gz_rendering_vendor:
 gz_ros2_control:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 gz_sensors_vendor:
-  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
-gz_sim_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
 gz_transport_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
@@ -198,3 +194,23 @@ visp:
     override_version: '3.7.0'
 zenoh_cpp_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK -DUSE_SYSTEM_ZENOH=ON"
+gz_gui_vendor:
+  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+gz_sim_vendor:
+  additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rqt_plot:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rqt_py_common:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_rendering:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
+rviz_rendering_tests:
+  # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
+  build_number: 30
