@@ -1,0 +1,7 @@
+diff --git a/src/resample.cpp b/src/resample.cpp
+index a4083144..62fa748e 100644
+--- a/src/resample.cpp
++++ b/src/resample.cpp
+@@ -22,0 +23,2 @@
++#include <rclcpp/utilities.hpp>
++

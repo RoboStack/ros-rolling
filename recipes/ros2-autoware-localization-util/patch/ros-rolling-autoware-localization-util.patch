@@ -1,0 +1,16 @@
+diff --git a/include/autoware/localization_util/util_func.hpp b/include/autoware/localization_util/util_func.hpp
+index 4853f603..b476f2d5 100644
+--- a/include/autoware/localization_util/util_func.hpp
++++ b/include/autoware/localization_util/util_func.hpp
+@@ -17,0 +18,3 @@
++#include <rclcpp/logger.hpp>
++#include <rclcpp/time.hpp>
++
+diff --git a/src/util_func.cpp b/src/util_func.cpp
+index 5c7d9af3..9ee6ef75 100644
+--- a/src/util_func.cpp
++++ b/src/util_func.cpp
+@@ -18,0 +19,3 @@
++#include <rclcpp/duration.hpp>
++#include <rclcpp/logging.hpp>
++

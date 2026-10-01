@@ -1,0 +1,14 @@
+diff --git a/src/geometry.cpp b/src/geometry.cpp
+index 7d92097..d80b4ce 100644
+--- a/src/geometry.cpp
++++ b/src/geometry.cpp
+@@ -17,7 +17,9 @@
+ #include <autoware_utils_geometry/geometry.hpp>
+ #include <range/v3/all.hpp>
+-
++#include <rclcpp/clock.hpp>
++#include <rclcpp/logging.hpp>
++
+ #include <geometry_msgs/msg/point.hpp>
+ #include <geometry_msgs/msg/pose.hpp>
+ #include <geometry_msgs/msg/quaternion.hpp>

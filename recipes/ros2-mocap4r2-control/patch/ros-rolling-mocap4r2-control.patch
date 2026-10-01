@@ -1,0 +1,36 @@
+diff --git a/mocap4r2_control/mocap4r2_control/CMakeLists.txt b/mocap4r2_control/mocap4r2_control/CMakeLists.txt
+index 394d5e56..77b13d01 100644
+--- a/mocap4r2_control/mocap4r2_control/CMakeLists.txt
++++ b/mocap4r2_control/mocap4r2_control/CMakeLists.txt
+@@ -27,6 +27,12 @@ set(dependencies
+   mocap4r2_control_msgs
+ )
+ 
++set(target_dependencies
++  rclcpp::rclcpp
++  rclcpp_lifecycle::rclcpp_lifecycle
++  ${mocap4r2_control_msgs_TARGETS}
++)
++
+ include_directories(include)
+ 
+ add_library(${PROJECT_NAME} SHARED
+@@ -34,10 +40,15 @@ add_library(${PROJECT_NAME} SHARED
+   src/mocap4r2_control/ControllerNode.cpp
+   src/mocap4r2_control/AuxiliarNode.cpp
+ )
+-ament_target_dependencies(${PROJECT_NAME} ${dependencies})
++# auxiliar_main (below) links against this library directly, so it needs
++# an import .lib on Windows -- this SHARED library has no
++# dllexport-annotated symbols, so without this MSVC produces the .dll but
++# no .lib (LNK1181: cannot open input file).
++set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++target_link_libraries(${PROJECT_NAME} ${target_dependencies})
+ 
+ add_executable(auxiliar_main src/auxiliar_main.cpp)
+-ament_target_dependencies(auxiliar_main ${dependencies})
++target_link_libraries(auxiliar_main ${target_dependencies})
+ target_link_libraries(auxiliar_main ${PROJECT_NAME})
+ 
+ install(DIRECTORY include/
+ 
