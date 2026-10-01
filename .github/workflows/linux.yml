@@ -1,0 +1,786 @@
+jobs:
+  stage_0_job_0:
+    name: ros2-rviz-visual-testing-framework ros2-moveit-ros-planning ros2-ros2bag
+      ros2-rqt-bag ros2-autoware-object-recognition-utils ros2-autoware-utils-pcl
+      ros2-autoware-point-types ros2-moveit-planners-chomp ros2-rviz-imu-plugin ros2-perception-pcl
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs: []
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-rviz-visual-testing-framework ros2-moveit-ros-planning ros2-ros2bag
+        ros2-rqt-bag ros2-autoware-object-recognition-utils ros2-autoware-utils-pcl
+        ros2-autoware-point-types ros2-moveit-planners-chomp ros2-rviz-imu-plugin
+        ros2-perception-pcl
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-rviz-visual-testing-framework ros2-moveit-ros-planning
+          ros2-ros2bag ros2-rqt-bag ros2-autoware-object-recognition-utils ros2-autoware-utils-pcl
+          ros2-autoware-point-types ros2-moveit-planners-chomp ros2-rviz-imu-plugin
+          ros2-perception-pcl
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_0_job_1:
+    name: trac-ik moveit-ros-control-interface moveit-plugins dual-laser-merger
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs: []
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-trac-ik ros-rolling-moveit-ros-control-interface ros-rolling-moveit-plugins
+        ros-rolling-dual-laser-merger
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-trac-ik ros-rolling-moveit-ros-control-interface
+          ros-rolling-moveit-plugins ros-rolling-dual-laser-merger
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_1_job_2:
+    name: ros2-rviz-default-plugins ros2-moveit-kinematics ros2-moveit-ros-warehouse
+      ros2-moveit-ros-robot-interaction ros2-rosbag2-tests ros2-moveit-planners-ompl
+      ros2-autoware-motion-velocity-planner-common ros2-autoware-behavior-velocity-planner
+      ros2-autoware-crop-box-filter ros2-autoware-ground-filter
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_0_job_0
+    - stage_0_job_1
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-rviz-default-plugins ros2-moveit-kinematics ros2-moveit-ros-warehouse
+        ros2-moveit-ros-robot-interaction ros2-rosbag2-tests ros2-moveit-planners-ompl
+        ros2-autoware-motion-velocity-planner-common ros2-autoware-behavior-velocity-planner
+        ros2-autoware-crop-box-filter ros2-autoware-ground-filter
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-rviz-default-plugins ros2-moveit-kinematics ros2-moveit-ros-warehouse
+          ros2-moveit-ros-robot-interaction ros2-rosbag2-tests ros2-moveit-planners-ompl
+          ros2-autoware-motion-velocity-planner-common ros2-autoware-behavior-velocity-planner
+          ros2-autoware-crop-box-filter ros2-autoware-ground-filter
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_1_job_3:
+    name: ros2-autoware-ndt-scan-matcher ros2-autoware-downsample-filters ros2-moveit-ros-perception
+      ros2-rosbag2-performance-benchmarking ros2-realsense2-camera ros2-autoware-utils
+      rviz-visual-testing-framework rviz-imu-plugin rqt-bag ros2bag
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_0_job_0
+    - stage_0_job_1
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-autoware-ndt-scan-matcher ros2-autoware-downsample-filters
+        ros2-moveit-ros-perception ros2-rosbag2-performance-benchmarking ros2-realsense2-camera
+        ros2-autoware-utils ros-rolling-rviz-visual-testing-framework ros-rolling-rviz-imu-plugin
+        ros-rolling-rqt-bag ros-rolling-ros2bag
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-autoware-ndt-scan-matcher ros2-autoware-downsample-filters
+          ros2-moveit-ros-perception ros2-rosbag2-performance-benchmarking ros2-realsense2-camera
+          ros2-autoware-utils ros-rolling-rviz-visual-testing-framework ros-rolling-rviz-imu-plugin
+          ros-rolling-rqt-bag ros-rolling-ros2bag
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_1_job_4:
+    name: perception-pcl moveit-ros-planning moveit-planners-chomp autoware-utils-pcl
+      autoware-point-types autoware-object-recognition-utils
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_0_job_0
+    - stage_0_job_1
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-perception-pcl ros-rolling-moveit-ros-planning ros-rolling-moveit-planners-chomp
+        ros-rolling-autoware-utils-pcl ros-rolling-autoware-point-types ros-rolling-autoware-object-recognition-utils
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-perception-pcl ros-rolling-moveit-ros-planning
+          ros-rolling-moveit-planners-chomp ros-rolling-autoware-utils-pcl ros-rolling-autoware-point-types
+          ros-rolling-autoware-object-recognition-utils
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_2_job_5:
+    name: ros2-rviz2 ros2-moveit-ros-move-group ros2-rosbag2 ros2-moveit-ros-benchmarks
+      ros2-autoware-motion-velocity-planner ros2-autoware-motion-velocity-obstacle-stop-module
+      ros2-autoware-behavior-velocity-stop-line-module ros2-autoware-euclidean-cluster-object-detector
+      ros2-autoware-core-localization ros2-rviz-satellite
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_1_job_2
+    - stage_1_job_3
+    - stage_1_job_4
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-rviz2 ros2-moveit-ros-move-group ros2-rosbag2 ros2-moveit-ros-benchmarks
+        ros2-autoware-motion-velocity-planner ros2-autoware-motion-velocity-obstacle-stop-module
+        ros2-autoware-behavior-velocity-stop-line-module ros2-autoware-euclidean-cluster-object-detector
+        ros2-autoware-core-localization ros2-rviz-satellite
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-rviz2 ros2-moveit-ros-move-group ros2-rosbag2 ros2-moveit-ros-benchmarks
+          ros2-autoware-motion-velocity-planner ros2-autoware-motion-velocity-obstacle-stop-module
+          ros2-autoware-behavior-velocity-stop-line-module ros2-autoware-euclidean-cluster-object-detector
+          ros2-autoware-core-localization ros2-rviz-satellite
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_2_job_6:
+    name: rviz-default-plugins rosbag2-tests rosbag2-performance-benchmarking realsense2-camera
+      moveit-ros-warehouse moveit-ros-robot-interaction moveit-ros-perception moveit-planners-ompl
+      moveit-kinematics autoware-utils
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_1_job_2
+    - stage_1_job_3
+    - stage_1_job_4
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-rviz-default-plugins ros-rolling-rosbag2-tests ros-rolling-rosbag2-performance-benchmarking
+        ros-rolling-realsense2-camera ros-rolling-moveit-ros-warehouse ros-rolling-moveit-ros-robot-interaction
+        ros-rolling-moveit-ros-perception ros-rolling-moveit-planners-ompl ros-rolling-moveit-kinematics
+        ros-rolling-autoware-utils
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-rviz-default-plugins ros-rolling-rosbag2-tests
+          ros-rolling-rosbag2-performance-benchmarking ros-rolling-realsense2-camera
+          ros-rolling-moveit-ros-warehouse ros-rolling-moveit-ros-robot-interaction
+          ros-rolling-moveit-ros-perception ros-rolling-moveit-planners-ompl ros-rolling-moveit-kinematics
+          ros-rolling-autoware-utils
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_2_job_7:
+    name: autoware-ndt-scan-matcher autoware-motion-velocity-planner-common autoware-ground-filter
+      autoware-downsample-filters autoware-crop-box-filter autoware-behavior-velocity-planner
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_1_job_2
+    - stage_1_job_3
+    - stage_1_job_4
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-autoware-ndt-scan-matcher ros-rolling-autoware-motion-velocity-planner-common
+        ros-rolling-autoware-ground-filter ros-rolling-autoware-downsample-filters
+        ros-rolling-autoware-crop-box-filter ros-rolling-autoware-behavior-velocity-planner
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-autoware-ndt-scan-matcher ros-rolling-autoware-motion-velocity-planner-common
+          ros-rolling-autoware-ground-filter ros-rolling-autoware-downsample-filters
+          ros-rolling-autoware-crop-box-filter ros-rolling-autoware-behavior-velocity-planner
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_3_job_8:
+    name: ros2-moveit-ros-planning-interface ros2-moveit-resources-prbt-moveit-config
+      ros2-rqt-bag-plugins ros2-ur-robot-driver ros2-ros-base ros2-webots-ros2-tests
+      ros2-autoware-core-planning ros2-autoware-core-perception ros2-moveit-visual-tools
+      ros2-livox-ros-driver2
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_2_job_5
+    - stage_2_job_6
+    - stage_2_job_7
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-moveit-ros-planning-interface ros2-moveit-resources-prbt-moveit-config
+        ros2-rqt-bag-plugins ros2-ur-robot-driver ros2-ros-base ros2-webots-ros2-tests
+        ros2-autoware-core-planning ros2-autoware-core-perception ros2-moveit-visual-tools
+        ros2-livox-ros-driver2
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-moveit-ros-planning-interface ros2-moveit-resources-prbt-moveit-config
+          ros2-rqt-bag-plugins ros2-ur-robot-driver ros2-ros-base ros2-webots-ros2-tests
+          ros2-autoware-core-planning ros2-autoware-core-perception ros2-moveit-visual-tools
+          ros2-livox-ros-driver2
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_3_job_9:
+    name: urdf-tutorial rviz-satellite rviz2 rosbag2 ros-gz roboplan-ros-py rmf-demos
+      moveit-ros-move-group moveit-ros-benchmarks autoware-motion-velocity-planner
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_2_job_5
+    - stage_2_job_6
+    - stage_2_job_7
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-urdf-tutorial ros-rolling-rviz-satellite ros-rolling-rviz2
+        ros-rolling-rosbag2 ros-rolling-ros-gz ros-rolling-roboplan-ros-py ros-rolling-rmf-demos
+        ros-rolling-moveit-ros-move-group ros-rolling-moveit-ros-benchmarks ros-rolling-autoware-motion-velocity-planner
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-urdf-tutorial ros-rolling-rviz-satellite ros-rolling-rviz2
+          ros-rolling-rosbag2 ros-rolling-ros-gz ros-rolling-roboplan-ros-py ros-rolling-rmf-demos
+          ros-rolling-moveit-ros-move-group ros-rolling-moveit-ros-benchmarks ros-rolling-autoware-motion-velocity-planner
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_3_job_10:
+    name: autoware-motion-velocity-obstacle-stop-module autoware-euclidean-cluster-object-detector
+      autoware-core-localization autoware-behavior-velocity-stop-line-module
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_2_job_5
+    - stage_2_job_6
+    - stage_2_job_7
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-autoware-motion-velocity-obstacle-stop-module ros-rolling-autoware-euclidean-cluster-object-detector
+        ros-rolling-autoware-core-localization ros-rolling-autoware-behavior-velocity-stop-line-module
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-autoware-motion-velocity-obstacle-stop-module
+          ros-rolling-autoware-euclidean-cluster-object-detector ros-rolling-autoware-core-localization
+          ros-rolling-autoware-behavior-velocity-stop-line-module
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_4_job_11:
+    name: ros2-moveit-ros-visualization ros2-moveit-resources-prbt-pg70-support ros2-moveit-py
+      ros2-rqt-common-plugins ros2-ur-calibration ros2-simulation ros2-perception
+      ros2-webots-ros2 ros2-moveit-hybrid-planning ros2-autoware-core
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_3_job_8
+    - stage_3_job_9
+    - stage_3_job_10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-moveit-ros-visualization ros2-moveit-resources-prbt-pg70-support
+        ros2-moveit-py ros2-rqt-common-plugins ros2-ur-calibration ros2-simulation
+        ros2-perception ros2-webots-ros2 ros2-moveit-hybrid-planning ros2-autoware-core
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-moveit-ros-visualization ros2-moveit-resources-prbt-pg70-support
+          ros2-moveit-py ros2-rqt-common-plugins ros2-ur-calibration ros2-simulation
+          ros2-perception ros2-webots-ros2 ros2-moveit-hybrid-planning ros2-autoware-core
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_4_job_12:
+    name: webots-ros2-tests ur-robot-driver rqt-bag-plugins ros-base moveit-visual-tools
+      moveit-ros-planning-interface moveit-resources-prbt-moveit-config livox-ros-driver2
+      autoware-core-planning autoware-core-perception
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_3_job_8
+    - stage_3_job_9
+    - stage_3_job_10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-webots-ros2-tests ros-rolling-ur-robot-driver ros-rolling-rqt-bag-plugins
+        ros-rolling-ros-base ros-rolling-moveit-visual-tools ros-rolling-moveit-ros-planning-interface
+        ros-rolling-moveit-resources-prbt-moveit-config ros-rolling-livox-ros-driver2
+        ros-rolling-autoware-core-planning ros-rolling-autoware-core-perception
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-webots-ros2-tests ros-rolling-ur-robot-driver
+          ros-rolling-rqt-bag-plugins ros-rolling-ros-base ros-rolling-moveit-visual-tools
+          ros-rolling-moveit-ros-planning-interface ros-rolling-moveit-resources-prbt-moveit-config
+          ros-rolling-livox-ros-driver2 ros-rolling-autoware-core-planning ros-rolling-autoware-core-perception
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_5_job_13:
+    name: ros2-moveit-setup-framework ros2-pilz-industrial-motion-planner ros2-moveit-servo
+      ros2-moveit-task-constructor-core ros2-moveit-ros ros2-desktop webots-ros2 ur-calibration
+      simulation rqt-common-plugins
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_4_job_11
+    - stage_4_job_12
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-moveit-setup-framework ros2-pilz-industrial-motion-planner
+        ros2-moveit-servo ros2-moveit-task-constructor-core ros2-moveit-ros ros2-desktop
+        ros-rolling-webots-ros2 ros-rolling-ur-calibration ros-rolling-simulation
+        ros-rolling-rqt-common-plugins
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-moveit-setup-framework ros2-pilz-industrial-motion-planner
+          ros2-moveit-servo ros2-moveit-task-constructor-core ros2-moveit-ros ros2-desktop
+          ros-rolling-webots-ros2 ros-rolling-ur-calibration ros-rolling-simulation
+          ros-rolling-rqt-common-plugins
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_5_job_14:
+    name: perception moveit-ros-visualization moveit-resources-prbt-pg70-support moveit-py
+      moveit-hybrid-planning autoware-core
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_4_job_11
+    - stage_4_job_12
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-perception ros-rolling-moveit-ros-visualization ros-rolling-moveit-resources-prbt-pg70-support
+        ros-rolling-moveit-py ros-rolling-moveit-hybrid-planning ros-rolling-autoware-core
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-perception ros-rolling-moveit-ros-visualization
+          ros-rolling-moveit-resources-prbt-pg70-support ros-rolling-moveit-py ros-rolling-moveit-hybrid-planning
+          ros-rolling-autoware-core
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_6_job_15:
+    name: ros2-moveit-setup-core-plugins ros2-moveit-setup-controllers ros2-moveit-setup-app-plugins
+      ros2-moveit-setup-srdf-plugins ros2-moveit-planners ros2-moveit-task-constructor-visualization
+      ros2-moveit-task-constructor-capabilities ros2-moveit-ros-trajectory-cache ros2-desktop-full
+      pilz-industrial-motion-planner
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_5_job_13
+    - stage_5_job_14
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-moveit-setup-core-plugins ros2-moveit-setup-controllers ros2-moveit-setup-app-plugins
+        ros2-moveit-setup-srdf-plugins ros2-moveit-planners ros2-moveit-task-constructor-visualization
+        ros2-moveit-task-constructor-capabilities ros2-moveit-ros-trajectory-cache
+        ros2-desktop-full ros-rolling-pilz-industrial-motion-planner
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-moveit-setup-core-plugins ros2-moveit-setup-controllers
+          ros2-moveit-setup-app-plugins ros2-moveit-setup-srdf-plugins ros2-moveit-planners
+          ros2-moveit-task-constructor-visualization ros2-moveit-task-constructor-capabilities
+          ros2-moveit-ros-trajectory-cache ros2-desktop-full ros-rolling-pilz-industrial-motion-planner
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_6_job_16:
+    name: moveit-task-constructor-core moveit-setup-framework moveit-servo moveit-ros
+      desktop
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_5_job_13
+    - stage_5_job_14
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-moveit-task-constructor-core ros-rolling-moveit-setup-framework
+        ros-rolling-moveit-servo ros-rolling-moveit-ros ros-rolling-desktop
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-moveit-task-constructor-core ros-rolling-moveit-setup-framework
+          ros-rolling-moveit-servo ros-rolling-moveit-ros ros-rolling-desktop
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_7_job_17:
+    name: ros2-moveit-setup-assistant ros2-ur-moveit-config ros2-moveit-task-constructor-demo
+      ros2-moveit-runtime moveit-task-constructor-visualization moveit-task-constructor-capabilities
+      moveit-setup-srdf-plugins moveit-setup-core-plugins moveit-setup-controllers
+      moveit-setup-app-plugins
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_6_job_15
+    - stage_6_job_16
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-moveit-setup-assistant ros2-ur-moveit-config ros2-moveit-task-constructor-demo
+        ros2-moveit-runtime ros-rolling-moveit-task-constructor-visualization ros-rolling-moveit-task-constructor-capabilities
+        ros-rolling-moveit-setup-srdf-plugins ros-rolling-moveit-setup-core-plugins
+        ros-rolling-moveit-setup-controllers ros-rolling-moveit-setup-app-plugins
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-moveit-setup-assistant ros2-ur-moveit-config ros2-moveit-task-constructor-demo
+          ros2-moveit-runtime ros-rolling-moveit-task-constructor-visualization ros-rolling-moveit-task-constructor-capabilities
+          ros-rolling-moveit-setup-srdf-plugins ros-rolling-moveit-setup-core-plugins
+          ros-rolling-moveit-setup-controllers ros-rolling-moveit-setup-app-plugins
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_7_job_18:
+    name: moveit-ros-trajectory-cache moveit-planners desktop-full
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_6_job_15
+    - stage_6_job_16
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-moveit-ros-trajectory-cache ros-rolling-moveit-planners
+        ros-rolling-desktop-full
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-moveit-ros-trajectory-cache ros-rolling-moveit-planners
+          ros-rolling-desktop-full
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_8_job_19:
+    name: ros2-ur-simulation-gz ros2-ur ros2-moveit ur-moveit-config moveit-task-constructor-demo
+      moveit-setup-assistant moveit-runtime
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_7_job_17
+    - stage_7_job_18
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros2-ur-simulation-gz ros2-ur ros2-moveit ros-rolling-ur-moveit-config
+        ros-rolling-moveit-task-constructor-demo ros-rolling-moveit-setup-assistant
+        ros-rolling-moveit-runtime
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros2-ur-simulation-gz ros2-ur ros2-moveit ros-rolling-ur-moveit-config
+          ros-rolling-moveit-task-constructor-demo ros-rolling-moveit-setup-assistant
+          ros-rolling-moveit-runtime
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+  stage_9_job_20:
+    name: ur-simulation-gz ur moveit
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    needs:
+    - stage_8_job_19
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0
+      with:
+        pixi-version: latest
+        cache: 'true'
+        log-level: v
+        frozen: 'true'
+    - name: Build ros-rolling-ur-simulation-gz ros-rolling-ur ros-rolling-moveit
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+        CURRENT_RECIPES: ros-rolling-ur-simulation-gz ros-rolling-ur ros-rolling-moveit
+        BUILD_TARGET: ''
+      run: |
+        export CI=github
+        export GIT_BRANCH=${GITHUB_REF_NAME}
+        export FEEDSTOCK_NAME=${GITHUB_REPOSITORY##*/}
+        .scripts/build_unix.sh --target $BUILD_TARGET
+    permissions:
+      id-token: write
+      attestations: write
+name: build_linux64
+on:
+  push:
+    branches:
+    - buildbranch_linux

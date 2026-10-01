@@ -1,0 +1,59 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8c6e1f792..de1670de3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -51,6 +51,9 @@ add_library(
+   include/moveit_setup_framework/qt/setup_step_widget.hpp
+   include/moveit_setup_framework/qt/rviz_panel.hpp
+   include/moveit_setup_framework/qt/double_list_widget.hpp)
++include(GenerateExportHeader)
++generate_export_header(${PROJECT_NAME})
++
+ target_include_directories(
+   moveit_setup_framework
+   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -78 +81,2 @@ install(FILES moveit_setup_framework_plugins.xml
+ install(DIRECTORY templates DESTINATION share/moveit_setup_framework)
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_export.h DESTINATION include)
+diff --git a/include/moveit_setup_framework/qt/setup_step_widget.hpp b/include/moveit_setup_framework/qt/setup_step_widget.hpp
+index f32e7b5ad3..c6f472682d 100644
+--- a/include/moveit_setup_framework/qt/setup_step_widget.hpp
++++ b/include/moveit_setup_framework/qt/setup_step_widget.hpp
+@@ -40,12 +40,14 @@
+ #include <moveit_setup_framework/qt/rviz_panel.hpp>
+ #include <QWidget>
+ 
++#include <moveit_setup_framework_export.h>
++
+ namespace moveit_setup
+ {
+ /**
+  * @brief The GUI code for one SetupStep
+  */
+-class SetupStepWidget : public QWidget
++class MOVEIT_SETUP_FRAMEWORK_EXPORT SetupStepWidget : public QWidget
+ {
+   Q_OBJECT
+ public:
+diff --git a/include/moveit_setup_framework/templates.hpp b/include/moveit_setup_framework/templates.hpp
+index 1555eee16b..b02d520243 100644
+--- a/include/moveit_setup_framework/templates.hpp
++++ b/include/moveit_setup_framework/templates.hpp
+@@ -38,6 +38,8 @@
+ #include <moveit_setup_framework/generated_file.hpp>
+ #include <string>
+ 
++#include <moveit_setup_framework_export.h>
++
+ namespace moveit_setup
+ {
+ /**
+@@ -69,7 +71,7 @@ public:
+ 
+   bool write() override;
+ 
+-  static std::vector<TemplateVariable> variables;
++  static MOVEIT_SETUP_FRAMEWORK_EXPORT std::vector<TemplateVariable> variables;
+ };
+ 
+ }  // namespace moveit_setup
