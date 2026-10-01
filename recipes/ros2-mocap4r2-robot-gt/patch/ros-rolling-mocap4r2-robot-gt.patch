@@ -1,0 +1,57 @@
+diff --git a/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt b/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt
+index 7c14e7e4..8e097dba 100644
+--- a/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt
++++ b/mocap4r2_robot_gt/mocap4r2_robot_gt/CMakeLists.txt
+@@ -16,13 +16,13 @@ find_package(geometry_msgs REQUIRED)
+ find_package(tf2_geometry_msgs REQUIRED)
+ 
+ set(dependencies
+-    rclcpp
+-    rclcpp_components
+-    mocap4r2_msgs
+-    mocap4r2_robot_gt_msgs
+-    tf2_ros
+-    geometry_msgs
+-    tf2_geometry_msgs
++    rclcpp::rclcpp
++    rclcpp_components::component
++    ${mocap4r2_msgs_TARGETS}
++    ${mocap4r2_robot_gt_msgs_TARGETS}
++    tf2_ros::tf2_ros
++    ${geometry_msgs_TARGETS}
++    ${tf2_geometry_msgs_TARGETS}
+ )
+ 
+ include_directories(
+@@ -30,19 +30,26 @@ include_directories(
+ )
+ 
+ add_library(gt_component SHARED src/mocap4r2_robot_gt/gt_component.cpp)
+-ament_target_dependencies(gt_component ${dependencies})
++# gt_program (below) links against this library directly, so it needs an
++# import .lib on Windows -- same missing-dllexport-symbols issue already
++# fixed for mocap4r2_control/mocap4r2_dummy_driver/mocap4r2_marker_viz.
++set_target_properties(gt_component PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++target_link_libraries(gt_component ${dependencies})
+ rclcpp_components_register_nodes(gt_component "mocap4r2_robot_gt::GTNode")
+ 
+ add_executable(gt_program src/gt_program.cpp)
+-ament_target_dependencies(gt_component ${dependencies})
++target_link_libraries(gt_component ${dependencies})
+ target_link_libraries(gt_program gt_component)
+ 
+ add_library(set_gt_component SHARED src/mocap4r2_robot_gt/set_gt_component.cpp)
+-ament_target_dependencies(set_gt_component ${dependencies})
++# set_gt_cli (below) links against this library directly, so it needs the
++# same import-library fix.
++set_target_properties(set_gt_component PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
++target_link_libraries(set_gt_component ${dependencies})
+ rclcpp_components_register_nodes(set_gt_component "mocap4r2_robot_gt::SetGTNode")
+ 
+ add_executable(set_gt_cli src/set_gt_cli.cpp)
+-ament_target_dependencies(set_gt_cli ${dependencies})
++target_link_libraries(set_gt_cli ${dependencies})
+ target_link_libraries(set_gt_cli set_gt_component)
+ 
+ install(TARGETS
+ 

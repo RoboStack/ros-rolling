@@ -1,0 +1,58 @@
+diff --git a/tutorials/teleop_turtle_key.cpp b/tutorials/teleop_turtle_key.cpp
+index 2f28483..78e4ad5 100644
+--- a/tutorials/teleop_turtle_key.cpp
++++ b/tutorials/teleop_turtle_key.cpp
+@@ -30,8 +30,8 @@
+ 
+ #include <atomic>
+ #include <functional>
++#include <memory>
+ #include <stdexcept>
+-#include <stop_token>  // NOLINT(build/include_order)
+ #include <thread>
+ 
+ #include <rclcpp/rclcpp.hpp>
+@@ -202,17 +202,16 @@ public:
+   {
+     char c;
+ 
+-    // Spin the node on a background thread. std::jthread joins automatically
+-    // when keyLoop() returns, and the stop_token cancels the executor cleanly,
+-    // so the spinner is guaranteed to have stopped touching the node before it
+-    // is destroyed
+-    std::jthread spin_thread(
+-      [this](std::stop_token stop_token) {
+-        rclcpp::executors::SingleThreadedExecutor executor;
+-        executor.add_node(nh_);
+-        std::stop_callback cancel_on_stop(stop_token, [&executor]() {executor.cancel();});
+-        executor.spin();
+-      });
++    // Keep the spinner joined before the node is destroyed.
++    auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
++    executor->add_node(nh_);
++    std::thread spin_thread([executor]() {executor->spin();});
++    const auto stop_spinner = [&executor, &spin_thread]() {
++      executor->cancel();
++      if (spin_thread.joinable()) {
++        spin_thread.join();
++      }
++    };
+ 
+     puts("Reading from keyboard");
+     puts("---------------------------");
+@@ -226,6 +225,7 @@ public:
+         c = input_.readOne();
+       } catch (const std::runtime_error &) {
+         perror("read():");
++        stop_spinner();
+         return -1;
+       }
+ 
+@@ -306,6 +306,7 @@ public:
+       }
+     }
+ 
++    stop_spinner();
+     return 0;
+   }
+ 
