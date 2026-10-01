@@ -1,0 +1,13 @@
+diff --git a/src/odom_to_tf.cpp b/src/odom_to_tf.cpp
+index b94896c..d1f5b61 100644
+--- a/src/odom_to_tf.cpp
++++ b/src/odom_to_tf.cpp
+@@ -41,7 +41,7 @@ public:
+     }
+     sub_ = this->create_subscription<nav_msgs::msg::Odometry>(odom_topic, rclcpp::SensorDataQoS(),
+                                                               std::bind(&OdomToTF::odomCallback, this, _1));
+-    tfb_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
++    tfb_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+   }
+ 
+ private:

@@ -1,0 +1,187 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ed34a38..93ee3fc 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -97,8 +97,18 @@ set(ouster_ros_library_deps
+   tf2_eigen
+ )
+ 
+-ament_target_dependencies(ouster_ros_library
+-  ${ouster_ros_library_deps}
++set(ouster_ros_target_deps
++  rclcpp::rclcpp
++  ${sensor_msgs_TARGETS}
++  ${geometry_msgs_TARGETS}
++  ${ouster_sensor_msgs_TARGETS}
++  pcl_conversions::pcl_conversions
++  tf2::tf2
++  tf2_eigen::tf2_eigen
++)
++
++target_link_libraries(ouster_ros_library
++  ${ouster_ros_target_deps}
+ )
+ 
+ target_link_libraries(ouster_ros_library
+@@ -125,14 +135,14 @@ function(create_ros2_component
+       "OUSTER_ROS_BUILDING_DLL"
+   )
+ 
+-  ament_target_dependencies(${component_lib_name}
+-    rclcpp
+-    class_loader
+-    rclcpp_components
+-    rclcpp_lifecycle
+-    std_msgs
+-    sensor_msgs
+-    geometry_msgs
++  target_link_libraries(${component_lib_name}
++    rclcpp::rclcpp
++    class_loader::class_loader
++    rclcpp_components::component
++    rclcpp_lifecycle::rclcpp_lifecycle
++    ${std_msgs_TARGETS}
++    ${sensor_msgs_TARGETS}
++    ${geometry_msgs_TARGETS}
+     ${additional_dependencies}
+   )
+ 
+@@ -146,7 +156,7 @@ endfunction()
+ # ==== os_sensor_component ====
+ create_ros2_component(os_sensor_component
+   "src/os_sensor_node_base.cpp;src/os_sensor_node.cpp"
+-  "std_srvs"
++  "${std_srvs_TARGETS}"
+ )
+ rclcpp_components_register_node(os_sensor_component
+   PLUGIN "ouster_ros::OusterSensor"
+@@ -166,7 +176,7 @@ rclcpp_components_register_node(os_replay_component
+ # ==== os_cloud_component ====
+ create_ros2_component(os_cloud_component
+   "src/os_processing_node_base.cpp;src/os_cloud_node.cpp"
+-  "tf2_ros"
++  "tf2_ros::tf2_ros"
+ )
+ rclcpp_components_register_node(os_cloud_component
+   PLUGIN "ouster_ros::OusterCloud"
+@@ -186,7 +196,7 @@ rclcpp_components_register_node(os_image_component
+ # ==== os_driver_component ====
+ create_ros2_component(os_driver_component
+   "src/os_sensor_node_base.cpp;src/os_sensor_node.cpp;src/os_driver_node.cpp"
+-  "std_srvs"
++  "${std_srvs_TARGETS}"
+ )
+ rclcpp_components_register_node(os_driver_component
+   PLUGIN "ouster_ros::OusterDriver"
+@@ -217,9 +227,9 @@ if(BUILD_TESTING)
+     test/point_transform_test.cpp
+     test/point_cloud_compose_test.cpp
+   )
+-  ament_target_dependencies(${PROJECT_NAME}_test
+-    rclcpp
+-    ouster_sensor_msgs
++  target_link_libraries(${PROJECT_NAME}_test
++    rclcpp::rclcpp
++    ${ouster_sensor_msgs_TARGETS}
+   )
+   target_include_directories(${PROJECT_NAME}_test PUBLIC
+     ${_ouster_ros_INCLUDE_DIRS}
+diff --git a/ouster-sdk/cmake/Findlibzip.cmake b/ouster-sdk/cmake/Findlibzip.cmake
+index 0de2ad5..266cf93 100644
+--- a/ouster-sdk/cmake/Findlibzip.cmake
++++ b/ouster-sdk/cmake/Findlibzip.cmake
+@@ -37,9 +37,11 @@ find_path(libzip_INCLUDE_DIRS
+   HINTS ${pkg_libzip_INCLUDE_DIRS})
+ mark_as_advanced(libzip_INCLUDE_DIRS)
+ 
+-# Linux/macos only
++# conda-forge's libzip ships the Windows import lib as "zip.lib" (no
++# "lib" prefix, matching MSVC convention), so it's never found by the
++# Unix-only names below -- add it too.
+ find_library(libzip_LIBRARIES NAMES
+-  libzip libzip.so libzip.dylib
++  libzip libzip.so libzip.dylib zip
+   HINTS ${pkg_libzip_LIBRARY_DIRS})
+ mark_as_advanced(libzip_LIBRARIES)
+ 
+diff --git a/ouster-sdk/ouster_client/CMakeLists.txt b/ouster-sdk/ouster_client/CMakeLists.txt
+index f17eeb4..c5eee7a 100644
+--- a/ouster-sdk/ouster_client/CMakeLists.txt
++++ b/ouster-sdk/ouster_client/CMakeLists.txt
+@@ -64,13 +64,24 @@ if(WIN32)
+   target_link_libraries(ouster_client PUBLIC ws2_32)
+ endif()
+ 
++# Use the real conda-forge spdlog/fmt instead of the bundled thirdparty
++# copy: mixing the two (e.g. a transitively-found external spdlog for
++# <spdlog/spdlog.h> alongside the vendored-only <spdlog/fmt/bundled/args.h>
++# that logging.cpp includes directly) collides on fmt's template
++# declarations (MSVC C2990/C2955/C2011/...). package.xml already declares
++# <depend>spdlog</depend>, so remove the vendored copy outright rather
++# than fight include-order for it; logging.cpp is patched to include
++# <fmt/args.h> instead of the vendored spdlog/fmt/bundled/args.h.
++file(REMOVE_RECURSE "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/spdlog")
++find_package(spdlog REQUIRED CONFIG)
++target_link_libraries(ouster_client PUBLIC spdlog::spdlog)
++
+ target_include_directories(ouster_client
+   PUBLIC
+       $<INSTALL_INTERFACE:include>
+       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+   PRIVATE
+       ${OPENSSL_INCLUDE_DIR}
+-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/spdlog>
+ )
+ 
+ target_include_directories(ouster_client SYSTEM
+diff --git a/ouster-sdk/ouster_client/include/ouster/version.h b/ouster-sdk/ouster_client/include/ouster/version.h
+index 7867e3a..6994f3d 100644
+--- a/ouster-sdk/ouster_client/include/ouster/version.h
++++ b/ouster-sdk/ouster_client/include/ouster/version.h
+@@ -14,6 +14,16 @@
+ #include "ouster/deprecation.h"
+ #include "ouster/visibility.h"
+ 
++// glibc may expose major/minor macros through sys/types.h, which breaks
++// Version's field names when this header is included after libc headers.
++#ifdef major
++#undef major
++#endif
++
++#ifdef minor
++#undef minor
++#endif
++
+ namespace ouster {
+ namespace sdk {
+ namespace core {
+diff --git a/ouster-sdk/ouster_client/src/logging.cpp b/ouster-sdk/ouster_client/src/logging.cpp
+index bf0fc72..eed53e6 100644
+--- a/ouster-sdk/ouster_client/src/logging.cpp
++++ b/ouster-sdk/ouster_client/src/logging.cpp
+@@ -1,10 +1,11 @@
+ #include "ouster/impl/logging.h"
+ 
+-#include <spdlog/fmt/bundled/args.h>
++#include <fmt/args.h>
+ #include <spdlog/sinks/basic_file_sink.h>
+ #include <spdlog/sinks/ringbuffer_sink.h>
+ #include <spdlog/sinks/rotating_file_sink.h>
+ #include <spdlog/sinks/stdout_sinks.h>
++#include <spdlog/pattern_formatter.h>
+ #include <spdlog/spdlog.h>
+ 
+ #include <iostream>
+diff --git a/src/os_static_transforms_broadcaster.h b/src/os_static_transforms_broadcaster.h
+index 94d50eb..b1e05ce 100644
+--- a/src/os_static_transforms_broadcaster.h
++++ b/src/os_static_transforms_broadcaster.h
+@@ -16,7 +16,7 @@ template <typename NodeT>
+ class OusterStaticTransformsBroadcaster {
+    public:
+     OusterStaticTransformsBroadcaster(NodeT* parent)
+-        : node(parent), tf_bcast(parent) {}
++        : node(parent), tf_bcast(*parent) {}
+ 
+     void declare_parameters() {
+         node->declare_parameter("sensor_frame", "os_sensor");
