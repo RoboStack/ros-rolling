@@ -312,6 +312,7 @@ packages_select_by_deps:
   - teleop
   - teleop_tools
   - toppra
+  - torch_conversions
   - tracetools
   - tracetools_launch
   - tracetools_trace
@@ -333,6 +334,7 @@ packages_select_by_deps:
       - apriltag_ros  # Depends on camera_ros
       - avt_vimba_camera
       - camera_ros  # Depends on libcamera that is only available on linux
+      - cuda_buffer_backend  # Depends on CUDA
       - libcamera
       - livox_ros_driver2
       - mavros  # libmavconn currently fails to build on macOS and windows
