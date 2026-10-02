@@ -17,6 +17,18 @@ compressed_depth_image_transport:
   additional_cmake_args: "-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 console_bridge_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
+cuda_buffer:
+  # nvcc runs in the build environment; headers/libraries come from the host SDK.
+  # BIN_DIR prevents FindCUDAToolkit from replacing host includes with nvcc's build paths.
+  additional_cmake_args:
+    if: aarch64
+    then: "-DCUDAToolkit_BIN_DIR=$PREFIX/bin -DCUDAToolkit_NVCC_EXECUTABLE=$BUILD_PREFIX/bin/nvcc -DCUDAToolkit_INCLUDE_DIRECTORIES=$PREFIX/targets/sbsa-linux/include"
+    else: "-DCUDAToolkit_BIN_DIR=$PREFIX/bin -DCUDAToolkit_NVCC_EXECUTABLE=$BUILD_PREFIX/bin/nvcc -DCUDAToolkit_INCLUDE_DIRECTORIES=$PREFIX/targets/x86_64-linux/include"
+cuda_buffer_backend:
+  additional_cmake_args:
+    if: aarch64
+    then: "-DCUDAToolkit_BIN_DIR=$PREFIX/bin -DCUDAToolkit_NVCC_EXECUTABLE=$BUILD_PREFIX/bin/nvcc -DCUDAToolkit_INCLUDE_DIRECTORIES=$PREFIX/targets/sbsa-linux/include"
+    else: "-DCUDAToolkit_BIN_DIR=$PREFIX/bin -DCUDAToolkit_NVCC_EXECUTABLE=$BUILD_PREFIX/bin/nvcc -DCUDAToolkit_INCLUDE_DIRECTORIES=$PREFIX/targets/x86_64-linux/include"
 cyclonedds:
   generate_dummy_package_with_run_deps:
     dep_name: cyclonedds
@@ -202,6 +214,10 @@ gz_sim_vendor:
   additional_cmake_args: "-DAMENT_VENDOR_POLICY=NEVER_VENDOR_IGNORE_SATISFIED_CHECK"
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30
+libtorch_vendor:
+  # CUDA architecture is only for Torch's compiler probe; no kernels are built here.
+  build_number: 31
+  additional_cmake_args: "-DFORCE_BUILD_VENDOR_PKG=OFF -DCMAKE_CUDA_ARCHITECTURES=75"
 rqt_plot:
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30
@@ -232,6 +248,10 @@ rviz_satellite:
 rviz_visual_testing_framework:
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30
+torch_conversions:
+  # Rebuild the exported Torch/CUDA targets and the variant-specific dependencies.
+  build_number: 31
+  additional_cmake_args: "-DCMAKE_CUDA_ARCHITECTURES=75"
 turtlesim:
   # Rebuild with qt6-main 6.11 (b29 was built against qt6-main 6.12, which pyqt6 6.11 can't install with).
   build_number: 30

@@ -39,3 +39,49 @@ If you use RoboStack in your academic work, please refer to the following paper:
 ## Installation, FAQ, and Contributing Instructions
 
 Please see our instructions [here](https://robostack.github.io/GettingStarted.html).
+
+## CUDA buffer builds
+
+On Linux, `cuda_buffer` and `cuda_buffer_backend` build two variants. The
+`cuda_buffer_cuda_version` matrix in `conda_build_config.yaml` is preserved by
+the matching override in `vinca_pinning.yaml`.
+
+| Build SDK | Runtime constraint | CUDA runtime ABI |
+| --- | --- | --- |
+| 12.9 | `cuda-version >=12.9,<13` | `libcudart.so.12` |
+| 13.0 | `cuda-version >=13.0,<14` | `libcudart.so.13` |
+
+`pixi run build` builds both variants. To debug the dependency chain, run
+`pixi run build-one ros2-cuda-buffer` followed by
+`pixi run build-one ros2-cuda-buffer-backend`. Select the installed variant by
+constraining `cuda-version` in the consuming environment; the package build
+hashes distinguish the two variants. Match that CUDA major with GPU LibTorch
+when using both libraries in the same environment.
+
+CUDA buffer and GPU LibTorch builds use GCC 14 on Linux, to satisfy the CUDA
+tool packages' compiler constraints. Native build tools live in the build
+prefix; target CUDA runtime,
+driver stubs and CRT headers live in the host prefix. The installed packages
+depend on the CUDA runtime, without bundling driver stubs or requiring nvcc at
+runtime. The NVIDIA driver supplies `libcuda.so.1` on the target machine.
+macOS and Windows skip these packages because the sources use POSIX IPC and
+`librt`. LibTorch and the message-only packages retain their existing platform
+support.
+
+## LibTorch CPU and GPU builds
+
+`libtorch_vendor` reuses conda-forge's `libtorch` through `find_package(Torch)`.
+The default builds use its CPU variant. Set `CF_CUDA_ENABLED=True` to additionally
+build CUDA 12.9 and 13.0 variants on `linux-64`, `linux-aarch64`, and `win-64`:
+
+```bash
+CF_CUDA_ENABLED=True pixi run build
+```
+
+This uses the existing `cuda_compiler_version` matrix in `vinca_pinning.yaml`;
+macOS keeps CPU builds even with the flag enabled. LibTorch and
+`torch_conversions` runtime dependencies select the same CPU/CUDA variant.
+Linux GPU `torch_conversions` also enables `cuda_buffer`, with the matching
+CUDA major. Builds use the CUDA SDK and driver stubs, so an NVIDIA driver and
+GPU are not required for compilation. Running CUDA tensor operations requires
+a compatible NVIDIA driver and GPU.

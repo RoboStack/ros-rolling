@@ -32,6 +32,68 @@ sdl2_vendor:
 libcurl_vendor:
   add_host: ["libcurl"]
   add_run: ["libcurl"]
+libtorch_vendor:
+  # Torch_FOUND skips the upstream download. CPU/cu12/cu13 must stay consistent.
+  add_build: &libtorch_build
+    - "${{ compiler('cuda') if cuda_compiler_version != 'None' else '' }}"
+  add_host:
+    - "libtorch * ${{ 'cpu' if cuda_compiler_version == 'None' else 'cuda' ~ (cuda_compiler_version | replace('.', '')) }}*"
+    - "${{ 'cuda-version ' ~ cuda_compiler_version ~ '.*' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'cuda-cudart-dev' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'cuda-driver-dev' if linux and cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'cuda-nvrtc-dev' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'nvtx-c' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'arm-variant * sbsa' if aarch64 and cuda_compiler_version != 'None' else '' }}"
+  add_run:
+    - "libtorch * ${{ 'cpu' if cuda_compiler_version == 'None' else 'cuda' ~ (cuda_compiler_version | replace('.', '')) }}*"
+    - "${{ 'cuda-version >=' ~ cuda_compiler_version ~ ',<' ~ ((cuda_compiler_version | split('.'))[0] | int + 1) if cuda_compiler_version != 'None' else '' }}"
+torch_conversions:
+  add_build: *libtorch_build
+  add_host:
+    - "libtorch * ${{ 'cpu' if cuda_compiler_version == 'None' else 'cuda' ~ (cuda_compiler_version | replace('.', '')) }}*"
+    - "${{ 'cuda-version ' ~ cuda_compiler_version ~ '.*' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'cuda-cudart-dev' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'cuda-driver-dev' if linux and cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'cuda-nvrtc-dev' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'nvtx-c' if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'arm-variant * sbsa' if aarch64 and cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'ros2-cuda-buffer' if linux and cuda_compiler_version != 'None' else '' }}"
+  add_run:
+    - "libtorch * ${{ 'cpu' if cuda_compiler_version == 'None' else 'cuda' ~ (cuda_compiler_version | replace('.', '')) }}*"
+    - "${{ 'cuda-version >=' ~ cuda_compiler_version ~ ',<' ~ ((cuda_compiler_version | split('.'))[0] | int + 1) if cuda_compiler_version != 'None' else '' }}"
+    - "${{ 'ros2-cuda-buffer' if linux and cuda_compiler_version != 'None' else '' }}"
+cuda_buffer:
+  # No .cu sources: nvcc is used only by FindCUDAToolkit for discovery/versioning.
+  # The CUDA 12.9/13.0 tool packages constrain GCC to <15, even for --version.
+  remove_build: ["${{ compiler('c') }}", "${{ compiler('cxx') }}"]
+  add_build:
+    - "gcc_${{ target_platform }} 14.*"
+    - "gxx_${{ target_platform }} 14.*"
+    - "cuda-nvcc-tools ${{ cuda_buffer_cuda_version }}.*"
+  add_host:
+    - "cuda-version ${{ cuda_buffer_cuda_version }}.*"
+    - cuda-cudart-dev
+    - cuda-driver-dev
+    - "cuda-crt-dev_${{ target_platform }} ${{ cuda_buffer_cuda_version }}.*"
+    - if: aarch64
+      then: "arm-variant * sbsa"
+  add_run:
+    - "cuda-version >=${{ cuda_buffer_cuda_version }},<${{ (cuda_buffer_cuda_version | split('.'))[0] | int + 1 }}"
+cuda_buffer_backend:
+  remove_build: ["${{ compiler('c') }}", "${{ compiler('cxx') }}"]
+  add_build:
+    - "gcc_${{ target_platform }} 14.*"
+    - "gxx_${{ target_platform }} 14.*"
+    - "cuda-nvcc-tools ${{ cuda_buffer_cuda_version }}.*"
+  add_host:
+    - "cuda-version ${{ cuda_buffer_cuda_version }}.*"
+    - cuda-cudart-dev
+    - cuda-driver-dev
+    - "cuda-crt-dev_${{ target_platform }} ${{ cuda_buffer_cuda_version }}.*"
+    - if: aarch64
+      then: "arm-variant * sbsa"
+  add_run:
+    - "cuda-version >=${{ cuda_buffer_cuda_version }},<${{ (cuda_buffer_cuda_version | split('.'))[0] | int + 1 }}"
 intra_process_demo:
   add_host: ["${{ 'libgl-devel' if linux }}", "${{ 'libopengl-devel' if linux }}"]
   # Depends on opencv with gui support, see https://github.com/ros2/demos/blob/8f361a1ece2daae54016959f3ea9ab2e7692ddbb/intra_process_demo/include/image_pipeline/image_view_node.hpp#L58

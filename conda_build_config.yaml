@@ -9,6 +9,7 @@ c_compiler_version:            # [unix]
   - 15                           # [linux]
   - 21                           # [osx]
   - 14                           # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+  - 14                           # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
 c_stdlib:
   - sysroot                    # [linux]
   - macosx_deployment_target   # [osx]
@@ -21,6 +22,7 @@ c_stdlib_version:              # [unix]
   - 2.28                         # [linux and not riscv64]
   - 2.39                         # [linux and riscv64]
   - 2.28                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+  - 2.28                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
   - 14.0                         # [osx]
 cxx_compiler:
   - gxx                        # [linux]
@@ -31,6 +33,7 @@ cxx_compiler_version:          # [unix]
   - 15                           # [linux]
   - 21                           # [osx]
   - 14                           # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+  - 14                           # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
 llvm_openmp:                   # [osx]
   - 21                         # [osx]
 fortran_compiler:              # [unix or win]
@@ -40,6 +43,7 @@ fortran_compiler_version:      # [unix or win]
   - 15                           # [unix]
   - 5                            # [win64]
   - 22                           # [win and arm64]
+  - 14                           # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
   - 14                           # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
 m2w64_c_compiler:                 # [win]
   - gcc                           # [win]
@@ -81,6 +85,7 @@ cuda_compiler:
 cuda_compiler_version:
   - None
   - 12.9                         # [((linux and (x86_64 or aarch64)) or win64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+  - 13.0                         # [((linux and (x86_64 or aarch64)) or win64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
 cuda_compiler_version_min:
   - None                       # [not ((linux and (x86_64 or aarch64)) or win64)]
   - 12.9                       # [((linux and (x86_64 or aarch64)) or win64)]
@@ -979,7 +984,6 @@ python:
   - 3.14.* *_cp314
 python_impl:
   - cpython
-
 python_min:
   # minimum supported python version per CFEP-25
   # bump to next minor version when we drop python versions
@@ -1172,6 +1176,11 @@ zlib_ng:
   - '2.3'
 zstd:
   - '1.5'
+cuda_buffer_cuda_version:
+  - '12.9'
+  - '13.0'
+  # Build commands provide their channels with `-c`, so omit the inherited
+  # conda-forge-pinning channel_sources value from the rendered configuration.
 libzenohc:
   - 1.10.1
 libzenohcxx:

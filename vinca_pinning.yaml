@@ -9,6 +9,10 @@ migrations:
   - urdfdom6
   - vtk970
 pinning_overrides:
+  # Only CUDA buffer recipes use this key; do not expand the global compiler matrix.
+  cuda_buffer_cuda_version:
+    - '12.9'
+    - '13.0'
   # Build commands provide their channels with `-c`, so omit the inherited
   # conda-forge-pinning channel_sources value from the rendered configuration.
   channel_sources: null
@@ -22,23 +26,28 @@ pinning_overrides:
     - 2.28                       # [linux and not riscv64]
     - 2.39                       # [linux and riscv64]
     - 2.28                       # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+    - 2.28                       # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
     - 14.0                       # [osx]
   c_compiler_version:
     - 15                         # [linux]
     - 21                         # [osx]
     - 14                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+    - 14                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
   cxx_compiler_version:
     - 15                         # [linux]
     - 21                         # [osx]
+    - 14                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
     - 14                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
   fortran_compiler_version:
     - 15                         # [unix]
     - 5                          # [win64]
     - 22                         # [win and arm64]
     - 14                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+    - 14                         # [linux and (x86_64 or aarch64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
   cuda_compiler_version:
     - None
     - 12.9                       # [((linux and (x86_64 or aarch64)) or win64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
+    - 13.0                       # [((linux and (x86_64 or aarch64)) or win64) and os.environ.get("CF_CUDA_ENABLED", "False") == "True"]
   libzenohc:
     - 1.10.1
   libzenohcxx:
@@ -67,4 +76,3 @@ pinning_overrides:
     - false
   python_impl:
     - cpython
-
