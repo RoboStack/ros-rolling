@@ -350,6 +350,255 @@ better_launch:
   tag: 1.3.0
   url: https://github.com/dfki-ric/better_launch.git
   version: 1.3.0
+easynav:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav
+easynav_bonxai_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: maps_managers/easynav_bonxai_maps_manager
+easynav_common:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_common
+easynav_controller:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_controller
+easynav_core:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_core
+easynav_costmap_common:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: common/easynav_costmap_common
+easynav_costmap_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: localizers/easynav_costmap_localizer
+easynav_costmap_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: maps_managers/easynav_costmap_maps_manager
+easynav_costmap_planner:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: planners/easynav_costmap_planner
+easynav_diagnostic_recovery:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: recoveries/easynav_diagnostic_recovery
+easynav_fusion_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: localizers/easynav_fusion_localizer
+easynav_interfaces:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_interfaces
+easynav_localizer:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_localizer
+easynav_maps_manager:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_maps_manager
+easynav_mhamcl_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: localizers/easynav_mhamcl_localizer
+easynav_mpc_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: controllers/easynav_mpc_controller
+easynav_mppi_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: controllers/easynav_mppi_controller
+easynav_nav2_bridge:
+  url: https://github.com/EasyNavigation/easynav_nav2_bridge.git
+  rev: f33a1f1629c56b5bad6472326dc434324790fe07
+  version: 0.5.0
+easynav_navmap_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: localizers/easynav_navmap_localizer
+easynav_navmap_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: maps_managers/easynav_navmap_maps_manager
+easynav_navmap_planner:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: planners/easynav_navmap_planner
+easynav_octomap_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: maps_managers/easynav_octomap_maps_manager
+easynav_planner:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_planner
+easynav_playground_kobuki:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_kobuki/easynav_playground_kobuki
+easynav_playground_kobuki_description:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_kobuki/easynav_playground_kobuki_description
+easynav_playground_kobuki_worlds:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_kobuki/easynav_playground_kobuki_worlds
+easynav_playground_omni:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_omni/easynav_playground_omni
+easynav_playground_omni_description:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_omni/easynav_playground_omni_description
+easynav_playground_omni_worlds:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_omni/easynav_playground_omni_worlds
+easynav_playground_summit:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_summit/easynav_playground_summit
+easynav_playground_summit_description:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_summit/easynav_playground_summit_description
+easynav_playground_summit_worlds:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_summit/easynav_playground_summit_worlds
+easynav_playground_tiago:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_tiago/easynav_playground_tiago
+easynav_playground_tiago_description:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_tiago/easynav_playground_tiago_description
+easynav_playground_tiago_worlds:
+  url: https://github.com/EasyNavigation/easynav_playgrounds.git
+  rev: e19fc70304b3db29d27f66e8122e530108810497
+  version: 0.5.0
+  additional_folder: playground_tiago/easynav_playground_tiago_worlds
+easynav_recovery:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_recovery
+easynav_regulated_pp_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: controllers/easynav_regulated_pp_controller
+easynav_routes_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: maps_managers/easynav_routes_maps_manager
+easynav_sensors:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_sensors
+easynav_serest_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: controllers/easynav_serest_controller
+easynav_simple_common:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: common/easynav_simple_common
+easynav_simple_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: controllers/easynav_simple_controller
+easynav_simple_localizer:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: localizers/easynav_simple_localizer
+easynav_simple_maps_manager:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: maps_managers/easynav_simple_maps_manager
+easynav_simple_planner:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: planners/easynav_simple_planner
+easynav_simple_recovery:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: recoveries/easynav_simple_recovery
+easynav_support_py:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_support_py
+easynav_system:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_system
+easynav_tools:
+  url: https://github.com/EasyNavigation/EasyNavigation.git
+  rev: 57c2c215518b8b562bbf1861bba2f4160583b4fa
+  version: 0.5.0
+  additional_folder: easynav_tools
+easynav_vff_controller:
+  url: https://github.com/EasyNavigation/easynav_plugins.git
+  rev: 703b73ae55bf6a419bf309b26084ca523b063ddf
+  version: 0.5.0
+  additional_folder: controllers/easynav_vff_controller
 livox_ros_driver2:
   tag: 1.2.4
   url: https://github.com/Livox-SDK/livox_ros_driver2.git
@@ -402,6 +651,46 @@ mocap4r2_robot_gt_msgs:
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
   version: 0.0.7
   additional_folder: mocap4r2_robot_gt/mocap4r2_robot_gt_msgs
+nav2_common:
+  url: https://github.com/ros-navigation/navigation2.git
+  rev: 7b9be248a652224a19305469fd5e854d50512341
+  version: 1.5.2
+  additional_folder: nav2_common
+nav2_msgs:
+  url: https://github.com/ros-navigation/navigation2.git
+  rev: 7b9be248a652224a19305469fd5e854d50512341
+  version: 1.5.2
+  additional_folder: nav2_msgs
+navmap_core:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 6893dbd6f3bea2b6983cc2aabe0c4abcea62ee25
+  version: 0.6.0
+  additional_folder: navmap_core
+navmap_examples:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 6893dbd6f3bea2b6983cc2aabe0c4abcea62ee25
+  version: 0.6.0
+  additional_folder: navmap_examples
+navmap_ros:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 6893dbd6f3bea2b6983cc2aabe0c4abcea62ee25
+  version: 0.6.0
+  additional_folder: navmap_ros
+navmap_ros_interfaces:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 6893dbd6f3bea2b6983cc2aabe0c4abcea62ee25
+  version: 0.6.0
+  additional_folder: navmap_ros_interfaces
+navmap_rviz_plugin:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 6893dbd6f3bea2b6983cc2aabe0c4abcea62ee25
+  version: 0.6.0
+  additional_folder: navmap_rviz_plugin
+navmap_tools:
+  url: https://github.com/EasyNavigation/NavMap.git
+  rev: 6893dbd6f3bea2b6983cc2aabe0c4abcea62ee25
+  version: 0.6.0
+  additional_folder: navmap_tools
 rqt_mocap4r2_control:
   tag: 0.0.7
   url: https://github.com/MOCAP4ROS2-Project/mocap4r2.git
@@ -415,3 +704,7 @@ rviz_visual_tools:  # temp addition
   tag: release/rolling/rviz_visual_tools/4.1.4-4
   url: https://github.com/ros2-gbp/rviz_visual_tools-release
   version: 4.1.4
+yaets:
+  url: https://github.com/fmrico/yaets.git
+  rev: 2f4de5d00bc87b56dbc2c6f23ff42f2016b817eb
+  version: 1.2.0
