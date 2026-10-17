@@ -1,0 +1,12 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -46,3 +46,3 @@
+ if(_torch_has_cuda AND CUDAToolkit_FOUND)
+-  target_link_libraries(${PROJECT_NAME} INTERFACE CUDA::cudart)
++  target_link_libraries(${PROJECT_NAME} INTERFACE CUDA::cudart CUDA::cuda_driver)
+   target_compile_definitions(${PROJECT_NAME} INTERFACE
+@@ -68,3 +68,3 @@
+ ament_export_dependencies(
+-  libtorch_vendor rosidl_buffer tensor_msgs rmw rcutils)
++  libtorch_vendor Torch rosidl_buffer tensor_msgs rmw rcutils)
+ if(_torch_has_cuda AND CUDAToolkit_FOUND)
